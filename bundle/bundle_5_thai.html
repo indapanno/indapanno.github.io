@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ระดับการพัฒนาทางจิตวิญญาณ</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700&family=Noto+Serif:wght@400;600;700&family=Noto+Sans+Thai:wght@400;600;700&family=Noto+Serif+Thai:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css">
+<link rel="stylesheet" href="/css/learned.css">
+<link rel="stylesheet" href="/css/bundle.css">
+<meta name="robots" content="noindex">
+<link rel="icon" href="/favicon.ico">
+<script src="/js/theme.js"></script>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-top">
+    <button id="menu-toggle" class="menu-toggle" aria-label="เมนู"><span></span><span></span><span></span></button>
+    <h1 id="page-title">ระดับการพัฒนาทางจิตวิญญาณ</h1>
+    <div class="header-controls">
+      <div class="control">
+        <span id="lang-label">Язык</span>
+        <div class="segmented" id="lang-switch" role="group" aria-labelledby="lang-label">
+          <a data-lang-value="ru" lang="ru">RU</a>
+          <a data-lang-value="thai" lang="th">ไทย</a>
+        </div>
+      </div>
+      <div class="control">
+        <span id="theme-label">ธีม</span>
+        <div class="segmented" id="theme-switch" role="group" aria-labelledby="theme-label">
+          <button type="button" data-theme-value="system" aria-pressed="false">ตามระบบ</button>
+          <button type="button" data-theme-value="light" aria-pressed="false">สว่าง</button>
+          <button type="button" data-theme-value="dark" aria-pressed="false">มืด</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="header-intro" id="header-intro">แนวคิดเหล่านี้สะท้อนถึงเส้นทางการยกระดับจิตใจที่เป็นหนึ่งเดียว โดยแต่ละสภาวะจะเกิดขึ้นต่อจากสภาวะก่อนหน้าตามลำดับการขจัด กิเลส และกิเลสเครื่องเศร้าหมองของจิต การศึกษาสภาวะเหล่านี้ตามลำดับจึงมีความจำเป็นต่อการเข้าใจพลวัตทั้งหมดของการเติบโตทางจิตวิญญาณ</p>
+  <div class="search-box">
+    <input id="search-input" class="search-input" type="text" placeholder="ค้นหาคำศัพท์…" autocomplete="off">
+    <div id="search-suggestions" class="search-suggestions" hidden></div>
+  </div>
+</header>
+
+<div id="nav-backdrop" class="nav-backdrop" hidden></div>
+<div id="nav-drawer" class="nav-drawer" hidden>
+  <div class="nav-drawer-header">
+    <span>เมนู</span>
+    <button id="nav-drawer-close" aria-label="ปิด">✕</button>
+  </div>
+  <ul id="nav-menu-list" class="nav-menu-list"></ul>
+</div>
+
+<main>
+  <nav class="breadcrumb"><a href="/nav_thai.html">นำทางคำศัพท์</a><span class="sep">/</span><a href="/bundle/bundles_thai.html">ชุดศัพท์ที่เกี่ยวข้อง</a><span class="sep">/</span><span class="current">ระดับการพัฒนาทางจิตวิญญาณ</span></nav>
+  <p class="nav-intro" id="learned-nav-note"></p>
+  <ul id="term-list" class="term-list"><li class="term-item"><a href="/terms/puthujjana_thai.html">ปุถุชน <span class="count-badge">+๑</span><div class="nav-snippet">หมายถึง คนธรรมดาทั่วไปที่ยังมีความโลภ ความโกรธ และความหลงอยู่เต็มหัวใจ ยังไม่ได้บรรลุธรรมขั้นสูง…</div></a><button type="button" class="learned-btn" data-learned-id="puthujjana">ยังไม่ได้เรียน</button></li><li class="term-item"><a href="/terms/sotapanna_thai.html">โสดาบัน <span class="count-badge">+๑</span><div class="nav-snippet">คนที่บรรลุความรู้แจ้งขั้นแรกในพุทธศาสนา เป็นผู้ที่พ้นจากความหลงผิด และกำลังเดินทางบนเส้นทางชีวิตที่ดีงาม…</div></a><button type="button" class="learned-btn" data-learned-id="sotapanna">ยังไม่ได้เรียน</button></li><li class="term-item"><a href="/terms/sakadagami_thai.html">สกทาคามี <span class="count-badge">+๒</span><div class="nav-snippet">คนที่ฝึกจิตใจจนตัดความเชื่อผิด ๆ เรื่องตัวตน และความลังเลสงสัยได้แล้ว อีกทั้งยังทำให้ความโกรธและความอยากได้ในสิ่งต่างๆ…</div></a><button type="button" class="learned-btn" data-learned-id="sakadagami">ยังไม่ได้เรียน</button></li><li class="term-item"><a href="/terms/anagami_thai.html">อนาคามี <span class="count-badge">+๑</span><div class="nav-snippet">หมายถึง คนที่ฝึกตนจนละความโกรธและความลุ่มหลงในเรื่องเพศรสได้อย่างเด็ดขาด เมื่อเสียชีวิตไปแล้วจะไปเกิดในสวรรค์ชั้นสูง…</div></a><button type="button" class="learned-btn" data-learned-id="anagami">ยังไม่ได้เรียน</button></li><li class="term-item"><a href="/terms/arahant_thai.html">พระอรหันต์ <span class="count-badge">+๒</span><div class="nav-snippet">หมายถึงบุคคลผู้ฝึกตนจนดับกิเลสและความทุกข์ในใจได้ทั้งหมดแล้ว เป็นผู้หลุดพ้นจากการเวียนว่ายตายเกิด…</div></a><button type="button" class="learned-btn" data-learned-id="arahant">ยังไม่ได้เรียน</button></li></ul>
+</main>
+
+<footer class="site-footer">
+  <p>
+    สร้างโดยพระอินทปัญโญ จากวัดป่าถ้ำวนนิมิต จังหวัดนครนายก ประเทศไทย เดือนกันยายน ๒๐๒๖.
+    ตัวนำทางประวัติคำศัพท์บาลีเป็นเนื้อหาเสริมสำหรับโพสต์เกี่ยวกับพระพุทธศาสนาที่เผยแพร่ในช่องสาธารณะ
+    <a href="https://max.ru/channel_buddhism">«ทำความเข้าใจพระพุทธศาสนา»</a> บนแอปพลิเคชันแม็กซ์ (Max).
+    จำนวนคำศัพท์ในตัวนำทาง: <span id="term-count">…</span>.
+    เวอร์ชันเว็บแอปพลิเคชัน: ๑.๐.๐.
+    <a href="https://github.com/indapanno/indapanno.github.io/blob/main/docs/for-researchers/thai.md">สำหรับนักวิจัยและนักพัฒนา</a>.
+    <span class="view-count-wrap" hidden>จำนวนการเข้าชม: <span id="view-count">0</span>.</span>
+  </p>
+</footer>
+
+<script data-goatcounter="https://indapanno.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+<script src="/js/thai-numerals.js"></script>
+<script src="/js/lang.js"></script>
+<script src="/js/learned.js"></script>
+<script src="/js/search.js"></script>
+<script src="/js/burger-menu.js"></script>
+<script src="/js/footer-counter.js"></script>
+<script src="/js/term-count.js"></script>
+</body>
+</html>
