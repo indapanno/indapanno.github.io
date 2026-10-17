@@ -1,0 +1,82 @@
+// Единый модуль адресов сайта. Три сборщика и тесты берут адреса только отсюда.
+// Сайт живёт в корне https://indapanno.github.io/ (репозиторий indapanno.github.io).
+//
+// «path» — путь от корня сайта (начинается с «/»), его пишут в ссылки на страницах.
+// «url» — полный канонический адрес (canonical, hreflang, Open Graph, sitemap).
+// «file» — имя файла, который пишет сборщик. «name» — прежнее имя страницы:
+// у первой страницы русского списка file = index.html, а name = nav_ru.html
+// (по прежнему имени сборщик кладёт заглушку, ведущую на новый адрес).
+
+const SITE_URL = 'https://indapanno.github.io';
+
+// Имена, которые нельзя использовать для файлов терминов и статей (раздел 6 ТЗ).
+const RESERVED_ROOT = ['nav_', 'progress_', 'how-to-', 'terms', 'bundle', 'publications', 'css', 'js', 'json',
+  'schema', 'docs', 'sitemap', 'robots', 'favicon', '404', 'index', 'img'];
+
+const absUrl = p => SITE_URL + p;
+const pageSuffix = page => (page > 1 ? '_' + page : '');
+
+// Страницы-списки: nav (корень), bundle/bundles_*, publications/publications_*.
+// Первая страница русского списка — index.html (адрес «/», «/bundle/», «/publications/»).
+function makeList(dir, prefix) {
+  const base = dir ? '/' + dir + '/' : '/';
+  const name = (lang, page) => prefix + '_' + lang + pageSuffix(page) + '.html';
+  const isIndex = (lang, page) => lang === 'ru' && page === 1;
+  return {
+    dir: dir,
+    name: name,
+    isIndex: isIndex,
+    file: (lang, page) => (isIndex(lang, page) ? 'index.html' : name(lang, page)),
+    path: (lang, page) => (isIndex(lang, page) ? base : base + name(lang, page)),
+    url: (lang, page) => absUrl(isIndex(lang, page) ? base : base + name(lang, page)),
+    basePath: base
+  };
+}
+
+const nav = makeList('', 'nav');
+const bundles = makeList('bundle', 'bundles');
+const publications = makeList('publications', 'publications');
+
+const cardPath = (id, lang) => '/terms/' + id + '_' + lang + '.html';
+const cardUrl = (id, lang) => absUrl(cardPath(id, lang));
+const bundlePath = (n, lang, page) => '/bundle/bundle_' + n + '_' + lang + pageSuffix(page || 1) + '.html';
+const bundleUrl = (n, lang, page) => absUrl(bundlePath(n, lang, page));
+const articlePath = name => '/publications/' + name;
+const articleUrl = name => absUrl(articlePath(name));
+const coverPath = file => '/publications/covers/' + file;
+const coverUrl = file => absUrl(coverPath(file));
+
+// Ссылка «к списку терминов» из хлебных крошек
+const navHomePath = lang => nav.path(lang, 1);
+
+function escAttr(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// Заглушка на старом/прежнем адресе: мгновенный meta refresh, canonical на новый адрес,
+// запасной JS-переход (сохраняет ?параметры и #якорь), ссылка в тексте. Без noindex.
+function stubHtml(targetUrl, lang) {
+  const thai = lang === 'thai';
+  const u = escAttr(targetUrl);
+  const js = JSON.stringify(targetUrl).replace(/</g, '\\u003c');
+  return '<!doctype html>\n'
+    + '<html lang="' + (thai ? 'th' : 'ru') + '">\n'
+    + '<head>\n'
+    + '<meta charset="UTF-8">\n'
+    + '<meta name="viewport" content="width=device-width, initial-scale=1">\n'
+    + '<title>' + (thai ? 'หน้านี้ย้ายแล้ว' : 'Страница переехала') + '</title>\n'
+    + '<link rel="canonical" href="' + u + '">\n'
+    + '<meta http-equiv="refresh" content="0; url=' + u + '">\n'
+    + '<script>location.replace(' + js + ' + location.search + location.hash);</script>\n'
+    + '</head>\n'
+    + '<body>\n'
+    + '<p>' + (thai ? 'หน้านี้ย้ายไปที่' : 'Страница переехала') + ': <a href="' + u + '">' + escAttr(targetUrl) + '</a></p>\n'
+    + '</body>\n'
+    + '</html>\n';
+}
+
+module.exports = {
+  SITE_URL, RESERVED_ROOT, absUrl, nav, bundles, publications,
+  cardPath, cardUrl, bundlePath, bundleUrl, articlePath, articleUrl, coverPath, coverUrl,
+  navHomePath, stubHtml, escAttr
+};

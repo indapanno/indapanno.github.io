@@ -1,0 +1,47 @@
+/* Страница «Проверка JSON». Использует переменные темы из style.css. */
+.validator-input {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0.5rem 0 0.75rem;
+  min-height: 12rem;
+  padding: 0.75rem;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  resize: vertical;
+}
+.validator-input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.validator-btn-secondary {
+  min-height: 44px;
+  padding: 0 1.1rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+.validator-result { margin-top: 1rem; }
+.validator-result.ok,
+.validator-result.error,
+.validator-result.pending {
+  padding: 0.9rem 1rem;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+}
+.validator-result.ok { border-color: #3f8f5a; }
+.validator-result.error { border-color: var(--accent-deep); }
+.validator-title { margin: 0 0 0.5rem; font-weight: 700; }
+.validator-line { margin: 0 0 0.35rem; }
+.validator-list { margin: 0 0 0.9rem; padding-left: 1.2rem; }
+.validator-list li { margin-bottom: 0.5rem; overflow-wrap: anywhere; }
+.validator-list code { font-weight: 700; }
+.validator-link { display: inline-block; margin-top: 0.4rem; color: var(--link-color); }
+.validator-note { color: var(--text-secondary); font-size: 0.85rem; }

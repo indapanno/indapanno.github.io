@@ -1,0 +1,281 @@
+/* Отметки «Изучен / Не изучен»: кнопка, приглушение плиток и подсказок поиска.
+   Цвета выполненного — приглушённый зелёный, отдельные переменные для тёмной
+   (по умолчанию) и светлой темы. Логика — в js/learned.js. */
+
+:root {
+  --learned: #86B892;
+  --learned-bg: #1E2B22;
+  --learned-border: #3D5E47;
+}
+
+html[data-theme="light"] {
+  --learned: #2F6B3E;
+  --learned-bg: #E4F0E6;
+  --learned-border: #A6C9AD;
+}
+
+/* --- Кнопка --- */
+.learned-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  min-height: 34px;
+  padding: 0 0.85rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.learned-btn:hover { border-color: var(--accent); color: var(--text); }
+
+.learned-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.learned-btn.is-learned {
+  background: var(--learned-bg);
+  border-color: var(--learned-border);
+  color: var(--learned);
+}
+
+.learned-btn.is-learned:hover { border-color: var(--learned); color: var(--learned); }
+
+/* --- Блок на карточке термина: кнопка + пояснение --- */
+.learned-bar {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+  margin: 0 0 1rem;
+}
+
+.learned-note {
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+
+/* --- Плитка на навигаторе: ссылка + кнопка рядом --- */
+.term-item {
+  display: flex;
+  align-items: stretch;
+  gap: 0.4rem;
+}
+
+.term-item > a {
+  flex: 1 1 auto;
+  min-width: 0;
+  transition: opacity 0.15s;
+}
+
+.term-item > .learned-btn {
+  flex: 0 0 auto;
+  align-self: center;
+  min-width: 6.6rem;
+}
+
+/* Изученное — блёклое; кнопка остаётся яркой, чтобы можно было нажать обратно */
+.term-item.is-learned > a { opacity: 0.5; }
+.term-item.is-learned > a:hover { opacity: 0.85; }
+
+/* --- Подсказки поиска --- */
+.search-suggestions a.is-learned { opacity: 0.5; }
+.search-suggestions a.is-learned:hover { opacity: 0.85; }
+
+@media (max-width: 400px) {
+  .term-item > .learned-btn { min-width: 5.6rem; padding: 0 0.5rem; font-size: 0.76rem; }
+}
+
+/* --- Страница «Мой прогресс» --- */
+:root { --learned-error: #E0917F; }
+html[data-theme="light"] { --learned-error: #A33A2A; }
+
+.progress-summary {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin: 0 0 0.6rem;
+}
+
+.progress-bar {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  width: 0;
+  background: var(--learned);
+  transition: width 0.3s;
+}
+
+.progress-section {
+  margin-top: 1.2rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.progress-section h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin: 0 0 0.3rem;
+}
+
+.progress-section .learned-note { margin: 0 0 0.65rem; }
+
+.progress-btn {
+  min-height: 44px;
+  padding: 0 1.1rem;
+  font-size: 0.9rem;
+}
+
+.progress-status {
+  margin: 0.7rem 0 0;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: var(--learned);
+}
+
+/* Пустая строка статуса не занимает места (остаётся в дереве для озвучивания) */
+.progress-status:empty { margin: 0; }
+
+.progress-status.is-error { color: var(--learned-error); }
+
+/* Ссылка внутри пояснения на навигаторе */
+.nav-intro a { color: var(--link-color); }
+
+/* Ссылка внутри пояснения на карточке термина */
+.learned-note a { color: var(--link-color); }
+
+/* --- Кнопка сброса и подтверждение --- */
+.learned-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.learned-btn:disabled:hover {
+  border-color: var(--border);
+  color: var(--text-secondary);
+}
+
+.learned-btn--danger {
+  border-color: var(--learned-error);
+  color: var(--learned-error);
+}
+
+.learned-btn--danger:hover:not(:disabled) {
+  border-color: var(--learned-error);
+  color: var(--learned-error);
+  background: var(--bg-highlight);
+}
+
+.learned-btn--danger-solid {
+  background: var(--learned-error);
+  border-color: var(--learned-error);
+  color: var(--bg-elevated);
+}
+
+.learned-btn--danger-solid:hover {
+  border-color: var(--learned-error);
+  color: var(--bg-elevated);
+  opacity: 0.9;
+}
+
+.progress-confirm {
+  margin: 0;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid var(--learned-error);
+  border-radius: 10px;
+  background: var(--bg);
+}
+
+.progress-confirm p {
+  margin: 0 0 0.7rem;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.progress-confirm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* --- Список изученных терминов на странице «Мой прогресс» --- */
+.progress-list {
+  list-style: none;
+  margin: 0.9rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.progress-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.45rem 0.6rem 0.45rem 0.8rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.progress-row a {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--text);
+  text-decoration: none;
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  overflow-wrap: anywhere;
+}
+
+.progress-row a:hover { color: var(--accent); }
+
+.progress-row .learned-btn {
+  flex: 0 0 auto;
+  min-width: 6.2rem;
+  min-height: 32px;
+}
+
+.progress-list-empty { margin: 0.9rem 0 0; }
+
+.progress-status a { color: var(--link-color); margin-left: 0.4rem; }
+
+/* Строка-сообщение на месте нажатой строки списка («Отметка снята… Вернуть») */
+.progress-row--notice {
+  border-style: dashed;
+  border-color: var(--learned);
+}
+
+.progress-row--notice .progress-notice-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 0.88rem;
+  line-height: 1.4;
+  color: var(--learned);
+  overflow-wrap: anywhere;
+}
+
+.progress-row--notice a {
+  flex: 0 0 auto;
+  padding: 0.5rem 0.3rem;
+  font-family: var(--font-body);
+  font-size: 0.88rem;
+  color: var(--link-color);
+  text-decoration: underline;
+}

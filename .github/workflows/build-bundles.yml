@@ -1,0 +1,71 @@
+name: Build bundles
+
+# Сборка страниц «Связанные термины». Независима от сборки обычных терминов:
+# только читает термины и пишет в bundle/.
+on:
+  push:
+    # migration — временно, на время переезда; после влития в main строка возвращается к [main]
+    branches: [main, migration]
+    paths:
+      - '_src/bundle/**'
+      - '.github/scripts/build-bundles.js'
+      - '.github/scripts/site-config.js'
+  # После каждой сборки терминов: перепроверка связок (термин удалён или потерял перевод)
+  workflow_run:
+    workflows: ['Build terms']
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+# Сборки идут по очереди, без отмены уже идущих
+concurrency:
+  group: build-bundles
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      # push и ручной запуск — ветка запуска; workflow_run — ветка, на которой прошла сборка терминов (main)
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_branch || github.ref_name }}
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run tests
+        run: node .github/scripts/test-bundles.js
+
+      # При ошибках в связках шаг не останавливает job: валидные страницы всё равно
+      # публикуются, а красный статус ставится последним шагом.
+      - name: Build bundles
+        id: build
+        continue-on-error: true
+        run: node .github/scripts/build-bundles.js
+
+      - name: Commit and push generated files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A -- bundle/
+          if git diff --staged --quiet; then
+            echo "Нет изменений для коммита"
+          else
+            git commit -m "Автосборка связанных терминов [skip ci]"
+            git pull --rebase origin ${{ github.event.workflow_run.head_branch || github.ref_name }}
+            git push origin HEAD
+          fi
+
+      - name: Fail if bundles have errors
+        if: steps.build.outcome == 'failure'
+        run: |
+          echo "В связках найдены ошибки (см. шаг Build bundles). Связки с ошибками не опубликованы."
+          exit 1

@@ -1,0 +1,90 @@
+/* Связанные термины: стили, дополняющие style.css и learned.css.
+   Список связок использует классы .term-list / .pagination из style.css;
+   здесь — только то, чего там нет. Цвета и шрифты — переменные темы. */
+
+/* Плитка связки: вся плитка — одна ссылка */
+.bundle-name {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.bundle-desc {
+  /* не больше 3 строк на любой ширине; при сборке текст дополнительно ограничен по словам (DESC_CLIP) */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow: hidden;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-top: 0.35rem;
+}
+
+.bundle-meta {
+  display: block;
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--accent);
+  margin-top: 0.5rem;
+}
+
+.bundle-terms {
+  display: block;
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  font-weight: 400;
+  color: var(--text);
+  line-height: 1.45;
+  margin-top: 0.15rem;
+}
+
+/* Пустой список связок */
+.bundle-empty {
+  background: var(--bg-elevated);
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  padding: 1.1rem;
+  font-size: 0.92rem;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+/* Заглушка «перевод отсутствует»: карточка term-card (как how-to-add-term), узкие экраны */
+.bundle-stub h2 { margin: 0 0 0.6rem; font-family: var(--font-display); }
+.bundle-stub ol { margin: 0.8rem 0 0; padding-left: 1.3rem; }
+.bundle-stub li { margin-bottom: 0.5rem; line-height: 1.55; }
+.bundle-stub a,
+.bundle-stub code {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.bundle-stub code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.82rem;
+  background: var(--bg-highlight);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.1rem 0.35rem;
+}
+
+.bundle-stub .bundle-code {
+  display: block;
+  margin-top: 0.4rem;
+  padding: 0.6rem 0.7rem;
+  font-size: 0.85rem;
+  background: var(--bg-highlight);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  line-height: 1.5;
+}

@@ -1,0 +1,378 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://indapanno.github.io/schema/term.schema.thai.json",
+  "title": "Термин Навигатора по терминам (TH)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "term_thai",
+    "term_iast",
+    "term_composition",
+    "origin",
+    "dating",
+    "attribution",
+    "recorded_by",
+    "school_tradition",
+    "reason_introduced",
+    "interpretation",
+    "language",
+    "sources",
+    "later_mentions"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*$"
+    },
+    "term_iast": {
+      "type": "string",
+      "minLength": 1
+    },
+    "term_composition": {
+      "$ref": "#/definitions/termComposition"
+    },
+    "origin": {
+      "$ref": "#/definitions/origin"
+    },
+    "dating": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/definitions/datingEntry"
+      }
+    },
+    "attribution": {
+      "$ref": "#/definitions/attribution"
+    },
+    "recorded_by": {
+      "type": "string",
+      "minLength": 1
+    },
+    "school_tradition": {
+      "type": "string",
+      "minLength": 1
+    },
+    "reason_introduced": {
+      "type": "string",
+      "minLength": 1
+    },
+    "interpretation": {
+      "type": "string",
+      "minLength": 1
+    },
+    "language": {
+      "type": "string",
+      "minLength": 1
+    },
+    "sources": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/definitions/sourceEntry"
+      }
+    },
+    "later_mentions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/laterMention"
+      }
+    },
+    "term_thai": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "definitions": {
+    "termComposition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "is_compound",
+        "components",
+        "note"
+      ],
+      "properties": {
+        "is_compound": {
+          "type": "boolean"
+        },
+        "components": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/component"
+          }
+        },
+        "note": {
+          "type": "string"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "is_compound": {
+                "const": true
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "components": {
+                "minItems": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "is_compound": {
+                "const": false
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "components": {
+                "maxItems": 0
+              }
+            }
+          }
+        }
+      ]
+    },
+    "component": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "part_iast",
+        "part_meaning"
+      ],
+      "properties": {
+        "part_iast": {
+          "type": "string",
+          "minLength": 1
+        },
+        "part_meaning": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "origin": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "source_tradition",
+        "attestation_before_term",
+        "etymology_versions"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "pattern": "^(บัญญัติขึ้นใหม่|ยืมมาและให้ความหมายใหม่)(\\s*\\(.+\\))?$"
+        },
+        "source_tradition": {
+          "type": "string"
+        },
+        "attestation_before_term": {
+          "type": "string"
+        },
+        "etymology_versions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/etymologyVersion"
+          }
+        }
+      }
+    },
+    "etymologyVersion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "type",
+        "version_source",
+        "status"
+      ],
+      "properties": {
+        "version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "type": {
+          "type": "string",
+          "pattern": "^(ทางวิชาการ \\(ภาษาศาสตร์\\)|ตามประเพณี\\s*/\\s*พื้นบ้าน)(\\s*\\(.+\\))?$"
+        },
+        "version_source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "datingEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "value",
+        "comment"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "pattern": "^(ตามประเพณี|ทางวิชาการ|การมีอยู่ก่อนพุทธกาล)(\\s*\\(.+\\))?$"
+        },
+        "value": {
+          "type": "string",
+          "minLength": 1
+        },
+        "comment": {
+          "type": "string"
+        }
+      }
+    },
+    "attribution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "traditional",
+        "academic",
+        "consensus"
+      ],
+      "properties": {
+        "traditional": {
+          "type": "string",
+          "minLength": 1
+        },
+        "academic": {
+          "type": "string",
+          "minLength": 1
+        },
+        "consensus": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "sourceEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "title",
+        "location",
+        "transmission_tradition",
+        "language",
+        "source_type",
+        "discrepancies"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "pattern": "^(หลัก|พยาน [0-9๐-๙]+)(\\s*\\(.+\\))?$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "location": {
+          "type": "string",
+          "minLength": 1
+        },
+        "transmission_tradition": {
+          "type": "string",
+          "minLength": 1
+        },
+        "language": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_type": {
+          "type": "string",
+          "minLength": 1
+        },
+        "discrepancies": {
+          "type": "string"
+        }
+      }
+    },
+    "laterMention": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "parent",
+        "author_id",
+        "date_updated",
+        "updated_by",
+        "reason_for_update",
+        "what_is_new",
+        "school_tradition",
+        "source_type",
+        "language",
+        "source"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "parent": {
+          "type": "string",
+          "minLength": 1
+        },
+        "author_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "date_updated": {
+          "type": "string",
+          "minLength": 1
+        },
+        "updated_by": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reason_for_update": {
+          "type": "string",
+          "minLength": 1
+        },
+        "what_is_new": {
+          "type": "string",
+          "minLength": 1
+        },
+        "school_tradition": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_type": {
+          "type": "string",
+          "minLength": 1
+        },
+        "language": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "title"
+          ],
+          "properties": {
+            "title": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      }
+    }
+  }
+}
