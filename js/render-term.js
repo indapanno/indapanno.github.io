@@ -189,7 +189,7 @@ if (typeof document !== 'undefined') {
         if (headerIntro) headerIntro.innerHTML = strings.headerIntro(boldTerm(info.id));
         var iastBtnMissing = document.getElementById('term-iast-btn');
         if (iastBtnMissing) iastBtnMissing.hidden = true;
-        container.innerHTML = renderMissingTranslation(strings, info.id, targetLangName, '/how-to-translate-term_' + info.lang + '.html');
+        container.innerHTML = renderMissingTranslation(strings, info.id, targetLangName, '/how/how-to-translate-term_' + info.lang + '.html');
       });
   });
 }

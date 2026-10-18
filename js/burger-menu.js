@@ -38,11 +38,11 @@ document.addEventListener('DOMContentLoaded', function () {
   var strings = BURGER_UI_STRINGS[lang] || BURGER_UI_STRINGS.ru;
 
   var items = [
-    { href: window.TermsLang.url(lang === 'ru' ? '' : 'nav_thai.html'), text: strings.navHome },
+    { href: window.TermsLang.url(lang === 'ru' ? '' : 'nav/nav_thai.html'), text: strings.navHome },
     { href: window.TermsLang.url(lang === 'ru' ? 'bundle/' : 'bundle/bundles_thai.html'), text: strings.bundles },
     { href: window.TermsLang.url('progress_' + lang + '.html'), text: strings.progress },
     { href: window.TermsLang.url(lang === 'ru' ? 'publications/' : 'publications/publications_thai.html'), text: strings.publications },
-    { href: window.TermsLang.url('how-to-add-term_' + lang + '.html'), text: strings.addTerm }
+    { href: window.TermsLang.url('how/how-to-add-term_' + lang + '.html'), text: strings.addTerm }
   ];
 
   list.innerHTML = items.map(function (item) {

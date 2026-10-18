@@ -236,7 +236,7 @@ const count = (s, sub) => s.split(sub).length - 1;
   check('thai: без времени чтения', !a.includes('เวลาอ่าน') && !a.includes('pub-meta'));
   check('thai: призыв «อ่านต่อ» в плитке', r.read('publications_thai.html').includes('<span class="pub-tile-more">อ่านต่อ</span>'));
   check('thai: выноска и ссылка на термин', a.includes('callout-title">ประเด็นสำคัญ<') && a.includes('href="/terms/t2_thai.html"'));
-  check('thai: крошки', a.includes('<a href="/nav_thai.html">นำทางคำศัพท์</a><span class="sep">/</span><a href="/publications/publications_thai.html">บทความ</a>'));
+  check('thai: крошки', a.includes('<a href="/nav/nav_thai.html">นำทางคำศัพท์</a><span class="sep">/</span><a href="/publications/publications_thai.html">บทความ</a>'));
   check('thai: русский список пуст и закрыт', r.read('index.html').includes('noindex') && r.sitemap.includes('/publications/publications_thai.html') && !r.sitemap.includes('<loc>https://indapanno.github.io/publications/</loc>'));
   check('thai: og:locale', a.includes('content="th_TH"'));
 }

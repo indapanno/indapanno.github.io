@@ -177,7 +177,7 @@ function buildCardHtml(lang, id, data) {
 
   const contentHtml = data
     ? renderTimeline(strings, data)
-    : renderMissingTranslation(strings, id, strings.langNameOfSelf, 'how-to-translate-term_' + lang + '.html');
+    : renderMissingTranslation(strings, id, strings.langNameOfSelf, cfg.howPath('how-to-translate-term', lang));
 
   html = replaceOnce(html, '<div id="term-content">\n    <p id="loading">' + loading + '</p>\n  </div>',
     '<div id="term-content">' + contentHtml + '</div>', lang + '/' + id, 'term-content');
@@ -304,17 +304,33 @@ LANGS.forEach(lang => {
         '<title>' + NAV_TITLE_TEXT[lang] + pageSuffix + '</title>', lang + ' nav p' + page, 'title');
     }
 
-    fs.writeFileSync(path.join(REPO_ROOT, cfg.nav.file(lang, page)), html, 'utf8');
+    const navTarget = path.join(REPO_ROOT, cfg.nav.file(lang, page));
+    fs.mkdirSync(path.dirname(navTarget), { recursive: true });
+    fs.writeFileSync(navTarget, html, 'utf8');
   }
   console.log('Навигационных страниц (' + lang + ') собрано:', totalPages);
 });
 
-// 5а. Заглушки на прежних адресах (R10): nav_ru.html и terms/index.html ведут на «/».
-fs.writeFileSync(path.join(REPO_ROOT, cfg.nav.name('ru', 1)), cfg.stubHtml(cfg.nav.url('ru', 1), 'ru'), 'utf8');
+// 5а. Заглушки на прежних адресах: terms/index.html и nav/index.html ведут на «/»;
+// прежние страницы списка в корне (nav_ru.html … nav_thai_5.html) ведут на новые адреса в nav/ и «/».
 fs.writeFileSync(path.join(HTML_DIR, 'index.html'), cfg.stubHtml(cfg.nav.url('ru', 1), 'ru'), 'utf8');
+fs.mkdirSync(path.join(REPO_ROOT, 'nav'), { recursive: true });
+fs.writeFileSync(path.join(REPO_ROOT, 'nav', 'index.html'), cfg.stubHtml(cfg.nav.url('ru', 1), 'ru'), 'utf8');
+// Прежние адреса инструкций в корне (how-to-*.html) ведут на /how/…; how/index.html — на «/».
+fs.mkdirSync(path.join(REPO_ROOT, 'how'), { recursive: true });
+fs.writeFileSync(path.join(REPO_ROOT, 'how', 'index.html'), cfg.stubHtml(cfg.nav.url('ru', 1), 'ru'), 'utf8');
+cfg.HOW_PAGES.forEach(page => LANGS.forEach(lang => {
+  fs.writeFileSync(path.join(REPO_ROOT, cfg.howLegacyFile(page, lang)), cfg.stubHtml(cfg.howUrl(page, lang), lang), 'utf8');
+}));
+LANGS.forEach(lang => {
+  const legacyTotal = Math.min(totalPagesByLang[lang] || 0, cfg.LEGACY_NAV_MAX);
+  for (let p = 1; p <= legacyTotal; p++) {
+    fs.writeFileSync(path.join(REPO_ROOT, cfg.nav.legacyFile(lang, p)), cfg.stubHtml(cfg.nav.url(lang, p), lang), 'utf8');
+  }
+});
 
 // 6. Уборка: осиротевшие карточки (в terms/) и лишние страницы пагинации (в корне).
-// Ручные файлы (progress_*, how-to-*, 404.html, index.html и т. д.) не удаляются никогда.
+// Ручные файлы (progress_*, how/*, 404.html, index.html и т. д.) не удаляются никогда.
 LANGS.forEach(lang => {
   const suffix = '_' + lang + '.html';
   const existingHtmlFiles = fs.readdirSync(HTML_DIR).filter(f =>
@@ -331,16 +347,22 @@ LANGS.forEach(lang => {
   });
   if (removedCards) console.log('Удалено осиротевших карточек (' + lang + '):', removedCards);
 
-  const existingNavFiles = fs.readdirSync(REPO_ROOT).filter(f => new RegExp('^nav_' + lang + '(_\\d+)?\\.html$').test(f));
+  // Страницы списка в nav/ (> числа страниц) и заглушки в корне (> min(число страниц, LEGACY_NAV_MAX))
+  const navRe = new RegExp('^nav_' + lang + '(?:_(\\d+))?\\.html$');
   let removedNavPages = 0;
-  existingNavFiles.forEach(file => {
-    const m = file.match(new RegExp('^nav_' + lang + '(?:_(\\d+))?\\.html$'));
-    const pageNum = m[1] ? parseInt(m[1], 10) : 1;
-    if (pageNum > totalPagesByLang[lang]) {
-      fs.unlinkSync(path.join(REPO_ROOT, file));
-      removedNavPages++;
-      console.log('Удалена устаревшая страница пагинации:', file);
-    }
+  [['nav', totalPagesByLang[lang] || 0], ['', Math.min(totalPagesByLang[lang] || 0, cfg.LEGACY_NAV_MAX)]].forEach(([sub, keepUpTo]) => {
+    const dir = path.join(REPO_ROOT, sub);
+    if (!fs.existsSync(dir)) return;
+    fs.readdirSync(dir).forEach(file => {
+      const m = file.match(navRe);
+      if (!m) return;
+      const pageNum = m[1] ? parseInt(m[1], 10) : 1;
+      if (pageNum > keepUpTo) {
+        fs.unlinkSync(path.join(dir, file));
+        removedNavPages++;
+        console.log('Удалена устаревшая страница пагинации:', (sub ? sub + '/' : '') + file);
+      }
+    });
   });
   if (removedNavPages) console.log('Удалено устаревших страниц пагинации (' + lang + '):', removedNavPages);
 });

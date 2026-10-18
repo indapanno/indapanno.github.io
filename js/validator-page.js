@@ -62,7 +62,7 @@
     var out = document.getElementById('validator-result');
     if (!input || !checkBtn || !out) return;
 
-    var lang = pageLang(), T = UI[lang], howTo = '/how-to-add-term_' + lang + '.html';
+    var lang = pageLang(), T = UI[lang], howTo = '/how/how-to-add-term_' + lang + '.html';
 
     function show(node, kind) {
       out.className = 'validator-result ' + kind;

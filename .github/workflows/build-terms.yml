@@ -37,7 +37,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add -A -- terms/ index.html 'nav_*.html' sitemap.xml 'json/index_*.json'
+          git add -A -- terms/ nav/ how/index.html index.html 'nav_*.html' 'how-to-*.html' sitemap.xml 'json/index_*.json'
           if git diff --staged --quiet; then
             echo "Нет изменений для коммита"
           else

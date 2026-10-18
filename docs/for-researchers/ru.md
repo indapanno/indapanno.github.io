@@ -2,7 +2,7 @@
 
 Технический документ. Описывает архитектуру, схему данных и способ развёртывания
 статического сайта. Для инструкции по добавлению термина через веб-интерфейс см.
-[how-to-add-term_ru.html](https://indapanno.github.io/how-to-add-term_ru.html).
+[how-to-add-term_ru.html](https://indapanno.github.io/how/how-to-add-term_ru.html).
 
 ## Технический стек
 
@@ -47,15 +47,17 @@ indapanno.github.io/                  # корень репозитория = к
 │   └── publications.css       # стили публикаций
 ├── favicon.ico
 ├── index.html                  # ГЕНЕРИРУЕТСЯ: первая страница русского списка терминов, адрес «/»
-├── nav_ru.html                 # ГЕНЕРИРУЕТСЯ: заглушка → «/» (прежний адрес)
-├── nav_ru_2.html, …            # ГЕНЕРИРУЕТСЯ, пагинация по 10 терминов/стр
-├── nav_thai.html, nav_thai_2.html, …   # ГЕНЕРИРУЕТСЯ
-├── how-to-add-term_ru.html     # статичный, вручную
-├── how-to-add-term_thai.html
-├── how-to-translate-term_ru.html
-├── how-to-translate-term_thai.html
-├── how-to-check-json_ru.html   # статичный, вручную — страница «Проверка JSON»
-├── how-to-check-json_thai.html
+├── nav/                        # ГЕНЕРИРУЕТСЯ: страницы списка терминов (пагинация по 10 терминов/стр)
+│   ├── index.html              # заглушка → «/»
+│   ├── nav_ru_2.html, nav_ru_3.html, …    # русский список, страница 2 и далее (страница 1 — «/»)
+│   └── nav_thai.html, nav_thai_2.html, …  # тайский список
+├── nav_ru.html … nav_thai_5.html          # ГЕНЕРИРУЕТСЯ: заглушки на прежних адресах (10 шт., не растут), ведут на «/» и /nav/…
+├── how/                        # инструкции: статичные, вручную (адрес /how/how-to-add-term_ru.html и т. д.)
+│   ├── how-to-add-term_ru.html, how-to-add-term_thai.html
+│   ├── how-to-translate-term_ru.html, how-to-translate-term_thai.html
+│   ├── how-to-check-json_ru.html, how-to-check-json_thai.html    # страница «Проверка JSON»
+│   └── index.html              # ГЕНЕРИРУЕТСЯ: заглушка → «/»
+├── how-to-add-term_ru.html … how-to-check-json_thai.html         # ГЕНЕРИРУЮТСЯ: 6 заглушек на прежних адресах → /how/…
 ├── progress_ru.html            # статичный, вручную — страница «Мой прогресс» (noindex, не в sitemap)
 ├── progress_thai.html
 ├── terms/                      # ГЕНЕРИРУЕТСЯ, не редактировать
@@ -113,7 +115,7 @@ indapanno.github.io/                  # корень репозитория = к
 **Правило:** `terms/`, `bundle/`, `index.html`, `nav_*.html`, `publications/*.html`,
 `sitemap.xml` и `sitemap_publications.xml` — вывод сборки. Ручная правка переживёт
 до следующей сборки, после которой будет перезаписана. Редактируются вручную только
-`_src/**`, `json/<id>_*.json`, `js/*.js`, `css/*.css`, `schema/*.json`, `how-to-*.html`,
+`_src/**`, `json/<id>_*.json`, `js/*.js`, `css/*.css`, `schema/*.json`, `how/how-to-*.html`,
 `progress_*.html`, `404.html`, `robots.txt`, `docs/**` и `publications/covers/**`.
 `terms/`, `index.html`, `nav_*.html` и `sitemap.xml` — вывод сборки терминов;
 `bundle/` — связанных терминов; `publications/*.html` и `sitemap_publications.xml` —
@@ -124,10 +126,10 @@ indapanno.github.io/                  # корень репозитория = к
 
 1. Push с изменениями в `json/**`, `_src/templates/**`, `js/render-term.js`, `js/thai-numerals.js`, `.github/scripts/build-terms.js` или `.github/scripts/site-config.js` триггерит `build-terms.yml`; ветка — `main`. Сборку можно запустить вручную: Actions → Build terms → Run workflow (бот закоммитит результат). Локально сгенерированные страницы коммитить не нужно.
 2. `build-terms.js` читает все `<id>_ru.json` / `<id>_thai.json`, объединяет id по обоим языкам.
-3. Для каждого id генерирует карточку на каждом языке (`terms/<id>_ru.html`, `terms/<id>_thai.html`) — если перевода нет, рендерит блок «перевод отсутствует» со ссылкой на `/how-to-translate-term_*.html` и `<meta name="robots" content="noindex">`. У карточек с переводом — `canonical`, `hreflang` (ru/th/x-default, если переведены оба языка), `meta description` (из `interpretation`, иначе `reason_introduced`), Open Graph.
+3. Для каждого id генерирует карточку на каждом языке (`terms/<id>_ru.html`, `terms/<id>_thai.html`) — если перевода нет, рендерит блок «перевод отсутствует» со ссылкой на `/how/how-to-translate-term_*.html` и `<meta name="robots" content="noindex">`. У карточек с переводом — `canonical`, `hreflang` (ru/th/x-default, если переведены оба языка), `meta description` (из `interpretation`, иначе `reason_introduced`), Open Graph.
 4. Пересобирает `index_ru.json` / `index_thai.json` (манифест для клиентского поиска: `id`, `term_ru`/`term_thai`, `later_count`).
-5. Пересобирает страницы навигатора с пагинацией (10 терминов/стр, реальные статичные файлы в корне: `index.html` — первая страница русского списка (адрес `/`), затем `nav_ru_2.html` и т.д., у тайского `nav_thai.html`, `nav_thai_2.html`; не `?page=N` — важно для индексации и работы без JS); `canonical`/`prev`/`next` (у страницы 2 русского списка `prev` ведёт на `/`), а на первой странице каждого языка — `hreflang` и `meta description`/Open Graph. Язык без единого термина получает `noindex` вместо этих тегов. Каждая плитка — `<li class="term-item">` со ссылкой на термин и кнопкой `<button class="learned-btn" data-learned-id="<id>">` (в HTML лежит текст-заглушка «Не изучен» / «ยังไม่ได้เรียน», актуальное состояние проставляет `learned.js`).
-6. Пишет заглушки на прежних адресах: `nav_ru.html` → `/` и `terms/index.html` → `/` (общий шаблон заглушки лежит в `site-config.js`). Удаляет осиротевшие карточки (в `terms/` — id, которого больше нет в `json/`) и лишние страницы пагинации (в корне — только `nav_(ru|thai)(_N).html`). Остальные файлы (`how-to-*`, `progress_*`, `404.html`, `index.html` и другие ручные) уборка не трогает. Идентификаторы терминов `index` и зарезервированные имена (`nav_…`, `progress_…`, `terms`, `bundle`, `css`, `js` и т. п., см. `RESERVED_ROOT` в `site-config.js`) дают ошибку сборки.
+5. Пересобирает страницы навигатора с пагинацией (10 терминов/стр, реальные статичные файлы: `index.html` в корне — первая страница русского списка (адрес `/`), остальные страницы — в папке `nav/`: `nav/nav_ru_2.html` и т.д., у тайского `nav/nav_thai.html`, `nav/nav_thai_2.html`, поэтому корень не растёт; не `?page=N` — важно для индексации и работы без JS); `canonical`/`prev`/`next` (у страницы 2 русского списка `prev` ведёт на `/`), а на первой странице каждого языка — `hreflang` и `meta description`/Open Graph. Язык без единого термина получает `noindex` вместо этих тегов. Каждая плитка — `<li class="term-item">` со ссылкой на термин и кнопкой `<button class="learned-btn" data-learned-id="<id>">` (в HTML лежит текст-заглушка «Не изучен» / «ยังไม่ได้เรียน», актуальное состояние проставляет `learned.js`).
+6. Пишет заглушки на прежних адресах: `terms/index.html`, `nav/index.html` и `how/index.html` → `/`; шесть заглушек `how-to-*.html` в корне → `/how/…`; в корне `nav_ru.html` … `nav_thai_5.html` (по 5 на язык, не больше `LEGACY_NAV_MAX`) ведут на новые адреса в `nav/` и на `/` (общий шаблон заглушки лежит в `site-config.js`). Удаляет осиротевшие карточки (в `terms/` — id, которого больше нет в `json/`) и лишние страницы пагинации (в `nav/` — выше числа страниц; в корне — заглушки выше числа страниц и выше 5). Остальные файлы (`how-to-*`, `progress_*`, `404.html`, `index.html` и другие ручные) уборка не трогает. Идентификаторы терминов `index` и зарезервированные имена (`nav_…`, `progress_…`, `terms`, `bundle`, `css`, `js` и т. п., см. `RESERVED_ROOT` в `site-config.js`) дают ошибку сборки.
 7. Генерирует `sitemap.xml` — только реально переведённые карточки (заглушки «перевод отсутствует» исключены) и страницы навигатора (первая страница русского списка — адресом `https://indapanno.github.io/`), с `hreflang` между языковыми версиями термина. Заглушки в карту не входят. Без `lastmod` (git-даты в GitHub Actions недостоверны).
 8. Коммитит результат с флагом `[skip ci]` (иначе бесконечный цикл триггеров).
 
@@ -139,9 +141,9 @@ indapanno.github.io/                  # корень репозитория = к
 ## Язык страницы
 
 - **Единый источник.** Язык страницы определяется атрибутом `<html lang>`, который ставит сборка (`ru` / `th`). `lang.js` отдаёт его как `TermsLang.get()` → `'ru'` или `'thai'`; остальные скрипты (`learned`, `search`, `burger-menu`, `term-count`, `footer-counter`, `progress`, `validator-page`) берут язык оттуда, а не из имени файла. Поэтому имена вида `nav_thai_2.html` язык не ломают.
-- **Переключатель языка** (`lang.js`): с карточки термина ведёт на `<id>_<другой язык>.html`; с любой страницы навигатора (`/`, `nav_<язык>[_N].html`) — на первую страницу другого языка (`/` или `/nav_thai.html`): страницы 2+ у языков не соответствуют друг другу; со страниц связок (`/bundle/…`) — на ту же связку или на список другого языка; со страниц публикаций (`/publications/`, `publications_<язык>[_N].html` и самих статей) — на первую страницу списка публикаций другого языка: статьи не переводятся. Таблица адресов зашита в `buildTargetUrl` (`js/lang.js`).
+- **Переключатель языка** (`lang.js`): с карточки термина ведёт на `<id>_<другой язык>.html`; с любой страницы навигатора (`/`, `/nav/nav_<язык>[_N].html`) — на первую страницу другого языка (`/` или `/nav/nav_thai.html`): страницы 2+ у языков не соответствуют друг другу; со страниц связок (`/bundle/…`) — на ту же связку или на список другого языка; со страниц публикаций (`/publications/`, `publications_<язык>[_N].html` и самих статей) — на первую страницу списка публикаций другого языка: статьи не переводятся. Таблица адресов зашита в `buildTargetUrl` (`js/lang.js`).
 - **Новый язык.** Добавить его код в `LANG_BY_HTML_LANG` в `lang.js` (плюс шаги из раздела «Отметки «Изучен»…»).
-- **Разметка шапки.** Блок `header-controls` с группами `#lang-switch` (ссылки RU / ไทย) и `#theme-switch` (три кнопки) лежит в `_template_*.html`, `_layout_*.html` и в ручных страницах (`how-to-*`, `progress_*`). Стили `.segmented` — в `style.css`; `href` и активное состояние расставляют скрипты.
+- **Разметка шапки.** Блок `header-controls` с группами `#lang-switch` (ссылки RU / ไทย) и `#theme-switch` (три кнопки) лежит в `_template_*.html`, `_layout_*.html` и в ручных страницах (`how/how-to-*`, `progress_*`). Стили `.segmented` — в `style.css`; `href` и активное состояние расставляют скрипты.
 - **Запоминание языка.** При клике по языку `lang.js` пишет ключ `terms-lang` (`ru` / `thai`); читает его только `404.html`. Порядок определения языка там: адрес → страница-источник своего сайта → `terms-lang` → оба языка.
 - **Правка шапки.** Меняется блок во всех шаблонах (включая `_src/bundle/template/_layout_*.html` и `_src/publications/template/_layout_*.html`), затем нужен ручной запуск «Build terms» (Actions → Build terms → Run workflow) и правка ручных страниц. Каркасы связок и публикаций пересобираются своими workflow при push в `_src/bundle/**` и `_src/publications/**`.
 

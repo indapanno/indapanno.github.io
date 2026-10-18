@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Как добавить термин — Навигатор по палийским терминам</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700&family=Noto+Serif:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css">
+<link rel="canonical" href="https://indapanno.github.io/how/how-to-add-term_ru.html">
+<link rel="icon" href="/favicon.ico">
+<script src="/js/theme.js"></script>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-top">
+    <button id="menu-toggle" class="menu-toggle" aria-label="Меню"><span></span><span></span><span></span></button>
+    <h1 id="page-title">Как добавить термин</h1>
+    <div class="header-controls">
+      <div class="control">
+        <span id="lang-label">ภาษา</span>
+        <div class="segmented" id="lang-switch" role="group" aria-labelledby="lang-label">
+          <a data-lang-value="ru" lang="ru">RU</a>
+          <a data-lang-value="thai" lang="th">ไทย</a>
+        </div>
+      </div>
+      <div class="control">
+        <span id="theme-label">Тема</span>
+        <div class="segmented" id="theme-switch" role="group" aria-labelledby="theme-label">
+          <button type="button" data-theme-value="system" aria-pressed="false">Системная</button>
+          <button type="button" data-theme-value="light" aria-pressed="false">Светлая</button>
+          <button type="button" data-theme-value="dark" aria-pressed="false">Тёмная</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="header-intro">Заметили, что интересного вам термина здесь ещё нет? Вот как его предложить — без специальных технических знаний.</p>
+  <div class="search-box">
+    <input id="search-input" class="search-input" type="text" placeholder="Поиск термина…" autocomplete="off">
+    <div id="search-suggestions" class="search-suggestions" hidden></div>
+  </div>
+</header>
+
+<div id="nav-backdrop" class="nav-backdrop" hidden></div>
+<div id="nav-drawer" class="nav-drawer" hidden>
+  <div class="nav-drawer-header">
+    <span>Меню</span>
+    <button id="nav-drawer-close" aria-label="Закрыть">✕</button>
+  </div>
+  <ul id="nav-menu-list" class="nav-menu-list"></ul>
+</div>
+
+<main>
+  <nav class="breadcrumb">
+    <a href="/">Навигатор по терминам</a>
+    <span class="sep">/</span>
+    <span class="current">Как добавить термин</span>
+  </nav>
+
+  <div class="term-card">
+    <h2>Как добавить термин</h2>
+    <p class="field-text">Сначала проверьте поиском выше на этой странице, что такого термина ещё нет — возможно, он уже добавлен.</p>
+    <ol>
+      <li>Перейдите по ссылке <a href="https://github.com/indapanno/indapanno.github.io/fork">github.com/indapanno/indapanno.github.io/fork</a> и нажмите <b>Create fork</b> — это создаст вашу личную копию репозитория, в которой можно свободно редактировать файлы, не затрагивая основной сайт. Нужен бесплатный аккаунт GitHub — если его нет, регистрация занимает пару минут.</li>
+      <li>Введите термин в поле ниже и нажмите «Скопировать промт» — готовый промт с вашим термином окажется в буфере обмена. Вставьте его в любой бесплатный ИИ (например, Claude, ChatGPT или Gemini) и получите готовый JSON. Скопируйте весь ответ ИИ целиком, включая фигурные скобки в начале и конце.
+        <div class="term-prompt-widget">
+          <label class="term-prompt-label" for="term-prompt-input">Термин на русском</label>
+          <div class="term-prompt-row">
+            <input id="term-prompt-input" class="term-prompt-input" type="text" placeholder="например, карума" autocomplete="off">
+            <button id="term-prompt-copy-btn" class="term-prompt-btn" type="button" data-copied-text="Скопировано! ✓" disabled aria-disabled="true">Скопировать промт</button>
+          </div>
+          <p class="term-prompt-hint">Затем вставьте промт в любой бесплатный ИИ и получите готовый JSON.</p>
+          <div id="term-prompt-status" class="term-prompt-status" role="status" aria-live="polite"></div>
+        </div>
+      </li>
+      <li><b>Проверьте JSON:</b> вставьте ответ ИИ на странице <a href="/how/how-to-check-json_ru.html">«Проверка JSON»</a> и нажмите «Проверить». Если найдены ошибки, скопируйте их список кнопкой и отправьте тому же ИИ с просьбой исправить JSON, затем проверьте снова. Переходите к следующему шагу, когда появится «JSON корректен ✓».</li>
+      <li><b>В своей копии репозитория</b> (не в оригинальном indapanno/indapanno.github.io!) откройте папку <b>json</b>, нажмите <b>Add file</b> → <b>Create new file</b>.</li>
+      <li>В поле имени файла введите значение ключа <b>"id"</b> из полученного JSON, плюс окончание <b>_ru.json</b> (латиницей, без пробелов). Например, если в JSON написано <code>"id": "karuna"</code> — имя файла: <b>karuna_ru.json</b>.</li>
+      <li>В большое текстовое поле ниже вставьте весь JSON целиком, без изменений. (Если удобнее — можно вместо этого сохранить JSON файлом на компьютере и загрузить через <b>Add file → Upload files</b>, результат тот же.)</li>
+      <li>Нажмите зелёную кнопку <b>Commit changes...</b> в правом верхнем углу страницы — откроется отдельное окно.</li>
+      <li>В открывшемся окне поле <b>Commit message</b> можно не менять. <b>⚠️ Обязательно переключите нижний вариант на «Create a new branch for this commit and start a pull request»</b> — по умолчанию выбран неверный вариант «Commit directly to the main branch», который отправит файл прямо в вашу копию и не предложит изменения основному сайту. После переключения заголовок окна сменится на «Propose changes» и появится поле с именем новой ветки (например, ваш_ник-patch-1) — его менять не нужно. Нажмите зелёную кнопку <b>Propose changes</b> внизу окна.</li>
+      <li>Откроется страница «Comparing changes». Обычно вверху НЕ будет строки <b>base repository</b> — только <b>base: main</b> и <b>compare: <имя вашей ветки></b>. Это нормально: так выглядит сравнение внутри вашей собственной копии. Нажмите ссылку <b>compare across forks</b> сразу под заголовком «Comparing changes» — появится дополнительный выбор <b>base repository</b>. Откройте его и выберите <b>indapanno/indapanno.github.io</b> (изначально там отмечена ваша копия) — поля <b>head repository</b> и <b>compare</b> трогать не нужно, они уже верные. Если строка <b>base repository: indapanno/indapanno.github.io</b> отображается сразу, без клика по ссылке — просто переходите к следующему шагу.</li>
+      <li>Нажмите зелёную кнопку <b>Create pull request</b>, при желании добавьте описание и нажмите её ещё раз на следующей странице.</li>
+      <li>Дождитесь проверки администратором. После одобрения термин появится в навигаторе.</li>
+    </ol>
+
+  </div>
+</main>
+
+<footer class="site-footer">
+  <p>
+    Создано монахом Индапаньо из лесного монастыря Тхавон Нимит в провинции Накхон Найок, Таиланд. Сентябрь 2026 года.
+    Навигатор по истории палийских терминов является дополнительным материалом к публикациям о буддизме, которые выходят
+    в публичном канале <a href="https://max.ru/channel_buddhism">«Разобраться в буддизме»</a> в мессенджере Макс.
+    Терминов в навигаторе: <span id="term-count">…</span>.
+    Версия веб-приложения: 1.0.0.
+    <a href="https://github.com/indapanno/indapanno.github.io/blob/main/docs/for-researchers/ru.md">Исследователям и разработчикам</a>.
+    <span class="view-count-wrap" hidden>Просмотров: <span id="view-count">0</span>.</span>
+  </p>
+</footer>
+
+<script data-goatcounter="https://indapanno.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+<script src="/js/lang.js"></script>
+<script src="/js/search.js"></script>
+<script src="/js/burger-menu.js"></script>
+<script src="/js/footer-counter.js"></script>
+<script src="/js/term-count.js"></script>
+<script src="/js/term-prompt-ru.js"></script>
+<script src="/js/term-prompt-widget.js"></script>
+</body>
+</html>

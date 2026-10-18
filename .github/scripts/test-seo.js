@@ -63,7 +63,27 @@ check('найдены страницы', files.length > 20, String(files.length)
 check('A5: у каждой индексируемой страницы один canonical, равный её адресу', badCanon.length === 0, badCanon.slice(0, 6).join(' | '));
 check('A5: заглушки: canonical указывает на существующую не-заглушку, без noindex', badStub.length === 0, badStub.slice(0, 6).join(' | '));
 check('канонические адреса только с нового домена', files.every(f => info[f].canon.every(c => c.startsWith(SITE + '/') && !c.includes('/buddhism/'))));
-check('заглушки есть (nav_ru.html, terms/index.html)', info['nav_ru.html'] && info['nav_ru.html'].redirect && info['terms/index.html'] && info['terms/index.html'].redirect);
+check('заглушки есть (terms/index.html, nav/index.html)', info['terms/index.html'] && info['terms/index.html'].redirect && info['nav/index.html'] && info['nav/index.html'].redirect);
+// Прежние страницы списка в корне: заглушки на новые адреса в nav/ (ru стр. 1 — на «/»)
+{
+  const legacy = [];
+  ['ru', 'thai'].forEach(l => { for (let p = 1; p <= 5; p++) legacy.push(['nav_' + l + (p > 1 ? '_' + p : '') + '.html', l, p]); });
+  const badLegacy = legacy.filter(([f, l, p]) => {
+    const i = info[f];
+    const want = l === 'ru' && p === 1 ? SITE + '/' : SITE + '/nav/nav_' + l + (p > 1 ? '_' + p : '') + '.html';
+    return !i || !i.redirect || i.canon[0] !== want;
+  });
+  check('заглушки прежних страниц списка в корне (10 шт.) ведут на новые адреса', badLegacy.length === 0, badLegacy.map(x => x[0]).join(','));
+  const badHow = [];
+  ['how-to-add-term', 'how-to-check-json', 'how-to-translate-term'].forEach(p => ['ru', 'thai'].forEach(l => {
+    const root = p + '_' + l + '.html', want = SITE + '/how/' + root;
+    if (!info[root] || !info[root].redirect || info[root].canon[0] !== want) badHow.push(root);
+    if (!info['how/' + root] || info['how/' + root].redirect || info['how/' + root].canon[0] !== want) badHow.push('how/' + root);
+  }));
+  check('инструкции: 6 страниц в how/ (canonical = свой адрес) и 6 заглушек в корне на них', badHow.length === 0, badHow.join(','));
+  check('how/index.html — заглушка на «/»', info['how/index.html'] && info['how/index.html'].redirect && info['how/index.html'].canon[0] === SITE + '/');
+  check('в корне нет других nav_*.html, кроме заглушек', files.filter(f => /^nav_/.test(f)).every(f => info[f].redirect));
+}
 
 // A6: hreflang
 const badHref = [];
@@ -109,14 +129,15 @@ function sitemapLocs(file) {
     if (i.redirect) problems.push('заглушка в sitemap ' + u);
     if (i.noindex) problems.push('noindex в sitemap ' + u);
     if (i.canon[0] !== u) problems.push('canonical ≠ loc ' + u);
-    if (/\/index\.html$/.test(u) || /^https:\/\/indapanno\.github\.io\/(how-to-|progress_)/.test(u)) problems.push('лишний адрес ' + u);
+    if (/\/index\.html$/.test(u) || /^https:\/\/indapanno\.github\.io\/(how\/|how-to-|progress_)/.test(u)) problems.push('лишний адрес ' + u);
   });
   alts.forEach(u => { const f = fileOfUrl(u); if (!f || !fs.existsSync(path.join(ROOT, f))) problems.push('hreflang в sitemap: нет файла ' + u); });
   check('A7: ' + sm + ': ' + locs.length + ' адресов, все существуют и канонические, без заглушек и noindex', locs.length > 0 && problems.length === 0, problems.slice(0, 6).join(' | '));
 });
 {
   const { locs } = sitemapLocs('sitemap.xml');
-  check('sitemap.xml: есть главная «/» и нет nav_ru.html и terms/index.html', locs.includes(SITE + '/') && !locs.some(u => /nav_ru\.html$|\/terms\/index\.html$|\/terms\/$/.test(u)));
+  check('sitemap.xml: есть «/», /nav/nav_ru_2.html, /nav/nav_thai.html; нет заглушек (корневых nav_*, terms/, nav/)', locs.includes(SITE + '/') && locs.includes(SITE + '/nav/nav_ru_2.html') && locs.includes(SITE + '/nav/nav_thai.html')
+    && !locs.some(u => /^https:\/\/indapanno\.github\.io\/nav_|\/terms\/index\.html$|\/terms\/$|\/nav\/$|\/nav\/index\.html$/.test(u)));
 }
 
 // A8: robots.txt

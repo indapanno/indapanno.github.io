@@ -89,6 +89,8 @@ scanFiles.forEach(f => {
   [['indapanno/buddhism'], ['share/terms'], ['/buddhism/']].forEach(([needle]) => { if (t.includes(needle)) hits.push(f + ' → ' + needle); });
   if (!f.startsWith('.github/') && !f.startsWith('_src/publications/html/') && /(["'(])\.\.\//.test(t)) hits.push(f + ' → ../');
 });
+check('инструкция «как добавить перевод» есть для ru и thai (на неё ведёт карточка без перевода)', exists('how/how-to-translate-term_ru.html') && exists('how/how-to-translate-term_thai.html')
+  && /'\/how\/how-to-translate-term_'/.test(fs.readFileSync(path.join(ROOT, 'js/render-term.js'), 'utf8')) && /cfg\.howPath\('how-to-translate-term'/.test(fs.readFileSync(path.join(ROOT, '.github/scripts/build-terms.js'), 'utf8')));
 check('A3: нет «indapanno/buddhism», «share/terms», «/buddhism/», «../» в страницах, шаблонах, скриптах и JS', hits.length === 0, hits.slice(0, 8).join(' | '));
 
 console.log('Ссылок проверено: ' + linkCount + ', страниц: ' + pages.length);

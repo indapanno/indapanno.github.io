@@ -15,9 +15,9 @@
 // Переключатель: группа ссылок #lang-switch.
 // Явный выбор языка пишется в localStorage ('terms-lang') — читает только 404.html.
 // У карточки термина ведёт на terms/<id>_<язык>.html, у любой
-// страницы навигатора (/, nav_<язык>_N.html) — на первую
+// страницы навигатора (/, nav/nav_<язык>_N.html) — на первую
 // страницу навигатора другого языка (страницы 2+ у языков не соответствуют
-// друг другу): / для ru, /nav_thai.html для thai. Страницы публикаций (/publications/,
+// друг другу): / для ru, /nav/nav_thai.html для thai. Страницы публикаций (/publications/,
 // publications_<язык>[_N].html и сами статьи, у которых в имени нет суффикса языка)
 // ведут на первую страницу списка публикаций другого языка: статьи не переводятся.
 
@@ -50,9 +50,10 @@
     var filename = path.substring(path.lastIndexOf('/') + 1);
     var thai = targetLang === 'thai';
 
-    // Список терминов: / (ru, стр. 1), /nav_<язык>[_N].html
-    if (path === '/' || path === '/index.html' || /^\/nav_(?:ru|thai)(?:_\d+)?\.html$/.test(path)) {
-      return thai ? '/nav_thai.html' : '/';
+    // Список терминов: / (ru, стр. 1), /nav/nav_<язык>[_N].html, /nav/ и прежние заглушки /nav_<язык>[_N].html
+    if (path === '/' || path === '/index.html' || path === '/nav/' || path === '/nav/index.html'
+        || /^\/(?:nav\/)?nav_(?:ru|thai)(?:_\d+)?\.html$/.test(path)) {
+      return thai ? '/nav/nav_thai.html' : '/';
     }
     // Список связок: /bundle/, /bundle/bundles_<язык>[_N].html
     if (path === '/bundle/' || path === '/bundle/index.html' || /^\/bundle\/bundles_(?:ru|thai)(?:_\d+)?\.html$/.test(path)) {

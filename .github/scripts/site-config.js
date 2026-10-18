@@ -4,14 +4,14 @@
 //
 // «path» — путь от корня сайта (начинается с «/»), его пишут в ссылки на страницах.
 // «url» — полный канонический адрес (canonical, hreflang, Open Graph, sitemap).
-// «file» — имя файла, который пишет сборщик. «name» — прежнее имя страницы:
+// «file» — файл, который пишет сборщик (от корня сайта). «name» — имя страницы:
 // у первой страницы русского списка file = index.html, а name = nav_ru.html
 // (по прежнему имени сборщик кладёт заглушку, ведущую на новый адрес).
 
 const SITE_URL = 'https://indapanno.github.io';
 
 // Имена, которые нельзя использовать для файлов терминов и статей (раздел 6 ТЗ).
-const RESERVED_ROOT = ['nav_', 'progress_', 'how-to-', 'terms', 'bundle', 'publications', 'css', 'js', 'json',
+const RESERVED_ROOT = ['nav_', 'progress_', 'how-to-', 'how', 'nav', 'terms', 'bundle', 'publications', 'css', 'js', 'json',
   'schema', 'docs', 'sitemap', 'robots', 'favicon', '404', 'index', 'img'];
 
 const absUrl = p => SITE_URL + p;
@@ -34,7 +34,27 @@ function makeList(dir, prefix) {
   };
 }
 
-const nav = makeList('', 'nav');
+// Список терминов: первая страница русского списка — «/» (index.html в корне), все остальные
+// страницы — в папке nav/ (nav/nav_ru_2.html, nav/nav_thai.html …), чтобы корень не рос.
+// Прежние адреса в корне (nav_ru.html, nav_ru_2.html … nav_thai_5.html) остаются заглушками:
+// legacy = имя файла заглушки в корне, их пишут только для страниц 1…LEGACY_NAV_MAX.
+const LEGACY_NAV_MAX = 5;
+const nav = (function () {
+  const name = (lang, page) => 'nav_' + lang + pageSuffix(page) + '.html';
+  const isIndex = (lang, page) => lang === 'ru' && page === 1;
+  const path = (lang, page) => (isIndex(lang, page) ? '/' : '/nav/' + name(lang, page));
+  return {
+    dir: 'nav',
+    name: name,
+    isIndex: isIndex,
+    file: (lang, page) => (isIndex(lang, page) ? 'index.html' : 'nav/' + name(lang, page)),
+    path: path,
+    url: (lang, page) => absUrl(path(lang, page)),
+    basePath: '/nav/',
+    legacyFile: name,                         // имя файла заглушки в корне
+    legacyPath: (lang, page) => '/' + name(lang, page)
+  };
+})();
 const bundles = makeList('bundle', 'bundles');
 const publications = makeList('publications', 'publications');
 
@@ -46,6 +66,14 @@ const articlePath = name => '/publications/' + name;
 const articleUrl = name => absUrl(articlePath(name));
 const coverPath = file => '/publications/covers/' + file;
 const coverUrl = file => absUrl(coverPath(file));
+
+// Инструкции (ручные страницы) лежат в how/: /how/how-to-add-term_ru.html. Прежние адреса в корне —
+// заглушки (пишет build-terms.js).
+const HOW_PAGES = ['how-to-add-term', 'how-to-check-json', 'how-to-translate-term'];
+const howName = (page, lang) => page + '_' + lang + '.html';
+const howPath = (page, lang) => '/how/' + howName(page, lang);
+const howUrl = (page, lang) => absUrl(howPath(page, lang));
+const howLegacyFile = (page, lang) => howName(page, lang);
 
 // Ссылка «к списку терминов» из хлебных крошек
 const navHomePath = lang => nav.path(lang, 1);
@@ -79,5 +107,5 @@ function stubHtml(targetUrl, lang) {
 module.exports = {
   SITE_URL, RESERVED_ROOT, absUrl, nav, bundles, publications,
   cardPath, cardUrl, bundlePath, bundleUrl, articlePath, articleUrl, coverPath, coverUrl,
-  navHomePath, stubHtml, escAttr
+  navHomePath, stubHtml, escAttr, LEGACY_NAV_MAX, HOW_PAGES, howName, howPath, howUrl, howLegacyFile
 };
