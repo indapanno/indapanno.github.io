@@ -122,7 +122,7 @@ indapanno.github.io/                  # корень репозитория = к
 
 ## Архитектура сборки
 
-1. Push с изменениями в `json/**`, `_src/templates/**`, `js/render-term.js`, `js/thai-numerals.js`, `.github/scripts/build-terms.js` или `.github/scripts/site-config.js` триггерит `build-terms.yml`; ветки — `main` (на время переезда ещё и `migration`). Сборку можно запустить вручную: Actions → Build terms → Run workflow (бот закоммитит результат). Локально сгенерированные страницы коммитить не нужно.
+1. Push с изменениями в `json/**`, `_src/templates/**`, `js/render-term.js`, `js/thai-numerals.js`, `.github/scripts/build-terms.js` или `.github/scripts/site-config.js` триггерит `build-terms.yml`; ветка — `main`. Сборку можно запустить вручную: Actions → Build terms → Run workflow (бот закоммитит результат). Локально сгенерированные страницы коммитить не нужно.
 2. `build-terms.js` читает все `<id>_ru.json` / `<id>_thai.json`, объединяет id по обоим языкам.
 3. Для каждого id генерирует карточку на каждом языке (`terms/<id>_ru.html`, `terms/<id>_thai.html`) — если перевода нет, рендерит блок «перевод отсутствует» со ссылкой на `/how-to-translate-term_*.html` и `<meta name="robots" content="noindex">`. У карточек с переводом — `canonical`, `hreflang` (ru/th/x-default, если переведены оба языка), `meta description` (из `interpretation`, иначе `reason_introduced`), Open Graph.
 4. Пересобирает `index_ru.json` / `index_thai.json` (манифест для клиентского поиска: `id`, `term_ru`/`term_thai`, `later_count`).

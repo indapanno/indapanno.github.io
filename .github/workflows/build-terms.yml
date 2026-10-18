@@ -2,8 +2,7 @@ name: Build terms
 
 on:
   push:
-    # migration — временно, на время переезда; после влития в main строка возвращается к [main]
-    branches: [main, migration]
+    branches: [main]
     paths:
       - 'json/**'
       - '_src/templates/**'

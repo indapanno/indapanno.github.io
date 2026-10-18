@@ -4,8 +4,7 @@ name: Build bundles
 # только читает термины и пишет в bundle/.
 on:
   push:
-    # migration — временно, на время переезда; после влития в main строка возвращается к [main]
-    branches: [main, migration]
+    branches: [main]
     paths:
       - '_src/bundle/**'
       - '.github/scripts/build-bundles.js'

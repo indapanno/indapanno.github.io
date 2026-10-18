@@ -4,8 +4,7 @@ name: Build publications
 # только читает термины и пишет в publications/*.html и sitemap_publications.xml.
 on:
   push:
-    # migration — временно, на время переезда; после влития в main строка возвращается к [main]
-    branches: [main, migration]
+    branches: [main]
     paths:
       - '_src/publications/**'
       - 'publications/covers/**'

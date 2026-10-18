@@ -120,7 +120,7 @@ indapanno.github.io/                  # root ของ repository = root ขอ�
 
 ## สถาปัตยกรรมการ build
 
-1. Push ที่มีการเปลี่ยนแปลงใน `json/**`, `_src/templates/**`, `js/render-term.js`, `js/thai-numerals.js`, `.github/scripts/build-terms.js` หรือ `.github/scripts/site-config.js` จะ trigger `build-terms.yml` สาขา `main` (ระหว่างการย้ายมีสาขา `migration` ด้วย) สั่งด้วยมือได้ที่ Actions → Build terms → Run workflow (บอทจะ commit ผลลัพธ์ให้) ไม่ต้อง commit หน้าที่สร้างในเครื่อง
+1. Push ที่มีการเปลี่ยนแปลงใน `json/**`, `_src/templates/**`, `js/render-term.js`, `js/thai-numerals.js`, `.github/scripts/build-terms.js` หรือ `.github/scripts/site-config.js` จะ trigger `build-terms.yml` สาขา `main` สั่งด้วยมือได้ที่ Actions → Build terms → Run workflow (บอทจะ commit ผลลัพธ์ให้) ไม่ต้อง commit หน้าที่สร้างในเครื่อง
 2. `build-terms.js` อ่านไฟล์ `<id>_ru.json` / `<id>_thai.json` ทั้งหมด รวม id จากทั้งสองภาษาเข้าด้วยกัน
 3. สร้างการ์ดคำศัพท์สำหรับแต่ละ id ในแต่ละภาษา (`<id>_ru.html`, `<id>_thai.html`) — หากยังไม่มีคำแปล จะแสดงข้อความ «ยังไม่มีคำแปล» พร้อมลิงก์ไปยัง `how-to-translate-term_*.html` และ `<meta name="robots" content="noindex">` การ์ดที่มีคำแปลจะได้ `canonical`, `hreflang` (ru/th/x-default หากมีคำแปลทั้งสองภาษา), `meta description` (จาก `interpretation` หรือ `reason_introduced`) และ Open Graph
 4. สร้างไฟล์ `index_ru.json` / `index_thai.json` ใหม่ (รายการสำหรับการค้นหาฝั่งไคลเอนต์: `id`, `term_ru`/`term_thai`, `later_count`)
