@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>404</title>
+<style>
+  /* Всё внутри файла: страница открывается по адресу любой глубины, относительные пути не работают */
+  :root { --bg: #f6f3ec; --card: #fff; --text: #2b2a27; --muted: #6f6a5f; --border: #ddd6c6; --accent: #b87333; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #1d1c1a; --card: #272623; --text: #ece8dd; --muted: #a39d8e; --border: #3a3834; --accent: #d9954f; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1.5rem 1rem;
+         background: var(--bg); color: var(--text); font: 16px/1.6 "Noto Sans", "Noto Sans Thai", -apple-system, "Segoe UI", sans-serif; }
+  main { width: 100%; max-width: 520px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 1.6rem 1.5rem; text-align: center; margin-bottom: 1rem; }
+  .code { font-size: 2.6rem; font-weight: 700; color: var(--accent); line-height: 1.1; margin: 0 0 .4rem; }
+  h1 { font-size: 1.25rem; margin: 0 0 .5rem; }
+  p { margin: 0 0 1.2rem; color: var(--muted); font-size: .95rem; }
+  a.btn { display: inline-block; padding: .65rem 1.3rem; border-radius: 10px; background: var(--accent); color: #fff; text-decoration: none; font-weight: 600; }
+  a.btn:hover { opacity: .9; }
+  [hidden] { display: none; }
+</style>
+</head>
+<body>
+<main>
+  <section class="card" id="block-ru">
+    <div class="code">404</div>
+    <h1>Страница не найдена</h1>
+    <p>Такой страницы нет. Возможно, ссылка устарела или в адресе опечатка.</p>
+    <a class="btn" data-lang="ru" href="/">Навигатор по терминам</a>
+  </section>
+  <section class="card" id="block-thai" lang="th">
+    <div class="code">404</div>
+    <h1>ไม่พบหน้านี้</h1>
+    <p>ไม่มีหน้าที่คุณต้องการ ลิงก์อาจล้าสมัยหรือพิมพ์ที่อยู่ผิด</p>
+    <a class="btn" data-lang="thai" href="/nav_thai.html">นำทางคำศัพท์</a>
+  </section>
+</main>
+<script>
+(function () {
+  var LANG_RE = /_(ru|thai)(?:_\d+)?(?:\.html)?$/;
+
+  // Язык по пути: сначала суффикс последнего сегмента (nav_ru_2.html, dukkha_thai.html,
+  // bundle_1_ru_2.html…), затем папки /bundle/ и /publications/ (там без суффикса — русский)
+  function langFromPath(pathname) {
+    var last = (pathname || '').replace(/\/+$/, '').split('/').pop();
+    var m = LANG_RE.exec(last);
+    if (m) return m[1];
+    if (/^\/(?:bundle|publications)(?:\/|$)/.test(pathname || '')) return 'ru';
+    return null;
+  }
+
+  // Язык, который посетитель выбрал сам кнопкой RU / ไทย (ключ пишет js/lang.js)
+  function savedLang() {
+    try {
+      var v = localStorage.getItem('terms-lang');
+      return (v === 'ru' || v === 'thai') ? v : null;
+    } catch (e) { return null; }
+  }
+
+  // Порядок: 1) адрес, которого нет; 2) страница, с которой пришли (только этот же сайт);
+  // 3) сохранённый выбор языка; 4) неизвестно — показываем оба языка
+  function detectLang(loc, referrer) {
+    var fromUrl = langFromPath(loc.pathname);
+    if (fromUrl) return fromUrl;
+    if (referrer) {
+      try {
+        var ref = new URL(referrer);
+        if (ref.origin === loc.origin) {
+          var fromRef = langFromPath(ref.pathname);
+          if (fromRef) return fromRef;
+        }
+      } catch (e) {}
+    }
+    return savedLang();
+  }
+
+  // Сайт живёт в корне домена
+  var base = window.location.origin + '/';
+  var lang = detectLang(window.location, document.referrer);
+
+  document.querySelectorAll('a.btn').forEach(function (a) {
+    a.href = base + (a.getAttribute('data-lang') === 'thai' ? 'nav_thai.html' : '');
+  });
+
+  if (lang === 'ru') { document.getElementById('block-thai').hidden = true; document.title = '404 — Страница не найдена'; }
+  else if (lang === 'thai') {
+    document.getElementById('block-ru').hidden = true;
+    document.documentElement.lang = 'th';
+    document.title = '404 — ไม่พบหน้านี้';
+  } else { document.title = '404 — Страница не найдена · ไม่พบหน้านี้'; }
+
+})();
+</script>
+</body>
+</html>

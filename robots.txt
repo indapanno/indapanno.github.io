@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://indapanno.github.io/sitemap.xml
+Sitemap: https://indapanno.github.io/sitemap_publications.xml

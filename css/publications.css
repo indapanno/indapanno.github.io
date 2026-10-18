@@ -1,0 +1,285 @@
+/* Публикации: стили, дополняющие style.css и learned.css.
+   Список использует .pagination / .page-link / .breadcrumb из style.css;
+   здесь — только плитки и страница статьи. Цвета и шрифты — переменные темы. */
+
+/* --- Список: плитки --- */
+.pub-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1.625rem, 4vw, 2rem);
+}
+
+.pub-tile {
+  display: block;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.pub-tile:hover { border-color: var(--accent); }
+
+.pub-tile-cover,
+.pub-cover {
+  display: block;
+  aspect-ratio: 1200 / 630;
+  background: var(--bg-highlight);
+  overflow: hidden;
+}
+
+.pub-tile-cover img,
+.pub-cover img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.pub-tile-body { display: block; padding: 0.9rem 1rem 1.05rem; }
+
+@media (min-width: 700px) {
+  .pub-tile-body { padding: 0.85rem 0.95rem 0.9rem; }
+}
+
+.pub-tile-title {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 600;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.pub-tile-lead {
+  /* не больше 4 строк на любой ширине */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
+  overflow: hidden;
+  margin-top: 0.4rem;
+  font-family: var(--font-body);
+  font-size: 0.88rem;
+  font-weight: 400;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+
+.pub-tile-more {
+  display: block;
+  margin-top: 0.6rem;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--link-color);
+}
+
+.pub-tile:hover .pub-tile-more { text-decoration: underline; }
+
+/* Пустой список */
+.pub-empty {
+  background: var(--bg-elevated);
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  padding: 1.1rem;
+  font-size: 0.92rem;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+/* --- Страница статьи --- */
+.pub-article { margin: 0; }
+
+.pub-cover { border-radius: 12px; margin: 0 0 1rem; }
+
+.pub-lead {
+  margin: 0 0 1.4rem;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  line-height: 1.6;
+  color: var(--text);
+}
+
+.pub-toc {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.8rem 1rem;
+  margin: 0 0 1.4rem;
+}
+
+.pub-toc-title {
+  margin: 0 0 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.pub-toc ol { margin: 0; padding-left: 1.2rem; }
+.pub-toc li { margin: 0.25rem 0; font-size: 0.9rem; line-height: 1.45; }
+.pub-toc a { color: var(--link-color); text-decoration: none; }
+.pub-toc a:hover { text-decoration: underline; }
+
+/* Тело статьи. Глобальный h2 в style.css — мелкий серый подзаголовок термина,
+   поэтому здесь заголовки задаются заново. */
+.pub-body {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+
+.pub-body > :first-child { margin-top: 0; }
+
+.pub-body p { margin: 0 0 1rem; }
+
+.pub-body h2 {
+  font-size: clamp(1.25rem, 4.5vw, 1.5rem);
+  font-weight: 700;
+  color: var(--text);
+  margin: 2rem 0 0.7rem;
+  line-height: 1.3;
+  scroll-margin-top: 1rem;
+}
+
+.pub-body h3 {
+  font-size: clamp(1.08rem, 4vw, 1.2rem);
+  font-weight: 600;
+  color: var(--text);
+  margin: 1.5rem 0 0.5rem;
+  line-height: 1.35;
+  scroll-margin-top: 1rem;
+}
+
+.pub-body ul,
+.pub-body ol { margin: 0 0 1rem; padding-left: 1.4rem; }
+.pub-body li { margin: 0.3rem 0; }
+
+.pub-body a { color: var(--link-color); }
+
+.pub-body hr {
+  border: 0;
+  border-top: 1px solid var(--border);
+  margin: 1.8rem 0;
+}
+
+.pub-body code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.88em;
+  background: var(--bg-highlight);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.05rem 0.3rem;
+}
+
+.pub-body sub,
+.pub-body sup { line-height: 0; }
+
+.pub-body blockquote {
+  margin: 0 0 1rem;
+  padding: 0.2rem 0 0.2rem 1rem;
+  border-left: 3px solid var(--accent);
+  color: var(--text);
+  font-family: var(--font-display);
+  font-style: italic;
+}
+
+.pub-body blockquote p { margin: 0 0 0.5rem; }
+.pub-body blockquote p:last-child { margin-bottom: 0; }
+
+.pub-body cite {
+  display: block;
+  margin-top: 0.3rem;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-style: normal;
+  color: var(--text-secondary);
+}
+
+/* Выноски */
+.pub-body aside.callout {
+  background: var(--bg-highlight);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--accent);
+  border-radius: 10px;
+  padding: 0.8rem 1rem;
+  margin: 0 0 1.2rem;
+}
+
+.pub-body aside.callout--practice { border-left-color: var(--link-color); }
+.pub-body aside.callout--important { border-left-color: var(--accent-deep); }
+
+.pub-body .callout-title {
+  margin: 0 0 0.35rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.pub-body aside.callout > :last-child { margin-bottom: 0; }
+
+/* Рисунки */
+.pub-body figure { margin: 0 0 1.2rem; }
+
+.pub-body figure img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: 10px;
+}
+
+.pub-body figcaption {
+  margin-top: 0.4rem;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+/* Сворачиваемый блок */
+.pub-body details {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.6rem 0.9rem;
+  margin: 0 0 1rem;
+}
+
+.pub-body summary { cursor: pointer; font-weight: 600; }
+.pub-body details[open] summary { margin-bottom: 0.5rem; }
+.pub-body details > :last-child { margin-bottom: 0; }
+
+/* Таблицы: прокрутка внутри контейнера, страница не уезжает вбок */
+.pub-body .table-scroll {
+  overflow-x: auto;
+  margin: 0 0 1.2rem;
+  -webkit-overflow-scrolling: touch;
+}
+
+.pub-body .table-scroll { overflow-wrap: normal; }
+
+.pub-body table {
+  border-collapse: collapse;
+  width: max-content;
+  min-width: 100%;
+  font-size: 0.92rem;
+}
+
+.pub-body th,
+.pub-body td {
+  border: 1px solid var(--border);
+  padding: 0.45rem 0.65rem;
+  text-align: left;
+  vertical-align: top;
+  line-height: 1.45;
+  min-width: 5.5rem;
+  max-width: 18rem;
+}
+
+.pub-body th { background: var(--bg-highlight); font-weight: 600; }
