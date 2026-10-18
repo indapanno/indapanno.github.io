@@ -1,0 +1,229 @@
+{
+  "terms": [
+    {
+      "id": "akalika",
+      "term_ru": "Акалика",
+      "later_count": 1
+    },
+    {
+      "id": "akusalakamma",
+      "term_ru": "Акусала-камма",
+      "later_count": 1
+    },
+    {
+      "id": "anagami",
+      "term_ru": "Анагами",
+      "later_count": 1
+    },
+    {
+      "id": "arahant",
+      "term_ru": "Арахант",
+      "later_count": 1
+    },
+    {
+      "id": "ariya",
+      "term_ru": "Ария",
+      "later_count": 2
+    },
+    {
+      "id": "avijja",
+      "term_ru": "Авиджжа",
+      "later_count": 1
+    },
+    {
+      "id": "bhava",
+      "term_ru": "Бхава",
+      "later_count": 1
+    },
+    {
+      "id": "cattariariyasaccani",
+      "term_ru": "Чаттари ариясаччани",
+      "later_count": 1
+    },
+    {
+      "id": "dukkha",
+      "term_ru": "Дуккха",
+      "later_count": 1
+    },
+    {
+      "id": "dukkhaariyasacca",
+      "term_ru": "Дуккха-ариясатья",
+      "later_count": 1
+    },
+    {
+      "id": "ehipassiko",
+      "term_ru": "Эхипассико",
+      "later_count": 1
+    },
+    {
+      "id": "idappaccayata",
+      "term_ru": "Идаппаччаята",
+      "later_count": 2
+    },
+    {
+      "id": "jaramarana",
+      "term_ru": "Жара-марана",
+      "later_count": 1
+    },
+    {
+      "id": "jati",
+      "term_ru": "Джати",
+      "later_count": 1
+    },
+    {
+      "id": "kamma",
+      "term_ru": "Камма",
+      "later_count": 1
+    },
+    {
+      "id": "kammabandhu",
+      "term_ru": "Каммабандху",
+      "later_count": 1
+    },
+    {
+      "id": "kammacetana",
+      "term_ru": "Камма-четана",
+      "later_count": 1
+    },
+    {
+      "id": "kammadayada",
+      "term_ru": "Каммадаяда",
+      "later_count": 1
+    },
+    {
+      "id": "kammapatisarana",
+      "term_ru": "Каммапатисарана",
+      "later_count": 1
+    },
+    {
+      "id": "kammassaka",
+      "term_ru": "Каммассака",
+      "later_count": 1
+    },
+    {
+      "id": "kammayoni",
+      "term_ru": "Каммайони",
+      "later_count": 1
+    },
+    {
+      "id": "kusalakamma",
+      "term_ru": "Кусала-камма",
+      "later_count": 1
+    },
+    {
+      "id": "magga",
+      "term_ru": "Магга",
+      "later_count": 1
+    },
+    {
+      "id": "manokamma",
+      "term_ru": "Мано-камма",
+      "later_count": 1
+    },
+    {
+      "id": "namarupa",
+      "term_ru": "Намарупа",
+      "later_count": 1
+    },
+    {
+      "id": "nirodha",
+      "term_ru": "Ниродха",
+      "later_count": 2
+    },
+    {
+      "id": "opanayiko",
+      "term_ru": "Опанайико",
+      "later_count": 1
+    },
+    {
+      "id": "paccattamveditabbovinnuhi",
+      "term_ru": "Паччаттам ведитаббо виньюхи",
+      "later_count": 1
+    },
+    {
+      "id": "paticcasamuppada",
+      "term_ru": "Патиччасамуппада",
+      "later_count": 3
+    },
+    {
+      "id": "phalanana",
+      "term_ru": "Пхала-ньяна",
+      "later_count": 1
+    },
+    {
+      "id": "phassa",
+      "term_ru": "Пхасса",
+      "later_count": 1
+    },
+    {
+      "id": "puthujjana",
+      "term_ru": "Путудджхана",
+      "later_count": 1
+    },
+    {
+      "id": "sacca",
+      "term_ru": "Сачча",
+      "later_count": 2
+    },
+    {
+      "id": "sakadagami",
+      "term_ru": "Сакадагами",
+      "later_count": 1
+    },
+    {
+      "id": "salayatana",
+      "term_ru": "Салаятана",
+      "later_count": 1
+    },
+    {
+      "id": "sammakammanta",
+      "term_ru": "Самма-камманта",
+      "later_count": 1
+    },
+    {
+      "id": "samudaya",
+      "term_ru": "Самудая",
+      "later_count": 0
+    },
+    {
+      "id": "sanditthiko",
+      "term_ru": "Сандиттхико",
+      "later_count": 1
+    },
+    {
+      "id": "sankhara",
+      "term_ru": "Санкхара",
+      "later_count": 2
+    },
+    {
+      "id": "sotapanna",
+      "term_ru": "Сотапанна",
+      "later_count": 1
+    },
+    {
+      "id": "svakkhato",
+      "term_ru": "Сваккхато",
+      "later_count": 1
+    },
+    {
+      "id": "tanha",
+      "term_ru": "Танха",
+      "later_count": 0
+    },
+    {
+      "id": "upadana",
+      "term_ru": "Упадана",
+      "later_count": 1
+    },
+    {
+      "id": "vedana",
+      "term_ru": "Ведана",
+      "later_count": 2
+    },
+    {
+      "id": "vinnana",
+      "term_ru": "Винняна",
+      "later_count": 1
+    }
+  ]
+}

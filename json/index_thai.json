@@ -1,0 +1,229 @@
+{
+  "terms": [
+    {
+      "id": "akalika",
+      "term_thai": "อกาลิโก",
+      "later_count": 1
+    },
+    {
+      "id": "akusalakamma",
+      "term_thai": "อกุศลกรรม",
+      "later_count": 1
+    },
+    {
+      "id": "anagami",
+      "term_thai": "อนาคามี",
+      "later_count": 1
+    },
+    {
+      "id": "arahant",
+      "term_thai": "พระอรหันต์",
+      "later_count": 2
+    },
+    {
+      "id": "ariya",
+      "term_thai": "อริยะ",
+      "later_count": 2
+    },
+    {
+      "id": "avijja",
+      "term_thai": "อวิชชา",
+      "later_count": 1
+    },
+    {
+      "id": "bhava",
+      "term_thai": "ภพ",
+      "later_count": 1
+    },
+    {
+      "id": "cattariariyasaccani",
+      "term_thai": "จัตตาริ อริยสัจจานิ",
+      "later_count": 1
+    },
+    {
+      "id": "dukkha",
+      "term_thai": "ทุกข์",
+      "later_count": 1
+    },
+    {
+      "id": "dukkhaariyasacca",
+      "term_thai": "ทุกขอริยสัจ",
+      "later_count": 1
+    },
+    {
+      "id": "ehipassiko",
+      "term_thai": "เอหิปัสสิโก",
+      "later_count": 1
+    },
+    {
+      "id": "idappaccayata",
+      "term_thai": "อิทัปปัจจยตา",
+      "later_count": 2
+    },
+    {
+      "id": "jaramarana",
+      "term_thai": "ชรามรณะ",
+      "later_count": 1
+    },
+    {
+      "id": "jati",
+      "term_thai": "ชาติ",
+      "later_count": 1
+    },
+    {
+      "id": "kamma",
+      "term_thai": "กรรม",
+      "later_count": 1
+    },
+    {
+      "id": "kammabandhu",
+      "term_thai": "กรรมพันธุ",
+      "later_count": 1
+    },
+    {
+      "id": "kammacetana",
+      "term_thai": "กัมมเจตนา",
+      "later_count": 1
+    },
+    {
+      "id": "kammadayada",
+      "term_thai": "กรรมทายาดา",
+      "later_count": 1
+    },
+    {
+      "id": "kammapatisarana",
+      "term_thai": "กรรมปฏิสรณา",
+      "later_count": 1
+    },
+    {
+      "id": "kammassaka",
+      "term_thai": "กรรมสสกา",
+      "later_count": 1
+    },
+    {
+      "id": "kammayoni",
+      "term_thai": "กรรมโยนิ",
+      "later_count": 1
+    },
+    {
+      "id": "kusalakamma",
+      "term_thai": "กุศลกรรม",
+      "later_count": 1
+    },
+    {
+      "id": "magga",
+      "term_thai": "มรรค",
+      "later_count": 1
+    },
+    {
+      "id": "manokamma",
+      "term_thai": "มโนกรรม",
+      "later_count": 1
+    },
+    {
+      "id": "namarupa",
+      "term_thai": "นามรูป",
+      "later_count": 1
+    },
+    {
+      "id": "nirodha",
+      "term_thai": "นิโรธ",
+      "later_count": 1
+    },
+    {
+      "id": "opanayiko",
+      "term_thai": "โอปนยิโก",
+      "later_count": 1
+    },
+    {
+      "id": "paccattamveditabbovinnuhi",
+      "term_thai": "ปัจจัตตัง เวทิตัพโพ วิญญูหิ",
+      "later_count": 1
+    },
+    {
+      "id": "paticcasamuppada",
+      "term_thai": "ปฏิจจสมุปบาท",
+      "later_count": 2
+    },
+    {
+      "id": "phalanana",
+      "term_thai": "ผลญาณ",
+      "later_count": 1
+    },
+    {
+      "id": "phassa",
+      "term_thai": "ผัสสะ",
+      "later_count": 2
+    },
+    {
+      "id": "puthujjana",
+      "term_thai": "ปุถุชน",
+      "later_count": 1
+    },
+    {
+      "id": "sacca",
+      "term_thai": "สัจจะ",
+      "later_count": 1
+    },
+    {
+      "id": "sakadagami",
+      "term_thai": "สกทาคามี",
+      "later_count": 2
+    },
+    {
+      "id": "salayatana",
+      "term_thai": "สฬายตนะ",
+      "later_count": 2
+    },
+    {
+      "id": "sammakammanta",
+      "term_thai": "สัมมากัมมันตะ",
+      "later_count": 1
+    },
+    {
+      "id": "samudaya",
+      "term_thai": "สมุทัย",
+      "later_count": 1
+    },
+    {
+      "id": "sanditthiko",
+      "term_thai": "สันทิฏฐิโก",
+      "later_count": 2
+    },
+    {
+      "id": "sankhara",
+      "term_thai": "สังขาร",
+      "later_count": 2
+    },
+    {
+      "id": "sotapanna",
+      "term_thai": "โสดาบัน",
+      "later_count": 1
+    },
+    {
+      "id": "svakkhato",
+      "term_thai": "สวากขาโต",
+      "later_count": 1
+    },
+    {
+      "id": "tanha",
+      "term_thai": "ตัณหา",
+      "later_count": 2
+    },
+    {
+      "id": "upadana",
+      "term_thai": "อุปาทาน",
+      "later_count": 1
+    },
+    {
+      "id": "vedana",
+      "term_thai": "เวทนา",
+      "later_count": 2
+    },
+    {
+      "id": "vinnana",
+      "term_thai": "วิญญาณ",
+      "later_count": 2
+    }
+  ]
+}
