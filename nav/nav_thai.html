@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>นำทางคำศัพท์บาลี</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700&family=Noto+Serif:wght@400;600;700&family=Noto+Sans+Thai:wght@400;600;700&family=Noto+Serif+Thai:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css">
+<link rel="canonical" href="https://indapanno.github.io/nav/nav_thai.html">
+<link rel="next" href="https://indapanno.github.io/nav/nav_thai_2.html">
+<link rel="alternate" hreflang="ru" href="https://indapanno.github.io/">
+<link rel="alternate" hreflang="th" href="https://indapanno.github.io/nav/nav_thai.html">
+<link rel="alternate" hreflang="x-default" href="https://indapanno.github.io/">
+<meta name="description" content="ตัวนำทางประวัติศัพท์บาลี: ดูว่าคำสำคัญในคำสอนของพระพุทธศาสนาเกิดขึ้นและเปลี่ยนความหมายมาอย่างไร ใครเป็นผู้บัญญัติ เมื่อใด และมีความหมายอย่างไรในแต่ละยุค">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="นำทางคำศัพท์บาลี">
+<meta property="og:title" content="นำทางคำศัพท์บาลี">
+<meta property="og:description" content="ตัวนำทางประวัติศัพท์บาลี: ดูว่าคำสำคัญในคำสอนของพระพุทธศาสนาเกิดขึ้นและเปลี่ยนความหมายมาอย่างไร ใครเป็นผู้บัญญัติ เมื่อใด และมีความหมายอย่างไรในแต่ละยุค">
+<meta property="og:url" content="https://indapanno.github.io/nav/nav_thai.html">
+<meta property="og:locale" content="th_TH">
+<link rel="stylesheet" href="/css/learned.css">
+<link rel="icon" href="/favicon.ico">
+<script src="/js/theme.js"></script>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-top">
+    <button id="menu-toggle" class="menu-toggle" aria-label="เมนู"><span></span><span></span><span></span></button>
+    <h1 id="page-title">นำทางคำศัพท์บาลี</h1>
+    <div class="header-controls">
+      <div class="control">
+        <span id="lang-label">Язык</span>
+        <div class="segmented" id="lang-switch" role="group" aria-labelledby="lang-label">
+          <a data-lang-value="ru" lang="ru">RU</a>
+          <a data-lang-value="thai" lang="th">ไทย</a>
+        </div>
+      </div>
+      <div class="control">
+        <span id="theme-label">ธีม</span>
+        <div class="segmented" id="theme-switch" role="group" aria-labelledby="theme-label">
+          <button type="button" data-theme-value="system" aria-pressed="false">ตามระบบ</button>
+          <button type="button" data-theme-value="light" aria-pressed="false">สว่าง</button>
+          <button type="button" data-theme-value="dark" aria-pressed="false">มืด</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="header-intro" id="header-intro">ที่นี่รวบรวมคำศัพท์ภาษาบาลีในพุทธศาสนา พร้อมประวัติความเป็นมาและการเปลี่ยนแปลงความหมายตามกาลเวลา</p>
+  <div class="search-box">
+    <input id="search-input" class="search-input" type="text" placeholder="ค้นหาคำศัพท์…" autocomplete="off">
+    <div id="search-suggestions" class="search-suggestions" hidden></div>
+  </div>
+</header>
+
+<div id="nav-backdrop" class="nav-backdrop" hidden></div>
+<div id="nav-drawer" class="nav-drawer" hidden>
+  <div class="nav-drawer-header">
+    <span>เมนู</span>
+    <button id="nav-drawer-close" aria-label="ปิด">✕</button>
+  </div>
+  <ul id="nav-menu-list" class="nav-menu-list"></ul>
+</div>
+
+<main>
+  <p class="nav-intro" id="learned-nav-note"></p>
+  <ul id="term-list" class="term-list"><li class="term-item"><a href="/terms/kamma_thai.html">กรรม <span class="count-badge">+๑</span><div class="nav-snippet">กรรม คือ การกระทำที่ทำลงไปโดยมีความตั้งใจ ไม่ว่าจะทำผ่านทางกาย พูดออกมา หรือคิดในใจ ซึ่งทุกการกระทำย่อมส่งผลตามมาเสมอ…</div></a><button type="button" class="learned-btn" data-learned-id="kamma">ยังไม่ได้เรียน</button></li><li class="term-item"><a href="/terms/kammadayada_thai.html">กรรมทายาดา <span class="count-badge">+๑</span><div class="nav-snippet">หมายถึง คนเราเป็นผู้รับผลการกระทำของตนเอง ทำสิ่งใดย่อมได้รับผลสิ่งนั้น เช่นเดียวกับลูกที่ได้รับมรดกจากครอบครัว…</div></a><button type="button" class="learned-btn" data-learned-id="kammadayada">ยังไม่ได้เรียน</button></li><li class="term-item"><a href="/terms/kammapatisarana_thai.html">กรรมปฏิสรณา <span class="count-badge">+๑</span><div class="nav-snippet">หมายถึง การมีผลการกระทำของตนเองเป็นที่พึ่งสุดท้าย ไม่ว่าจะทำดีหรือทำชั่ว…</div></a><button type="button" class="learned-btn" data-learned-id="kammapatisarana">ยังไม่ได้เรียน</button></li><li class="term-item"><a href="/terms/kammabandhu_thai.html">กรรมพันธุ <span class="count-badge">+๑</span><div class="nav-snippet">หมายถึง การที่เรามีผลของการกระทำ (กรรม) เป็นเสมือนญาติพี่น้องหรือเผ่าพันธุ์ คอยติดตาม เป็นเพื่อน และให้ผลแก่ชีวิตเรา…</div></a><button type="button" class="learned-btn" data-learned-id="kammabandhu">ยังไม่ได้เรียน</button></li><li class="term-item"><a href="/terms/kammayoni_thai.html">กรรมโยนิ <span class="count-badge">+๑</span><div class="nav-snippet">หมายถึง การมีกรรมเป็นที่เกิด หรือการมีผลจากการกระทำของตนเองเป็นแหล่งกำเนิด…</div></a><button type="button" class="learned-btn" data-learned-id="kammayoni">ยังไม่ได้เรียน</button></li><li class="term-item"><a href="/terms/kammassaka_thai.html">กรรมสสกา <span class="count-badge">+๑</span><div class="nav-snippet">หมายถึง ทุกคนเป็นเจ้าของผลการกระทำของตนเอง ใครทำสิ่งใดไว้ ไม่ว่าจะทำดีหรือทำชั่ว ตัวเขาก็จะต้องเป็นผู้รับผลของการกระทำนั้นเอง…</div></a><button type="button" class="learned-btn" data-learned-id="kammassaka">ยังไม่ได้เรียน</button></li><li class="term-item"><a href="/terms/kammacetana_thai.html">กัมมเจตนา <span class="count-badge">+๑</span><div class="nav-snippet">กัมมเจตนา คือ ความตั้งใจหรือพลังใจที่สั่งให้เราลงมือทำ พูด หรือคิด…</div></a><button type="button" class="learned-btn" data-learned-id="kammacetana">ยังไม่ได้เรียน</button></li><li class="term-item"><a href="/terms/kusalakamma_thai.html">กุศลกรรม <span class="count-badge">+๑</span><div class="nav-snippet">หมายถึง การกระทำไม่ว่าจะทางกาย วาจา หรือใจ ที่ทำขึ้นด้วยความปรารถนาดี ไม่โลภ ไม่พยาบาท และมีความเข้าใจที่ถูกต้อง…</div></a><button type="button" class="learned-btn" data-learned-id="kusalakamma">ยังไม่ได้เรียน</button></li><li class="term-item"><a href="/terms/cattariariyasaccani_thai.html">จัตตาริ อริยสัจจานิ <span class="count-badge">+๑</span><div class="nav-snippet">จัตตาริ อริยสัจจานิ หมายถึง “อริยสัจ ๔” ได้แก่ ทุกข์ เหตุเกิดทุกข์ ความดับทุกข์ และทางปฏิบัติที่นำไปสู่ความดับทุกข์ ในพระสูตร…</div></a><button type="button" class="learned-btn" data-learned-id="cattariariyasaccani">ยังไม่ได้เรียน</button></li><li class="term-item"><a href="/terms/jaramarana_thai.html">ชรามรณะ <span class="count-badge">+๑</span><div class="nav-snippet">หมายถึง ความเสื่อมทรุดโทรมของร่างกายตามกาลเวลา รวมไปถึงการสิ้นชีวิตและการดับสูญของกายและใจ…</div></a><button type="button" class="learned-btn" data-learned-id="jaramarana">ยังไม่ได้เรียน</button></li></ul><nav class="pagination" aria-label="หน้า"><span class="page-current">๑</span><a href="/nav/nav_thai_2.html" class="page-link">๒</a><a href="/nav/nav_thai_3.html" class="page-link">๓</a><a href="/nav/nav_thai_4.html" class="page-link">๔</a><a href="/nav/nav_thai_5.html" class="page-link">๕</a><a href="/nav/nav_thai_2.html" class="page-link">ถัดไป →</a></nav>
+</main>
+
+<footer class="site-footer">
+  <p>
+    สร้างโดยพระอินทปัญโญ จากวัดป่าถ้ำวนนิมิต จังหวัดนครนายก ประเทศไทย เดือนกันยายน ๒๐๒๖.
+    ตัวนำทางประวัติคำศัพท์บาลีเป็นเนื้อหาเสริมสำหรับโพสต์เกี่ยวกับพระพุทธศาสนาที่เผยแพร่ในช่องสาธารณะ
+    <a href="https://max.ru/channel_buddhism">«ทำความเข้าใจพระพุทธศาสนา»</a> บนแอปพลิเคชันแม็กซ์ (Max).
+    จำนวนคำศัพท์ในตัวนำทาง: <span id="term-count">…</span>.
+    เวอร์ชันเว็บแอปพลิเคชัน: ๑.๐.๐.
+    <a href="https://github.com/indapanno/indapanno.github.io/blob/main/docs/for-researchers/thai.md">สำหรับนักวิจัยและนักพัฒนา</a>.
+    <span class="view-count-wrap" hidden>จำนวนการเข้าชม: <span id="view-count">0</span>.</span>
+  </p>
+</footer>
+
+<script data-goatcounter="https://indapanno.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+<script src="/js/thai-numerals.js"></script>
+<script src="/js/lang.js"></script>
+<script src="/js/learned.js"></script>
+<script src="/js/search.js"></script>
+<script src="/js/burger-menu.js"></script>
+<script src="/js/footer-counter.js"></script>
+<script src="/js/term-count.js"></script>
+</body>
+</html>
