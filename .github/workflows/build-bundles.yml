@@ -60,8 +60,12 @@ jobs:
             echo "Нет изменений для коммита"
           else
             git commit -m "Автосборка связанных терминов [skip ci]"
-            git pull --rebase origin ${{ github.event.workflow_run.head_branch || github.ref_name }}
-            git push origin HEAD
+            ok=0
+            for i in 1 2 3 4 5 6; do
+              if git pull --rebase origin ${{ github.event.workflow_run.head_branch || github.ref_name }} && git push origin HEAD; then ok=1; break; fi
+              echo "Отправка не удалась (попытка $i), повтор"; sleep $((RANDOM % 5 + 2))
+            done
+            [ "$ok" = 1 ] || exit 1
           fi
 
       - name: Fail if bundles have errors
