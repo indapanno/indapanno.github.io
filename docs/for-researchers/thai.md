@@ -51,15 +51,14 @@ indapanno.github.io/                  # root ของ repository = root ขอ�
 │   ├── index.html              # หน้าแจ้งย้าย → «/»
 │   ├── nav_ru_2.html, nav_ru_3.html, …    # รายการภาษารัสเซีย หน้า 2 ขึ้นไป (หน้า 1 คือ «/»)
 │   └── nav_thai.html, nav_thai_2.html, …  # รายการภาษาไทย
-├── nav_ru.html … nav_thai_5.html          # สร้างอัตโนมัติ: หน้าแจ้งย้ายที่ที่อยู่เดิม (10 ไฟล์ ไม่เพิ่มขึ้น) ชี้ไป «/» และ /nav/…
 ├── how/                        # หน้าคำแนะนำ: ไฟล์คงที่ แก้ด้วยมือ (ที่อยู่ /how/how-to-add-term_ru.html เป็นต้น)
 │   ├── how-to-add-term_ru.html, how-to-add-term_thai.html
 │   ├── how-to-translate-term_ru.html, how-to-translate-term_thai.html
 │   ├── how-to-check-json_ru.html, how-to-check-json_thai.html    # หน้า «ตรวจ JSON»
 │   └── index.html              # สร้างอัตโนมัติ: หน้าแจ้งย้าย → «/»
-├── how-to-add-term_ru.html … how-to-check-json_thai.html         # สร้างอัตโนมัติ: หน้าแจ้งย้าย 6 ไฟล์ที่ที่อยู่เดิม → /how/…
-├── progress_ru.html            # ไฟล์คงที่ แก้ด้วยมือ — หน้า «ความคืบหน้าของฉัน» (noindex ไม่อยู่ใน sitemap)
-├── progress_thai.html
+├── my/                         # หน้าส่วนตัว: ไฟล์คงที่ แก้ด้วยมือ (noindex ไม่อยู่ใน sitemap)
+│   ├── progress_ru.html        # หน้า «ความคืบหน้าของฉัน» (ที่อยู่ /my/progress_ru.html)
+│   └── progress_thai.html
 ├── terms/                      # สร้างอัตโนมัติ ห้ามแก้ด้วยมือ
 │   ├── <id>_ru.html            # การ์ดที่สร้างจากแม่แบบ + JSON
 │   ├── <id>_thai.html
@@ -114,7 +113,7 @@ indapanno.github.io/                  # root ของ repository = root ขอ�
 **กฎสำคัญ:** `terms/`, `bundle/`, `index.html`, `nav_*.html`, `publications/*.html`,
 `sitemap.xml` และ `sitemap_publications.xml` เป็นผลลัพธ์จากการ build การแก้ด้วยมือจะอยู่ได้
 จนกว่าจะมีการ build ครั้งถัดไป แล้วจะถูกเขียนทับ ไฟล์ที่แก้ไขด้วยมือได้มีเพียง `_src/**`,
-`json/<id>_*.json`, `js/*.js`, `css/*.css`, `schema/*.json`, `how/how-to-*.html`, `progress_*.html`,
+`json/<id>_*.json`, `js/*.js`, `css/*.css`, `schema/*.json`, `how/how-to-*.html`, `my/progress_*.html`,
 `404.html`, `robots.txt`, `docs/**` และ `publications/covers/**` โดย `terms/`, `index.html`,
 `nav_*.html` และ `sitemap.xml` เป็นผลลัพธ์ของการ build คำศัพท์ `bundle/` ของการ build ชุดศัพท์ที่เกี่ยวข้อง
 `publications/*.html` และ `sitemap_publications.xml` ของการ build บทความ การ build ทุกแบบทำงานฝั่ง GitHub (Actions)
@@ -127,7 +126,7 @@ indapanno.github.io/                  # root ของ repository = root ขอ�
 3. สร้างการ์ดคำศัพท์สำหรับแต่ละ id ในแต่ละภาษา (`<id>_ru.html`, `<id>_thai.html`) — หากยังไม่มีคำแปล จะแสดงข้อความ «ยังไม่มีคำแปล» พร้อมลิงก์ไปยัง `/how/how-to-translate-term_*.html` และ `<meta name="robots" content="noindex">` การ์ดที่มีคำแปลจะได้ `canonical`, `hreflang` (ru/th/x-default หากมีคำแปลทั้งสองภาษา), `meta description` (จาก `interpretation` หรือ `reason_introduced`) และ Open Graph
 4. สร้างไฟล์ `index_ru.json` / `index_thai.json` ใหม่ (รายการสำหรับการค้นหาฝั่งไคลเอนต์: `id`, `term_ru`/`term_thai`, `later_count`)
 5. สร้างหน้านำทางแบบแบ่งหน้าใหม่ (หน้าละ 10 คำศัพท์ เป็นไฟล์ static จริง: `index.html` ที่ root คือหน้าแรกของรายการภาษารัสเซีย (ที่อยู่ `/`) หน้าอื่นอยู่ในโฟลเดอร์ `nav/`: `nav/nav_ru_2.html` ภาษาไทยคือ `nav/nav_thai.html`, `nav/nav_thai_2.html` จึงไม่ทำให้ root โตขึ้น ไม่ใช่ `?page=N` — สำคัญต่อการทำ indexing และให้ใช้งานได้แม้ไม่มี JS) พร้อม `canonical`/`prev`/`next` (ในหน้า 2 ของรายการภาษารัสเซีย `prev` ชี้ไปที่ `/`) และในหน้าแรกของแต่ละภาษา — `hreflang` กับ `meta description`/Open Graph ภาษาที่ยังไม่มีคำศัพท์เลยจะได้ `noindex` แทน แต่ละแถบคือ `<li class="term-item">` ที่มีลิงก์ไปยังคำศัพท์และปุ่ม `<button class="learned-btn" data-learned-id="<id>">` (ใน HTML ใส่ข้อความชั่วคราวตามภาษา — «Не изучен» / «ยังไม่ได้เรียน» ส่วนสถานะจริง `learned.js` เป็นผู้ใส่)
-6. เขียนหน้าแจ้งย้ายที่ที่อยู่เดิม: `terms/index.html`, `nav/index.html` และ `how/index.html` → `/` หน้าแจ้งย้าย 6 ไฟล์ `how-to-*.html` ที่ root → `/how/…` ที่ root `nav_ru.html` … `nav_thai_5.html` (ภาษาละ 5 ไฟล์ ไม่เกิน `LEGACY_NAV_MAX`) ชี้ไปที่อยู่ใหม่ใน `nav/` และ `/` (แม่แบบอยู่ใน `site-config.js`) ลบการ์ดที่ไม่มี id ใน `json/` แล้ว (orphaned ใน `terms/`) และหน้าแบ่งหน้าที่เกินความจำเป็น (ใน `nav/` เกินจำนวนหน้า ที่ root หน้าแจ้งย้ายเกินจำนวนหน้าหรือเกิน 5) ไฟล์อื่น (`how-to-*`, `progress_*`, `404.html`, `index.html` และไฟล์ที่แก้ด้วยมือ) ขั้นตอนนี้ไม่แตะต้อง id คำศัพท์ `index` และชื่อที่สงวนไว้ (`nav_…`, `progress_…`, `terms`, `bundle`, `css`, `js` ฯลฯ ดู `RESERVED_ROOT` ใน `site-config.js`) จะทำให้ build ล้มเหลว
+6. เขียนหน้าแจ้งย้ายที่ที่อยู่ของโฟลเดอร์: `terms/index.html`, `nav/index.html` และ `how/index.html` → `/` ลบการ์ดที่ไม่มี id ใน `json/` แล้ว (orphaned ใน `terms/`) และหน้าแบ่งหน้าที่เกินความจำเป็น (ใน `nav/` เกินจำนวนหน้า ส่วนไฟล์ `nav_*.html` ที่ root จะถูกลบเสมอ) ไฟล์อื่น (`how-to-*`, `progress_*`, `404.html`, `index.html` และไฟล์ที่แก้ด้วยมือ) ขั้นตอนนี้ไม่แตะต้อง id คำศัพท์ `index` และชื่อที่สงวนไว้ (`nav_…`, `progress_…`, `terms`, `bundle`, `css`, `js` ฯลฯ ดู `RESERVED_ROOT` ใน `site-config.js`) จะทำให้ build ล้มเหลว
 7. สร้าง `sitemap.xml` — เฉพาะการ์ดที่มีคำแปลจริง (ไม่รวมการ์ด «ยังไม่มีคำแปล») และหน้านำทาง (หน้าแรกของรายการภาษารัสเซียใช้ที่อยู่ `https://indapanno.github.io/`) พร้อม `hreflang` ระหว่างเวอร์ชันภาษาของแต่ละคำศัพท์ หน้าแจ้งย้ายไม่รวมอยู่ใน sitemap ไม่มี `lastmod` (วันที่จาก git ใน GitHub Actions ไม่น่าเชื่อถือ)
 8. commit ผลลัพธ์ด้วยแท็ก `[skip ci]` (เพื่อป้องกัน trigger วนลูปไม่สิ้นสุด)
 
@@ -141,7 +140,7 @@ indapanno.github.io/                  # root ของ repository = root ขอ�
 - **แหล่งข้อมูลเดียว.** ภาษาของหน้ากำหนดจากแอตทริบิวต์ `<html lang>` ซึ่ง build เป็นผู้ใส่ (`ru` / `th`) `lang.js` เปิดให้ใช้เป็น `TermsLang.get()` → `'ru'` หรือ `'thai'` สคริปต์อื่น (`learned`, `search`, `burger-menu`, `term-count`, `footer-counter`, `progress`, `validator-page`) อ่านภาษาจากที่นี่ ไม่อ่านจากชื่อไฟล์ ดังนั้นชื่อหน้าอย่าง `nav_thai_2.html` จึงไม่ทำให้ภาษาผิด
 - **ตัวสลับภาษา** (`lang.js`): จากการ์ดคำศัพท์ไปที่ `<id>_<ภาษาอื่น>.html` จากหน้านำทางทุกหน้า (`/`, `/nav/nav_<ภาษา>[_N].html`) ไปที่หน้าแรกของอีกภาษา (`/` หรือ `/nav/nav_thai.html`) เพราะหน้า 2 ขึ้นไปของสองภาษาไม่ตรงกัน จากหน้าของชุดศัพท์ (`/bundle/…`) ไปที่ชุดเดียวกันหรือรายการชุดของอีกภาษา จากหน้าบทความ (`/publications/`, `publications_<ภาษา>[_N].html` และตัวบทความ) ไปที่หน้าแรกของรายการบทความอีกภาษา เพราะบทความไม่มีการแปล ตารางที่อยู่อยู่ใน `buildTargetUrl` (`js/lang.js`)
 - **ภาษาใหม่.** เพิ่มรหัสภาษาใน `LANG_BY_HTML_LANG` ใน `lang.js` (นอกเหนือจากขั้นตอนในหัวข้อ «การทำเครื่องหมาย «เรียนแล้ว»…»)
-- **มาร์กอัปของส่วนหัว** บล็อก `header-controls` มีกลุ่ม `#lang-switch` (ลิงก์ RU / ไทย) และ `#theme-switch` (ปุ่ม 3 ปุ่ม) อยู่ใน `_template_*.html`, `_layout_*.html` และหน้าที่แก้ด้วยมือ (`how/how-to-*`, `progress_*`) สไตล์ `.segmented` อยู่ใน `style.css` ส่วน `href` และสถานะที่เลือกอยู่ถูกกำหนดโดยสคริปต์
+- **มาร์กอัปของส่วนหัว** บล็อก `header-controls` มีกลุ่ม `#lang-switch` (ลิงก์ RU / ไทย) และ `#theme-switch` (ปุ่ม 3 ปุ่ม) อยู่ใน `_template_*.html`, `_layout_*.html` และหน้าที่แก้ด้วยมือ (`how/how-to-*`, `my/progress_*`) สไตล์ `.segmented` อยู่ใน `style.css` ส่วน `href` และสถานะที่เลือกอยู่ถูกกำหนดโดยสคริปต์
 - **การจำภาษา** เมื่อผู้อ่านคลิกเลือกภาษา `lang.js` จะบันทึกคีย์ `terms-lang` (`ru` / `thai`) ซึ่งอ่านโดย `404.html` เท่านั้น ลำดับการกำหนดภาษาในหน้านั้น: URL → หน้าต้นทางของเว็บไซต์เดียวกัน → `terms-lang` → แสดงทั้งสองภาษา
 - **การแก้ส่วนหัว** แก้บล็อกในแม่แบบทุกไฟล์ (รวมถึง `_src/bundle/template/_layout_*.html` และ `_src/publications/template/_layout_*.html`) จากนั้นสั่ง «Build terms» ด้วยมือ (Actions → Build terms → Run workflow) และแก้หน้าที่แก้ด้วยมือ โครงหน้าของชุดศัพท์และบทความจะถูก build ใหม่โดย workflow ของตัวเองเมื่อ push เข้า `_src/bundle/**` และ `_src/publications/**`
 
@@ -215,7 +214,7 @@ Node) ผ่านการเทียบผลกับ library อ้าง�
 - **`js/learned.js`** — โมดูลกลาง อ็อบเจกต์ global `window.Learned`: `isLearned(id)`, `set(id, on)`, `toggle(id)`, `all()`, `merge(ids)` (คืนจำนวนที่เพิ่มใหม่), `clear()`, `refresh(root)` การคลิกที่ `.learned-btn[data-learned-id]` ใด ๆ ถูกจัดการด้วย event handler แบบ delegated ตัวเดียว ปุ่มจึงทำงานได้แม้ใน HTML ที่สร้างภายหลัง การเปลี่ยนแปลงจากแท็บอื่นถูกรับผ่านอีเวนต์ `storage`
 - **ปุ่มอยู่ที่ไหน.** บนแถบคำศัพท์ในหน้านำทาง `build-terms.js` เป็นผู้เขียน (ขั้นตอนที่ 5 ของการ build) บนการ์ดคำศัพท์ใช้บล็อก `<div id="learned-bar">` ใน `_template_*.html` ซึ่ง `learned.js` เติมปุ่มและคำอธิบายให้ (id คำศัพท์ได้จากชื่อไฟล์) ในการ์ด «ยังไม่มีคำแปล» การ build จะลบบล็อกนี้ออก (ไม่มีอะไรให้เรียน) และการ์ดเหล่านี้ไม่อยู่ใน `index_<lang>.json` และหน้านำทาง ข้อความอธิบายรวมเหนือรายการในหน้านำทางคือ `<p id="learned-nav-note">` ใน `_template_nav_*.html` เติมโดยสคริปต์เดียวกัน
 - **ความจาง.** แถบของคำศัพท์ที่เรียนแล้วมี class `is-learned` (`.term-item.is-learned > a { opacity: .5 }`) ในคำแนะนำของช่องค้นหา `search.js` ใส่ class เดียวกันให้ลิงก์ สไตล์อยู่ใน `css/learned.css` สี «เรียนแล้ว» และ «ข้อผิดพลาด» กำหนดเป็นตัวแปรสำหรับธีมมืดและธีมสว่าง
-- **หน้า «ความคืบหน้าของฉัน»** (`/progress_ru.html`, `/progress_thai.html` ไฟล์คงที่ `noindex` ตรรกะอยู่ใน `js/progress.js`):
+- **หน้า «ความคืบหน้าของฉัน»** (`/my/progress_ru.html`, `/my/progress_thai.html` ไฟล์คงที่ `noindex` ตรรกะอยู่ใน `js/progress.js`):
   - ตัวนับ «เรียนแล้ว X จาก Y» และแถบความคืบหน้า: Y คือจำนวนคำศัพท์ใน `index_<lang>.json`, X คือเครื่องหมายที่มีคำศัพท์อยู่ในรายการนี้
   - **ดาวน์โหลด** — ไฟล์ `pali-terms-progress-ปปปป-ดด-วว.json` รูปแบบ `{"format": "pali-terms-progress", "version": 1, "exported": "<วันที่ ISO>", "learned": ["<id>", …]}` ถ้ารายการว่างจะไม่ส่งออก
   - **โหลดจากไฟล์** — ตรวจไฟล์ (`format` ตรงกัน, `learned` เป็น array, ขนาดไม่เกิน 1 MB, ไม่เกิน 5000 id, แต่ละ id ตรงตามรูปแบบ `[A-Za-z0-9_-]{1,100}`) จากนั้น **รวม** เครื่องหมายเข้ากับของเดิม ไม่มีอะไรถูกลบ ไฟล์แปลกปลอมหรือไฟล์เสียจะถูกปฏิเสธโดยไม่เปลี่ยนแปลงอะไร
@@ -224,7 +223,7 @@ Node) ผ่านการเทียบผลกับ library อ้าง�
   - **รายการคำศัพท์ที่ยังไม่ได้เรียน** — คำศัพท์ที่เหลือของภาษาของหน้า (ผลต่างระหว่าง `index_<lang>.json` กับเครื่องหมายที่มี) เรียงและแบ่งหน้าแบบเดียวกัน มีหน้าของตัวเอง ปุ่ม «ยังไม่ได้เรียน» จะทำเครื่องหมาย: ตรงตำแหน่งแถวจะมีข้อความพร้อมลิงก์ «ย้อนกลับ» และคำศัพท์จะย้ายไปอยู่ในรายการที่เรียนแล้ว เมื่อไม่มีคำศัพท์ที่ยังไม่ได้เรียนจะแสดง «เรียนทุกคำศัพท์แล้ว»
   - **ข้อความอยู่ใกล้องค์ประกอบ** ข้อความแสดงตรงที่ผู้ใช้ทำงาน ไม่ใช่บรรทัดรวมด้านล่าง: ในรายการเป็นแถวข้อความแทนแถวที่กด (มีได้หนึ่งข้อความทั้งหน้า และหายไปเมื่อทำอย่างอื่นต่อ) ส่วนดาวน์โหลด โหลดจากไฟล์ และล้างเครื่องหมายมีบรรทัดสถานะใต้ปุ่ม (`#progress-status-export`, `-import`, `-reset`) ข้อผิดพลาดตอนเริ่มหน้าอยู่ใต้ตัวนับ (`#progress-status-top`) หลังกด «ย้อนกลับ» รายการจะไปยังหน้าที่คำศัพท์กลับมาและโฟกัสที่ปุ่มของมัน กฎนี้ใช้กับทุกส่วนติดต่อใหม่ของโปรเจกต์
 - **เมนูและลิงก์.** รายการ «ความคืบหน้าของฉัน» อยู่ใน `burger-menu.js` ลิงก์ไปหน้านี้อยู่ในคำอธิบายบนหน้านำทางและบนการ์ดคำศัพท์
-- **ภาษาใหม่.** ข้อความ UI อยู่ในอ็อบเจกต์ `STR` ภายใน `learned.js`, `progress.js` และ `burger-menu.js` ถ้าเพิ่มภาษาใหม่ ให้เพิ่มข้อความในทั้งสามไฟล์ เพิ่มรหัสภาษาใน `LANG_BY_HTML_LANG` ใน `lang.js` และสร้าง `progress_<lang>.html`
+- **ภาษาใหม่.** ข้อความ UI อยู่ในอ็อบเจกต์ `STR` ภายใน `learned.js`, `progress.js` และ `burger-menu.js` ถ้าเพิ่มภาษาใหม่ ให้เพิ่มข้อความในทั้งสามไฟล์ เพิ่มรหัสภาษาใน `LANG_BY_HTML_LANG` ใน `lang.js` และสร้าง `my/progress_<lang>.html`
 
 ## ชุดศัพท์ที่เกี่ยวข้อง
 
@@ -406,7 +405,7 @@ workflow จะแสดงสถานะสีแดงในตอนท้�
   Open Graph — ดู «สถาปัตยกรรมการ build» ด้านบน
 - `sitemap.xml` สร้างขึ้นอัตโนมัติ (ขั้นตอนที่ 7 ของการ build) และส่งเข้า Google Search
   Console, Bing Webmaster Tools และ Yandex Webmaster แล้ว
-- หน้า `progress_*.html` เป็นหน้าส่วนตัว: `noindex` และไม่อยู่ใน `sitemap.xml`
+- หน้า `my/progress_*.html` เป็นหน้าส่วนตัว: `noindex` และไม่อยู่ใน `sitemap.xml`
 - หน้าชุดศัพท์ที่เกี่ยวข้อง (`bundle/*` ยกเว้นหน้าแจ้งย้าย `bundles_ru.html` รวมถึงหน้าแจ้งว่ายังไม่มีคำแปล) เป็น `noindex`
   ไม่มี `canonical` และ `hreflang` และไม่อยู่ใน `sitemap.xml` (สร้างโดย `build-terms.js` เท่านั้น)
 - หน้าบทความ (`publications/*.html`) ถูก index (หน้ารายการที่ไม่มีบทความเป็น `noindex`) URL ของหน้าเหล่านี้อยู่ในไฟล์แยก
@@ -414,7 +413,7 @@ workflow จะแสดงสถานะสีแดงในตอนท้�
 - การ์ดคำศัพท์และหน้านำทางยังไม่มีรูปสำหรับพรีวิวลิงก์ (`og:image`) — วาง Open Graph ไว้แล้ว แต่พรีวิวในแอปแชท
   ยังเป็นแบบข้อความล้วน ส่วนบทความใช้ภาพปกเป็น `og:image`
 - `robots.txt` อยู่ที่ root ของเว็บไซต์: `Allow: /` และสองบรรทัด `Sitemap:` (`sitemap.xml`, `sitemap_publications.xml`)
-- ทุกหน้าที่ถูก index มี `canonical` หนึ่งตัวที่ตรงกับที่อยู่ของหน้านั้น หน้าแจ้งย้ายที่ที่อยู่เดิมมี `canonical` ไปยังที่อยู่ใหม่และ `meta refresh` ทันที ไม่มี `noindex` ตรวจโดย `test-seo.js` และ `test-links.js`
+- ทุกหน้าที่ถูก index มี `canonical` หนึ่งตัวที่ตรงกับที่อยู่ของหน้านั้น หน้าแจ้งย้ายที่ที่อยู่เดิมใน repository `buddhism` มี `canonical` ไปยังที่อยู่ใหม่และ `meta refresh` ทันที ไม่มี `noindex` ตรวจโดย `test-seo.js` และ `test-links.js`
 
 ## การติดตั้งด้วยตนเอง (fork)
 

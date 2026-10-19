@@ -137,7 +137,7 @@
       note.className = 'learned-note';
       note.textContent = s.noteCard;
       var cardLink = document.createElement('a');
-      cardLink.href = window.TermsLang.url('progress_' + info.lang + '.html');
+      cardLink.href = window.TermsLang.url('my/progress_' + info.lang + '.html');
       cardLink.textContent = s.linkCard;
       note.appendChild(document.createTextNode(' '));
       note.appendChild(cardLink);
@@ -150,7 +150,7 @@
     if (navNote) {
       navNote.textContent = s.noteNav;
       var link = document.createElement('a');
-      link.href = window.TermsLang.url('progress_' + info.lang + '.html');
+      link.href = window.TermsLang.url('my/progress_' + info.lang + '.html');
       link.textContent = s.linkCard;
       navNote.appendChild(document.createTextNode(' '));
       navNote.appendChild(link);

@@ -11,7 +11,7 @@
 const SITE_URL = 'https://indapanno.github.io';
 
 // Имена, которые нельзя использовать для файлов терминов и статей (раздел 6 ТЗ).
-const RESERVED_ROOT = ['nav_', 'progress_', 'how-to-', 'how', 'nav', 'terms', 'bundle', 'publications', 'css', 'js', 'json',
+const RESERVED_ROOT = ['nav_', 'progress_', 'how-to-', 'how', 'my', 'nav', 'terms', 'bundle', 'publications', 'css', 'js', 'json',
   'schema', 'docs', 'sitemap', 'robots', 'favicon', '404', 'index', 'img'];
 
 const absUrl = p => SITE_URL + p;
@@ -36,9 +36,7 @@ function makeList(dir, prefix) {
 
 // Список терминов: первая страница русского списка — «/» (index.html в корне), все остальные
 // страницы — в папке nav/ (nav/nav_ru_2.html, nav/nav_thai.html …), чтобы корень не рос.
-// Прежние адреса в корне (nav_ru.html, nav_ru_2.html … nav_thai_5.html) остаются заглушками:
-// legacy = имя файла заглушки в корне, их пишут только для страниц 1…LEGACY_NAV_MAX.
-const LEGACY_NAV_MAX = 5;
+
 const nav = (function () {
   const name = (lang, page) => 'nav_' + lang + pageSuffix(page) + '.html';
   const isIndex = (lang, page) => lang === 'ru' && page === 1;
@@ -50,9 +48,7 @@ const nav = (function () {
     file: (lang, page) => (isIndex(lang, page) ? 'index.html' : 'nav/' + name(lang, page)),
     path: path,
     url: (lang, page) => absUrl(path(lang, page)),
-    basePath: '/nav/',
-    legacyFile: name,                         // имя файла заглушки в корне
-    legacyPath: (lang, page) => '/' + name(lang, page)
+    basePath: '/nav/'
   };
 })();
 const bundles = makeList('bundle', 'bundles');
@@ -67,13 +63,11 @@ const articleUrl = name => absUrl(articlePath(name));
 const coverPath = file => '/publications/covers/' + file;
 const coverUrl = file => absUrl(coverPath(file));
 
-// Инструкции (ручные страницы) лежат в how/: /how/how-to-add-term_ru.html. Прежние адреса в корне —
-// заглушки (пишет build-terms.js).
+// Инструкции (ручные страницы) лежат в how/: /how/how-to-add-term_ru.html.
 const HOW_PAGES = ['how-to-add-term', 'how-to-check-json', 'how-to-translate-term'];
 const howName = (page, lang) => page + '_' + lang + '.html';
 const howPath = (page, lang) => '/how/' + howName(page, lang);
 const howUrl = (page, lang) => absUrl(howPath(page, lang));
-const howLegacyFile = (page, lang) => howName(page, lang);
 
 // Ссылка «к списку терминов» из хлебных крошек
 const navHomePath = lang => nav.path(lang, 1);
@@ -107,5 +101,5 @@ function stubHtml(targetUrl, lang) {
 module.exports = {
   SITE_URL, RESERVED_ROOT, absUrl, nav, bundles, publications,
   cardPath, cardUrl, bundlePath, bundleUrl, articlePath, articleUrl, coverPath, coverUrl,
-  navHomePath, stubHtml, escAttr, LEGACY_NAV_MAX, HOW_PAGES, howName, howPath, howUrl, howLegacyFile
+  navHomePath, stubHtml, escAttr, HOW_PAGES, howName, howPath, howUrl
 };

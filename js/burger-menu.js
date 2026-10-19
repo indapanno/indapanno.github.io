@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', function () {
   var items = [
     { href: window.TermsLang.url(lang === 'ru' ? '' : 'nav/nav_thai.html'), text: strings.navHome },
     { href: window.TermsLang.url(lang === 'ru' ? 'bundle/' : 'bundle/bundles_thai.html'), text: strings.bundles },
-    { href: window.TermsLang.url('progress_' + lang + '.html'), text: strings.progress },
+    { href: window.TermsLang.url('my/progress_' + lang + '.html'), text: strings.progress },
     { href: window.TermsLang.url(lang === 'ru' ? 'publications/' : 'publications/publications_thai.html'), text: strings.publications },
     { href: window.TermsLang.url('how/how-to-add-term_' + lang + '.html'), text: strings.addTerm }
   ];
