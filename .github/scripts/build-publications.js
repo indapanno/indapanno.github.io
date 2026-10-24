@@ -32,6 +32,7 @@ const S = {
     back1: '← Назад', next1: 'Далее →', pages: 'Страницы', pageWord: 'страница',
     toc: 'Содержание',
     more: 'Читать далее',
+    check: { todo: 'Не выполнено', done: 'Выполнено' },
     callout: { key: 'Ключевая мысль', practice: 'Практика', important: 'Важно' }
   },
   thai: {
@@ -41,19 +42,27 @@ const S = {
     back1: '← ย้อนกลับ', next1: 'ถัดไป →', pages: 'หน้า', pageWord: 'หน้า',
     toc: 'สารบัญ',
     more: 'อ่านต่อ',
+    check: { todo: 'ยังไม่ได้ทำ', done: 'ทำแล้ว' },
     callout: { key: 'ประเด็นสำคัญ', practice: 'ลงมือปฏิบัติ', important: 'โปรดทราบ' }
   }
 };
 
 // --- Данные обычных терминов (только чтение) ---
 function loadTerms(termsDir) {
-  const out = { ru: new Set(), thai: new Set() };
+  const out = { ru: new Map(), thai: new Map() }; // id -> interpretation (для поповера)
   const dir = path.join(termsDir, 'json');
   if (!fs.existsSync(dir)) return out;
   LANGS.forEach(lang => {
     const suffix = '_' + lang + '.json';
     fs.readdirSync(dir).filter(f => f.endsWith(suffix) && !f.startsWith('index'))
-      .forEach(f => out[lang].add(f.slice(0, -suffix.length)));
+      .forEach(f => {
+        let interp = '';
+        try {
+          const d = JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8').replace(/^\uFEFF/, ''));
+          if (d && typeof d.interpretation === 'string') interp = d.interpretation;
+        } catch (e) { /* карточку проверяет сборка терминов */ }
+        out[lang].set(f.slice(0, -suffix.length), interp);
+      });
   });
   return out;
 }
@@ -153,8 +162,181 @@ const AI_JUNK = /\[(?:cite|cite_start|source)[^\]]*\]|oaicite|contentReference|t
 const escAttr = v => String(v).replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 const plain = s => s.replace(/&[A-Za-z#0-9]+;/g, ' ').replace(/\s+/g, ' ').trim();
 
-function processArticle(src, lang, ctx) {
+// --- Обогатители публикаций: <div data-widget="…"> (widgets_TZ.md) ---
+// Обёртка только на верхнем уровне статьи; внутри — проверка структуры своими правилами, затем
+// тот же разбор процессором статьи (ссылки, термины, экранирование), чтобы правила были едиными.
+const WIDGET_KINDS = ['checklist', 'faq', 'publication'];
+const PUB_NAME_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*\.html$/;
+const INLINE_TAGS = new Set(['strong', 'em', 'a', 'sup', 'sub', 'code', 'small', 'br']);
+const FAQ_SUMMARY_TAGS = new Set(['strong', 'em']);
+const FAQ_ANSWER_TAGS = new Set(['p', 'ul', 'ol', 'li', 'blockquote', 'cite', 'strong', 'em', 'a', 'sup', 'sub', 'code', 'small', 'br']);
+const escData = v => String(v).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+// Плитка публикации: одна функция для списка и для вставки в статью
+function tileAnchor(lang, d) {
+  return '<a class="pub-tile" href="' + cfg.articlePath(d.html) + '">'
+    + '<span class="pub-tile-cover"><img src="' + escapeHtml(cfg.coverPath(d.cover)) + '" alt="" loading="lazy" width="1200" height="630"></span>'
+    + '<span class="pub-tile-body"><span class="pub-tile-title">' + escapeHtml(d.headline) + '</span>'
+    + '<span class="pub-tile-lead">' + escapeHtml(d.lead) + '</span>'
+    + '<span class="pub-tile-more">' + S[lang].more + '</span></span></a>';
+}
+
+// Теги и текст фрагмента по порядку (свой экземпляр регулярки: общий TAG_RE не трогаем)
+function scanTokens(inner) {
+  const re = new RegExp(TAG_RE.source, 'g');
+  const out = [];
+  let last = 0, m;
+  while ((m = re.exec(inner)) !== null) {
+    if (m.index > last) out.push({ text: inner.slice(last, m.index) });
+    last = re.lastIndex;
+    if (m[0].startsWith('<!--')) continue;
+    out.push({ closing: m[1] === '/', tag: m[2].toLowerCase(), start: m.index, end: re.lastIndex, attrs: (m[3] || '').trim() });
+  }
+  if (last < inner.length) out.push({ text: inner.slice(last) });
+  return out;
+}
+const isWs = t => t.text !== undefined && !t.text.trim();
+const isTag = (t, name, closing) => !!t && t.text === undefined && t.tag === name && t.closing === closing;
+const emptyText = raw => !plain(raw.replace(/<[^>]*>/g, ' '));
+
+function parseChecklist(inner) {
+  const bad = msg => ({ error: { code: 17, msg: 'чек-лист: ' + msg } });
+  const T = scanTokens(inner);
+  const items = [];
+  let i = 0, seenUl = false;
+  while (i < T.length) {
+    if (isWs(T[i])) { i++; continue; }
+    if (!isTag(T[i], 'ul', false) || seenUl) return bad('внутри обёртки нужен ровно один список <ul> без другого содержимого');
+    if (T[i].attrs) return bad('<ul> без атрибутов');
+    seenUl = true; i++;
+    let closed = false;
+    while (i < T.length) {
+      const u = T[i];
+      if (isWs(u)) { i++; continue; }
+      if (isTag(u, 'ul', true)) { closed = true; i++; break; }
+      if (!isTag(u, 'li', false)) return bad('внутри <ul> разрешены только пункты <li>');
+      if (u.attrs) return bad('<li> без атрибутов');
+      const from = u.end;
+      i++;
+      let ok = false;
+      while (i < T.length) {
+        const v = T[i];
+        if (v.text !== undefined) { i++; continue; }
+        if (isTag(v, 'li', true)) { ok = true; break; }
+        if (!INLINE_TAGS.has(v.tag)) return bad('в пункте разрешены только строчные теги, найден <' + v.tag + '>');
+        i++;
+      }
+      if (!ok) return bad('не закрыт <li>');
+      const raw = inner.slice(from, T[i].start);
+      if (emptyText(raw)) return bad('пустой пункт');
+      items.push(raw.trim());
+      i++;
+    }
+    if (!closed) return bad('не закрыт <ul>');
+  }
+  if (!seenUl) return bad('нет списка <ul>');
+  if (!items.length) return bad('в списке нет пунктов');
+  return { items };
+}
+
+function parseFaq(inner) {
+  const bad = msg => ({ error: { code: 18, msg: 'вопросы и ответы: ' + msg } });
+  const T = scanTokens(inner);
+  const items = [];
+  let i = 0;
+  while (i < T.length) {
+    if (isWs(T[i])) { i++; continue; }
+    if (!isTag(T[i], 'details', false)) return bad('внутри обёртки разрешены только <details>');
+    if (T[i].attrs) return bad('<details> без атрибутов');
+    i++;
+    while (i < T.length && isWs(T[i])) i++;
+    if (!isTag(T[i], 'summary', false)) return bad('<details> должен начинаться с <summary>');
+    const sFrom = T[i].end;
+    i++;
+    while (i < T.length && !isTag(T[i], 'summary', true)) {
+      if (T[i].text === undefined && !FAQ_SUMMARY_TAGS.has(T[i].tag)) return bad('в <summary> разрешены только <strong> и <em>, найден <' + T[i].tag + '>');
+      i++;
+    }
+    if (i >= T.length) return bad('не закрыт <summary>');
+    const sRaw = inner.slice(sFrom, T[i].start), aFrom = T[i].end;
+    i++;
+    while (i < T.length && !isTag(T[i], 'details', true)) {
+      if (T[i].text === undefined && !FAQ_ANSWER_TAGS.has(T[i].tag)) return bad('в ответе недопустим <' + T[i].tag + '>');
+      i++;
+    }
+    if (i >= T.length) return bad('не закрыт <details>');
+    const aRaw = inner.slice(aFrom, T[i].start);
+    i++;
+    if (emptyText(sRaw)) return bad('пустой вопрос (<summary>)');
+    if (emptyText(aRaw)) return bad('пустой ответ');
+    items.push({ q: sRaw.trim(), a: aRaw.trim() });
+  }
+  if (!items.length) return bad('нет ни одного <details>');
+  return { items };
+}
+
+// Возвращает { html, text, soft } или { error: {code, msg} }
+function renderWidget(kind, attrs, inner, lang, ctx, wstate) {
+  const soft = [];
+  let text = '';
+  const sub = raw => {
+    const r = processArticle(raw, lang, ctx, { inner: true });
+    r.soft.forEach(x => soft.push(x));
+    text += ' ' + r.text;
+    return r;
+  };
+  const subFail = (r, where) => ({ error: { code: 11, msg: where + ': ' + r.errors[0].msg } });
+
+  if (kind === 'checklist') {
+    const p = parseChecklist(inner);
+    if (p.error) return p;
+    const lis = [];
+    for (const raw of p.items) {
+      const r = sub(raw);
+      if (r.errors.length) return subFail(r, 'чек-лист');
+      lis.push('<li><label><input type="checkbox"><span>' + r.html + '</span></label></li>');
+    }
+    wstate.check++;
+    const st = S[lang].check;
+    return { soft, text, html: '<div class="pub-check" data-check="' + wstate.check + '">'
+      + '<p class="pub-check-title pub-check-todo">' + st.todo + '</p>'
+      + '<ul class="pub-check-list">' + lis.join('') + '</ul>'
+      + '<p class="pub-check-title pub-check-done" hidden>' + st.done + '</p>'
+      + '<ul class="pub-check-list pub-check-done-list" hidden></ul></div>' };
+  }
+
+  if (kind === 'faq') {
+    const p = parseFaq(inner);
+    if (p.error) return p;
+    const parts = [];
+    for (const it of p.items) {
+      const q = sub(it.q);
+      if (q.errors.length) return subFail(q, 'вопросы и ответы');
+      const a = sub(it.a);
+      if (a.errors.length) return subFail(a, 'вопросы и ответы');
+      parts.push('<details class="pub-faq-item"><summary>' + q.html + '</summary><div class="pub-faq-answer">' + a.html + '</div></details>');
+    }
+    return { soft, text, html: '<div class="pub-faq">' + parts.join('') + '</div>' };
+  }
+
+  // publication
+  const bad = msg => ({ error: { code: 19, msg: 'плитка: ' + msg } });
+  if (!('data-publication' in attrs)) return bad('нет атрибута data-publication');
+  const name = attrs['data-publication'].trim();
+  if (!PUB_NAME_RE.test(name)) return bad('data-publication «' + name.slice(0, 40) + '»: нужно имя статьи (строчные латинские буквы, цифры, дефис, .html)');
+  if (inner.trim()) return bad('обёртка должна быть пустой');
+  const map = ctx.pubMap && ctx.pubMap[lang];
+  const d = map && map.get(name);
+  if (d) return { soft, text, html: '<div class="pub-tile-embed">' + tileAnchor(lang, d) + '</div>' };
+  const other = lang === 'ru' ? 'thai' : 'ru';
+  if (ctx.pubAny && ctx.pubAny[other].has(name) && !ctx.pubAny[lang].has(name)) return bad('публикация «' + name + '» на другом языке; плитка только того же языка');
+  soft.push({ code: 20, msg: 'плитка: публикации «' + name + '» нет или она не создана из-за ошибки; плитка не выведена' });
+  return { soft, text, html: '' };
+}
+
+function processArticle(src, lang, ctx, opts) {
   const errors = [], soft = [];
+  const wstate = { check: 0 };
   const fail = msg => errors.push({ code: 11, msg });
   const out = [];
   const stack = [];
@@ -180,6 +362,35 @@ function processArticle(src, lang, ctx) {
     if (m[0].startsWith('<!--')) continue;
 
     const closing = m[1] === '/', tag = m[2].toLowerCase(), attrSrc = m[3] || '', selfClose = m[4] === '/';
+    if (tag === 'div') {
+      if (closing) { fail('закрывающий </div> без открывающего <div data-widget="…">'); break; }
+      const wa = {};
+      let wm;
+      ATTR_RE.lastIndex = 0;
+      while ((wm = ATTR_RE.exec(attrSrc)) !== null) wa[wm[1].toLowerCase()] = wm[2] !== undefined ? wm[2] : wm[3] !== undefined ? wm[3] : wm[4] !== undefined ? wm[4] : '';
+      if (!('data-widget' in wa)) { fail('тег <div> не разрешён (допустим только <div data-widget="checklist|faq|publication">)'); break; }
+      const w16 = msg => errors.push({ code: 16, msg });
+      const kind = wa['data-widget'].trim();
+      if (!WIDGET_KINDS.includes(kind)) { w16('неизвестное значение data-widget «' + kind + '» (допустимо: ' + WIDGET_KINDS.join(', ') + ')'); break; }
+      const extra = Object.keys(wa).filter(k => k !== 'data-widget' && !(kind === 'publication' && k === 'data-publication'));
+      if (extra.length) { w16('у обёртки «' + kind + '» лишние атрибуты: ' + extra.join(', ')); break; }
+      if (stack.length) { w16('обёртка data-widget допустима только на верхнем уровне статьи (найдена внутри <' + stack[stack.length - 1].tag + '>)'); break; }
+      const from = TAG_RE.lastIndex;
+      const closeRe = /<\/div\s*>/gi;
+      closeRe.lastIndex = from;
+      const cm = closeRe.exec(rest);
+      if (!cm) { w16('не закрыта обёртка <div data-widget="' + kind + '">'); break; }
+      const inner = rest.slice(from, cm.index);
+      if (/<div[\s>\/]/i.test(inner)) { w16('внутри обёртки «' + kind + '» не может быть другой <div>'); break; }
+      const w = renderWidget(kind, wa, inner, lang, ctx, wstate);
+      if (w.error) { errors.push(w.error); break; }
+      out.push(w.html);
+      text += ' ' + w.text;
+      w.soft.forEach(x => soft.push(x));
+      last = cm.index + cm[0].length;
+      TAG_RE.lastIndex = last; // рекурсивный разбор внутри обёртки сбрасывает общий счётчик
+      continue;
+    }
     if (!(tag in ALLOWED)) { fail('тег <' + tag + '> не разрешён'); break; }
 
     if (closing) {
@@ -214,7 +425,11 @@ function processArticle(src, lang, ctx) {
       if ('data-term' in attrs) {
         const id = attrs['data-term'].trim();
         if (!ctx.terms[lang].has(id)) { soft.push({ code: 13, msg: 'ссылка на термин «' + id + '»: термина нет или он не переведён на язык статьи; ссылка заменена текстом' }); drop = true; }
-        else open = '<a href="' + escAttr(cfg.cardPath(id, lang)) + '">';
+        else {
+          const interp = (ctx.terms[lang].get(id) || '').replace(/\s+/g, ' ').trim();
+          open = '<a href="' + escAttr(cfg.cardPath(id, lang)) + '" target="_blank" rel="noopener noreferrer"'
+            + (interp ? ' class="pub-term" data-interp="' + escData(interp) + '"' : '') + '>';
+        }
       } else if ('href' in attrs) {
         const href = attrs.href.trim();
         if (!href) { fail('<a> с пустым href'); break; }
@@ -269,7 +484,7 @@ function processArticle(src, lang, ctx) {
   if (!errors.length && stack.length) fail('не закрыт тег <' + stack[stack.length - 1].tag + '>');
 
   const clean = text.replace(/\s+/g, ' ').trim();
-  if (!errors.length && !clean) errors.push({ code: 12, msg: 'статья пустая' });
+  if (!errors.length && !clean && !(opts && opts.inner)) errors.push({ code: 12, msg: 'статья пустая' });
   return { errors, soft, html: out.join(''), text: clean, h2s };
 }
 
@@ -342,11 +557,7 @@ function listPages(lang, items, layout) {
     let main;
     if (!items.length) main = '<p class="pub-empty">' + st.empty + '</p>';
     else {
-      const li = slice.map(p => '<li><a class="pub-tile" href="' + cfg.articlePath(p.data.html) + '">'
-        + '<span class="pub-tile-cover"><img src="' + escapeHtml(cfg.coverPath(p.data.cover)) + '" alt="" loading="lazy" width="1200" height="630"></span>'
-        + '<span class="pub-tile-body"><span class="pub-tile-title">' + escapeHtml(p.data.headline) + '</span>'
-        + '<span class="pub-tile-lead">' + escapeHtml(p.data.lead) + '</span>'
-        + '<span class="pub-tile-more">' + st.more + '</span></span></a></li>').join('');
+      const li = slice.map(p => '<li>' + tileAnchor(lang, p.data) + '</li>').join('');
       main = '<ul class="pub-list">' + li + '</ul>' + pagination(lang, page, total);
     }
     main = crumbs(lang, [{ text: st.title }]) + main;
@@ -426,10 +637,22 @@ function build(opts) {
     }
   });
 
-  // 3. Статьи
+  // 3. Статьи. Два прохода: плитка на публикацию, статья которой не создана из-за ошибки, — мягкая ошибка 20
+  const live = entries.filter(e => e.data);
+  ctx.pubAny = { ru: new Set(), thai: new Set() };
+  live.forEach(e => ctx.pubAny[e.lang].add(e.data.html));
+  let valid = new Set(live.map(e => e.lang + ':' + e.data.html));
+  let results = [];
+  for (let pass = 0; pass < 3; pass++) {
+    ctx.pubMap = { ru: new Map(), thai: new Map() };
+    live.forEach(e => { if (valid.has(e.lang + ':' + e.data.html)) ctx.pubMap[e.lang].set(e.data.html, e.data); });
+    results = live.map(e => ({ e, art: processArticle(fs.readFileSync(path.join(ctx.htmlDir, e.data.html), 'utf8'), e.lang, ctx) }));
+    const next = new Set(results.filter(r => !r.art.errors.length).map(r => r.e.lang + ':' + r.e.data.html));
+    if (next.size === valid.size) break;
+    valid = next;
+  }
   const articles = new Map();
-  entries.filter(e => e.data).forEach(e => {
-    const art = processArticle(fs.readFileSync(path.join(ctx.htmlDir, e.data.html), 'utf8'), e.lang, ctx);
+  results.forEach(({ e, art }) => {
     art.errors.forEach(x => errors.push({ code: x.code, file: e.data.html, msg: x.msg }));
     art.soft.forEach(x => errors.push({ code: x.code, file: e.data.html, msg: x.msg, soft: true }));
     if (art.errors.length) { e.data = null; return; }

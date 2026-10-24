@@ -9,8 +9,10 @@ on:
       - '_src/publications/**'
       - 'publications/covers/**'
       - 'css/publications.css'
+      - 'js/publication-widgets.js'
       - '.github/scripts/build-publications.js'
       - '.github/scripts/test-publications.js'
+      - '.github/scripts/test-widgets.js'
       - '.github/scripts/site-config.js'
   # После каждой сборки терминов: перепроверка ссылок на термины в статьях
   workflow_run:
@@ -45,6 +47,9 @@ jobs:
 
       - name: Run tests
         run: node .github/scripts/test-publications.js
+
+      - name: Run widget tests
+        run: node .github/scripts/test-widgets.js
 
       # При ошибках в публикациях шаг не останавливает job: валидные публикации всё равно
       # собираются, а красный статус ставится последним шагом.
