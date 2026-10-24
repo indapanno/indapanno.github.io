@@ -57,7 +57,7 @@ const css = read('css/publications.css') || '';
 check('стили: отметка зачёркивает текст (input:checked + span)', /\.pub-check-list\s+input\[type="checkbox"\]:checked\s*\+\s*span\s*\{[^}]*line-through/.test(css));
 check('стили: нет заголовков разделов и списка «Выполнено»', !/pub-check-title|pub-check-done|pub-check-todo/.test(css));
 check('стили: в тёмной теме рамка поповера цветом ссылок', /html:not\(\[data-theme="light"\]\)\s+\.pub-popover\s*\{[^}]*border-color:\s*var\(--link-color\)/.test(css));
-check('стили: в тёмной теме рамка кнопки закрытия цветом ссылок', /html:not\(\[data-theme="light"\]\)\s+\.pub-popover-close\s*\{[^}]*border-color:\s*var\(--link-color\)/.test(css));
+check('стили: в тёмной теме «×» цветом ссылок и без рамки', /html:not\(\[data-theme="light"\]\)\s+\.pub-popover-close\s*\{[^}]*color:\s*var\(--link-color\)/.test(css) && !/html:not\(\[data-theme="light"\]\)\s+\.pub-popover-close\s*\{[^}]*border/.test(css));
 
 // 5. Подключение в шаблонах обеих языков (ровно один раз)
 ['ru', 'thai'].forEach(l => {

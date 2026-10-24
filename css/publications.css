@@ -352,9 +352,9 @@
 
 .pub-popover-close:hover { color: var(--text); background: var(--bg-highlight); }
 
-/* Тёмная тема: поповер не сливается с фоном — рамка цветом ссылок у поповера и кнопки закрытия */
+/* Тёмная тема: поповер не сливается с фоном — рамка поповера и сам крестик цветом ссылок (у крестика рамки нет) */
 html:not([data-theme="light"]) .pub-popover { border-color: var(--link-color); }
-html:not([data-theme="light"]) .pub-popover-close { border-width: 1px; border-style: solid; border-color: var(--link-color); }
+html:not([data-theme="light"]) .pub-popover-close { color: var(--link-color); }
 
 .pub-popover a:focus-visible,
 .pub-popover-close:focus-visible,
