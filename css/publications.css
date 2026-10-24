@@ -315,6 +315,15 @@
 
 .pub-popover[hidden] { display: none; }
 
+/* Название термина — заголовок поповера, вверху слева */
+.pub-popover-title {
+  margin: 0 0 0.35rem;
+  font-weight: 700;
+  font-size: 1rem;
+  line-height: 1.3;
+  color: var(--text);
+}
+
 .pub-popover-text { margin: 0 0 0.55rem; }
 
 .pub-popover-more {
@@ -343,31 +352,22 @@
 
 .pub-popover-close:hover { color: var(--text); background: var(--bg-highlight); }
 
+/* Тёмная тема: поповер не сливается с фоном — рамка цветом ссылок у поповера и кнопки закрытия */
+html:not([data-theme="light"]) .pub-popover { border-color: var(--link-color); }
+html:not([data-theme="light"]) .pub-popover-close { border-width: 1px; border-style: solid; border-color: var(--link-color); }
+
 .pub-popover a:focus-visible,
 .pub-popover-close:focus-visible,
 .pub-body a.pub-term:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-/* Чек-лист: общий .pub-body ul (маркеры, отступы) здесь отключается */
+/* Чек-лист: один спокойный список; отмеченный пункт — чекбокс и зачёркнутый текст (общий .pub-body ul здесь отключается) */
 .pub-body .pub-check {
   background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: 10px;
-  padding: 0.8rem 1rem;
+  padding: 0.4rem 1rem;
   margin: 0 0 1.2rem;
 }
-
-.pub-body .pub-check-title {
-  margin: 0 0 0.45rem;
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--text-secondary);
-}
-
-.pub-body .pub-check-done { margin-top: 0.9rem; }
-.pub-body .pub-check-title[hidden],
-.pub-body .pub-check-list[hidden] { display: none; }
 
 .pub-body ul.pub-check-list {
   list-style: none;
@@ -398,7 +398,7 @@
 
 .pub-body .pub-check-list span { min-width: 0; }
 
-.pub-body .pub-check-done-list span {
+.pub-body .pub-check-list input[type="checkbox"]:checked + span {
   text-decoration: line-through;
   color: var(--text-secondary);
 }
@@ -469,7 +469,7 @@
 /* Узкие экраны */
 @media (max-width: 479px) {
   .pub-popover { padding-left: 0.85rem; }
-  .pub-body .pub-check { padding: 0.7rem 0.85rem; }
+  .pub-body .pub-check { padding: 0.3rem 0.85rem; }
   .pub-body .pub-faq-item summary { padding-left: 0.85rem; }
   .pub-body .pub-faq-answer { padding-left: 0.85rem; padding-right: 0.85rem; }
 }

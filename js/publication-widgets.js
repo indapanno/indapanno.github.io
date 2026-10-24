@@ -13,6 +13,7 @@
   // ---------- Поповер ----------
   var pop = null;      // открытый поповер
   var current = null;  // ссылка, к которой он открыт
+  var point = null;    // место клика в координатах страницы (null — открыто с клавиатуры)
 
   function closePopover(returnFocus) {
     if (!pop) return;
@@ -20,34 +21,60 @@
     if (pop.parentNode) pop.parentNode.removeChild(pop);
     pop = null;
     current = null;
+    point = null;
     if (link) {
       link.setAttribute('aria-expanded', 'false');
       if (returnFocus) link.focus();
     }
   }
 
+  // Строка ссылки, по которой кликнули: ссылка из нескольких слов может переноситься на несколько строк
+  function pickRect(link) {
+    var rects = link.getClientRects();
+    if (!rects.length) return null;
+    if (!point) return rects[0];
+    var x = point.x - window.pageXOffset, y = point.y - window.pageYOffset;
+    var best = rects[0], bestD = Infinity;
+    for (var i = 0; i < rects.length; i++) {
+      var r = rects[i];
+      var dx = x < r.left ? r.left - x : (x > r.right ? x - r.right : 0);
+      var dy = y < r.top ? r.top - y : (y > r.bottom ? y - r.bottom : 0);
+      var d = dx * dx + dy * dy;
+      if (d < bestD) { bestD = d; best = r; }
+    }
+    return best;
+  }
+
   function position() {
     if (!pop || !current) return;
-    var rects = current.getClientRects();
-    if (!rects.length) return;
-    var first = rects[0], last = rects[rects.length - 1];
+    var rect = pickRect(current);
+    if (!rect) return;
     var vw = doc.documentElement.clientWidth, vh = window.innerHeight;
     var w = pop.offsetWidth, h = pop.offsetHeight;
-    var left = Math.max(MARGIN, Math.min(first.left, vw - w - MARGIN));
-    var below = vh - last.bottom - 8, above = first.top - 8;
-    var top = (h > below && above > below) ? first.top - h - 8 : last.bottom + 8;
+    var anchorX = point ? point.x - window.pageXOffset - MARGIN : rect.left;
+    var left = Math.max(MARGIN, Math.min(anchorX, vw - w - MARGIN));
+    var below = vh - rect.bottom - 8, above = rect.top - 8;
+    var top = (h > below && above > below) ? rect.top - h - 8 : rect.bottom + 8;
     pop.style.left = Math.round(left + window.pageXOffset) + 'px';
     pop.style.top = Math.round(top + window.pageYOffset) + 'px';
   }
 
-  function openPopover(link) {
+  function openPopover(link, pointer) {
     closePopover(false);
     var p = doc.createElement('div');
     p.className = 'pub-popover';
     p.setAttribute('role', 'dialog');
-    p.setAttribute('aria-label', link.textContent.trim());
+    p.setAttribute('aria-label', (link.getAttribute('data-title') || link.textContent).trim());
     p.tabIndex = -1;
     p.style.outline = 'none';
+
+    var title = link.getAttribute('data-title');
+    var head = null;
+    if (title) {
+      head = doc.createElement('p');
+      head.className = 'pub-popover-title';
+      head.textContent = title;
+    }
 
     var text = doc.createElement('p');
     text.className = 'pub-popover-text';
@@ -67,6 +94,7 @@
     close.textContent = '\u00d7';
     close.addEventListener('click', function () { closePopover(true); });
 
+    if (head) p.appendChild(head);
     p.appendChild(text);
     p.appendChild(more);
     p.appendChild(close);
@@ -74,6 +102,7 @@
 
     pop = p;
     current = link;
+    point = pointer || null;
     link.setAttribute('aria-expanded', 'true');
     position();
     p.focus({ preventScroll: true });
@@ -85,7 +114,8 @@
     if (link) {
       if (e.defaultPrevented || e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
       e.preventDefault();
-      if (current === link) closePopover(false); else openPopover(link);
+      if (current === link) closePopover(false);
+      else openPopover(link, (e.clientX || e.clientY) ? { x: e.clientX + window.pageXOffset, y: e.clientY + window.pageYOffset } : null);
       return;
     }
     if (pop && !pop.contains(t)) closePopover(false);
@@ -161,64 +191,29 @@
   }
 
   function initChecklist(box) {
-    var lists = box.querySelectorAll('.pub-check-list');
-    var todo = null, done = box.querySelector('.pub-check-done-list');
-    for (var k = 0; k < lists.length; k++) if (lists[k] !== done) { todo = lists[k]; break; }
-    var todoTitle = box.querySelector('.pub-check-title.pub-check-todo');
-    var doneTitle = box.querySelector('.pub-check-title.pub-check-done');
-    if (!todo || !done) return;
-
+    var list = box.querySelector('.pub-check-list');
+    if (!list) return;
     var key = KEY + pageName() + ':' + (box.getAttribute('data-check') || '1');
     var items = [];
-    var lis = todo.children;
+    var lis = list.children;
     for (var i = 0; i < lis.length; i++) {
       var span = lis[i].querySelector('span');
-      items.push({ li: lis[i], input: lis[i].querySelector('input[type="checkbox"]'), order: i, fp: fingerprint(span ? span.textContent : '') });
+      items.push({ input: lis[i].querySelector('input[type="checkbox"]'), fp: fingerprint(span ? span.textContent : '') });
     }
 
-    function refresh() {
-      if (todoTitle) todoTitle.hidden = todo.children.length === 0;
-      if (doneTitle) doneTitle.hidden = done.children.length === 0;
-      done.hidden = done.children.length === 0;
-      todo.hidden = todo.children.length === 0;
-    }
-
+    // Отмеченные пункты (отпечатки текстов) → в память браузера; пункты остаются на своих местах
     function persist() {
       var marks = [];
-      for (var j = 0; j < done.children.length; j++) {
-        for (var m = 0; m < items.length; m++) if (items[m].li === done.children[j]) marks.push(items[m].fp);
-      }
+      items.forEach(function (item) { if (item.input && item.input.checked) marks.push(item.fp); });
       saveMarks(key, marks);
-    }
-
-    function place(item, isDone) {
-      var hadFocus = doc.activeElement === item.input;
-      if (isDone) {
-        done.appendChild(item.li);
-      } else {
-        var before = null;
-        for (var n = 0; n < todo.children.length; n++) {
-          var other = null;
-          for (var q = 0; q < items.length; q++) if (items[q].li === todo.children[n]) other = items[q];
-          if (other && other.order > item.order) { before = other.li; break; }
-        }
-        todo.insertBefore(item.li, before);
-      }
-      item.input.checked = isDone;
-      if (hadFocus) item.input.focus({ preventScroll: true });
     }
 
     var saved = loadMarks(key);
     items.forEach(function (item) {
       if (!item.input) return;
-      if (saved.indexOf(item.fp) !== -1) place(item, true);
-      item.input.addEventListener('change', function () {
-        place(item, item.input.checked);
-        refresh();
-        persist();
-      });
+      if (saved.indexOf(item.fp) !== -1) item.input.checked = true;
+      item.input.addEventListener('change', persist);
     });
-    refresh();
   }
 
   function init() {

@@ -274,12 +274,13 @@ const noWidgetLeft = a => !a.includes('data-widget');
   check('чек-лист: без ошибок', r.errors.length === 0, JSON.stringify(r.errors));
   check('чек-лист: обёртка заменена, нет data-widget', a.includes('<div class="pub-check" data-check="1">') && noWidgetLeft(a));
   check('чек-лист: нумерация 1 и 2', a.includes('data-check="1"') && a.includes('data-check="2"') && count(a, 'class="pub-check"') === 2);
-  check('чек-лист: заголовки разделов (выполнено скрыто)', a.includes('<p class="pub-check-title pub-check-todo">Не выполнено</p>') && a.includes('<p class="pub-check-title pub-check-done" hidden>Выполнено</p>'));
+  const chk = (a.match(/<div class="pub-check"[\s\S]*?<\/ul><\/div>/) || [''])[0];
+  check('чек-лист: без заголовков разделов и «Выполнено» (простой список)', chk.length > 50 && !chk.includes('pub-check-title') && !chk.includes('pub-check-done') && !chk.includes('hidden') && !chk.includes('Не выполнено') && !chk.includes('Выполнено'));
   check('чек-лист: пункты label+checkbox (работает без JS)', a.includes('<li><label><input type="checkbox"><span>Действие 1</span></label></li>') && a.includes('<span>Действие <strong>2</strong></span>'));
-  check('чек-лист: пустой скрытый список «Выполнено»', a.includes('<ul class="pub-check-list pub-check-done-list" hidden></ul>'));
+  check('чек-лист: разметка — один <ul class="pub-check-list"> в обёртке', a.includes('<div class="pub-check" data-check="1"><ul class="pub-check-list"><li>') && count(a, '<ul class="pub-check-list">') === 2);
   const th = makeEnv({ json: { 'publication_1_thai.json': tileTh() }, html: { 'b-one.html': BODY_TH + W.check }, covers: cov() });
   const b = th.read('b-one.html');
-  check('чек-лист thai: подписи', th.errors.length === 0 && b.includes('>ยังไม่ได้ทำ</p>') && b.includes('>ทำแล้ว</p>') && !b.includes('Не выполнено'), JSON.stringify(th.errors));
+  check('чек-лист thai: без подписей разделов', th.errors.length === 0 && !b.includes('ยังไม่ได้ทำ') && !b.includes('ทำแล้ว') && b.includes('<ul class="pub-check-list">'), JSON.stringify(th.errors));
   const h = one('<h2>Один</h2>' + BODY + W.check + '<h2>Два</h2>' + BODY + '<h2>Три</h2>' + BODY);
   check('чек-лист между разделами: якоря s1..s3 и оглавление целы', h.errors.length === 0 && h.read('a-one.html').includes('<h2 id="s3">Три</h2>') && h.read('a-one.html').includes('class="pub-toc"'), JSON.stringify(h.errors));
 }
@@ -407,6 +408,33 @@ const noWidgetLeft = a => !a.includes('data-widget');
   const fl = makeEnv({ json: { 'publication_1_ru.json': tile() }, covers: cov(), terms: { 't1_ru.json': { interpretation: 'Строка\nвторая   строка' } },
     html: { 'a-one.html': BODY + '<p><a data-term="t1">один</a></p>' } });
   check('поповер: перевод строки не ломает атрибут', fl.errors.length === 0 && !/data-interp="[^"]*\n/.test(fl.read('a-one.html')), JSON.stringify(fl.errors));
+}
+
+// 16. Поповер: название термина (data-title из term_ru / term_thai карточки)
+{
+  const terms = {
+    't1_ru.json': { term_ru: 'путхуджана', interpretation: 'Толк.' },
+    't2_ru.json': { term_ru: 'a"b & <c>   d', interpretation: 'Толк2.' },
+    't3_ru.json': { term_ru: 'танха' },
+    't4_ru.json': { interpretation: 'Без названия.' },
+    't5_ru.json': { term_ru: '   ', interpretation: 'Пробелы.' },
+    't6_ru.json': { term_ru: 'четыре истины', term_thai: 'ไม่ใช่', interpretation: 'Составное.' }
+  };
+  const r = makeEnv({ json: { 'publication_1_ru.json': tile() }, covers: cov(), terms,
+    html: { 'a-one.html': BODY + '<p><a data-term="t1">1</a> <a data-term="t2">2</a> <a data-term="t3">3</a> <a data-term="t4">4</a> <a data-term="t5">5</a> <a data-term="t6">6</a></p>' } });
+  const a = r.read('a-one.html');
+  const L = 'target="_blank" rel="noopener noreferrer"';
+  check('название: ru с заглавной, перед толкованием', a.includes('<a href="/terms/t1_ru.html" ' + L + ' class="pub-term" data-title="Путхуджана" data-interp="Толк.">1</a>'), (a.match(/<a href="\/terms\/t1[^>]*>/) || [])[0]);
+  check('название: экранирование и пробелы', a.includes('data-title="A&quot;b &amp; &lt;c&gt; d" data-interp="Толк2."'), (a.match(/<a href="\/terms\/t2[^>]*>/) || [])[0]);
+  check('название без толкования: обычная ссылка, без data-title', a.includes('<a href="/terms/t3_ru.html" ' + L + '>3</a>'));
+  check('толкование без названия: поповер без data-title', a.includes('<a href="/terms/t4_ru.html" ' + L + ' class="pub-term" data-interp="Без названия.">4</a>'));
+  check('пустое название (пробелы): без data-title', a.includes('<a href="/terms/t5_ru.html" ' + L + ' class="pub-term" data-interp="Пробелы.">5</a>'));
+  check('название: заглавная только первая буква, term_thai не берётся', a.includes('data-title="Четыре истины" data-interp="Составное."') && !a.includes('ไม่ใช่'));
+  const th = makeEnv({ json: { 'publication_1_thai.json': tileTh() }, covers: cov(),
+    terms: { 't2_ru.json': { term_ru: 'русское', interpretation: 'рус' }, 't2_thai.json': { term_thai: 'ตัณหา', interpretation: 'คำอธิบาย' } },
+    html: { 'b-one.html': BODY_TH + '<p><a data-term="t2">คำ</a></p>' } });
+  const b = th.read('b-one.html');
+  check('название thai: из term_thai, без смены регистра', th.errors.length === 0 && b.includes('class="pub-term" data-title="ตัณหา" data-interp="คำอธิบาย"') && !b.includes('Русское'), JSON.stringify(th.errors));
 }
 
 console.log('Пройдено: ' + passed + ', провалено: ' + failed);

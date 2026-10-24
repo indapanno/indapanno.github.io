@@ -32,7 +32,6 @@ const S = {
     back1: '← Назад', next1: 'Далее →', pages: 'Страницы', pageWord: 'страница',
     toc: 'Содержание',
     more: 'Читать далее',
-    check: { todo: 'Не выполнено', done: 'Выполнено' },
     callout: { key: 'Ключевая мысль', practice: 'Практика', important: 'Важно' }
   },
   thai: {
@@ -42,26 +41,29 @@ const S = {
     back1: '← ย้อนกลับ', next1: 'ถัดไป →', pages: 'หน้า', pageWord: 'หน้า',
     toc: 'สารบัญ',
     more: 'อ่านต่อ',
-    check: { todo: 'ยังไม่ได้ทำ', done: 'ทำแล้ว' },
     callout: { key: 'ประเด็นสำคัญ', practice: 'ลงมือปฏิบัติ', important: 'โปรดทราบ' }
   }
 };
 
 // --- Данные обычных терминов (только чтение) ---
 function loadTerms(termsDir) {
-  const out = { ru: new Map(), thai: new Map() }; // id -> interpretation (для поповера)
+  const out = { ru: new Map(), thai: new Map() }; // id -> { interp, name } (толкование и название для поповера)
   const dir = path.join(termsDir, 'json');
   if (!fs.existsSync(dir)) return out;
   LANGS.forEach(lang => {
     const suffix = '_' + lang + '.json';
     fs.readdirSync(dir).filter(f => f.endsWith(suffix) && !f.startsWith('index'))
       .forEach(f => {
-        let interp = '';
+        let interp = '', name = '';
         try {
           const d = JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8').replace(/^\uFEFF/, ''));
           if (d && typeof d.interpretation === 'string') interp = d.interpretation;
+          const nm = d && d[lang === 'thai' ? 'term_thai' : 'term_ru'];
+          if (typeof nm === 'string') name = nm.replace(/\s+/g, ' ').trim();
         } catch (e) { /* карточку проверяет сборка терминов */ }
-        out[lang].set(f.slice(0, -suffix.length), interp);
+        // Русское название — с заглавной буквы; тайское как есть
+        if (name && lang === 'ru') name = name.charAt(0).toUpperCase() + name.slice(1);
+        out[lang].set(f.slice(0, -suffix.length), { interp, name });
       });
   });
   return out;
@@ -297,12 +299,8 @@ function renderWidget(kind, attrs, inner, lang, ctx, wstate) {
       lis.push('<li><label><input type="checkbox"><span>' + r.html + '</span></label></li>');
     }
     wstate.check++;
-    const st = S[lang].check;
     return { soft, text, html: '<div class="pub-check" data-check="' + wstate.check + '">'
-      + '<p class="pub-check-title pub-check-todo">' + st.todo + '</p>'
-      + '<ul class="pub-check-list">' + lis.join('') + '</ul>'
-      + '<p class="pub-check-title pub-check-done" hidden>' + st.done + '</p>'
-      + '<ul class="pub-check-list pub-check-done-list" hidden></ul></div>' };
+      + '<ul class="pub-check-list">' + lis.join('') + '</ul></div>' };
   }
 
   if (kind === 'faq') {
@@ -426,9 +424,10 @@ function processArticle(src, lang, ctx, opts) {
         const id = attrs['data-term'].trim();
         if (!ctx.terms[lang].has(id)) { soft.push({ code: 13, msg: 'ссылка на термин «' + id + '»: термина нет или он не переведён на язык статьи; ссылка заменена текстом' }); drop = true; }
         else {
-          const interp = (ctx.terms[lang].get(id) || '').replace(/\s+/g, ' ').trim();
+          const info = ctx.terms[lang].get(id) || {};
+          const interp = (info.interp || '').replace(/\s+/g, ' ').trim();
           open = '<a href="' + escAttr(cfg.cardPath(id, lang)) + '" target="_blank" rel="noopener noreferrer"'
-            + (interp ? ' class="pub-term" data-interp="' + escData(interp) + '"' : '') + '>';
+            + (interp ? ' class="pub-term"' + (info.name ? ' data-title="' + escData(info.name) + '"' : '') + ' data-interp="' + escData(interp) + '"' : '') + '>';
         }
       } else if ('href' in attrs) {
         const href = attrs.href.trim();
