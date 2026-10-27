@@ -26,6 +26,21 @@
       "later_count": 2
     },
     {
+      "id": "ariyakantasila",
+      "term_thai": "อริยกันตศีล",
+      "later_count": 1
+    },
+    {
+      "id": "ariyasaccanadassana",
+      "term_thai": "อริยสจฺจานทสฺสนํ",
+      "later_count": 1
+    },
+    {
+      "id": "ariyasavaka",
+      "term_thai": "อริยสาวก",
+      "later_count": 1
+    },
+    {
       "id": "avijja",
       "term_thai": "อวิชชา",
       "later_count": 1
@@ -36,8 +51,38 @@
       "later_count": 1
     },
     {
+      "id": "bhavana",
+      "term_thai": "ภาวนา",
+      "later_count": 1
+    },
+    {
+      "id": "caga",
+      "term_thai": "จาคะ",
+      "later_count": 1
+    },
+    {
       "id": "cattariariyasaccani",
       "term_thai": "จัตตาริ อริยสัจจานิ",
+      "later_count": 1
+    },
+    {
+      "id": "dana",
+      "term_thai": "ทาน",
+      "later_count": 1
+    },
+    {
+      "id": "dhamma",
+      "term_thai": "ธรรม",
+      "later_count": 2
+    },
+    {
+      "id": "dhammacakkhu",
+      "term_thai": "ธรรมจักษุ",
+      "later_count": 1
+    },
+    {
+      "id": "dhammadasa",
+      "term_thai": "ธรรมาทาส",
       "later_count": 1
     },
     {
@@ -126,9 +171,19 @@
       "later_count": 1
     },
     {
+      "id": "nibbana",
+      "term_thai": "นิพพาน",
+      "later_count": 2
+    },
+    {
       "id": "nirodha",
       "term_thai": "นิโรธ",
       "later_count": 1
+    },
+    {
+      "id": "nivarana",
+      "term_thai": "นิวรณ์",
+      "later_count": 2
     },
     {
       "id": "opanayiko",
@@ -141,9 +196,24 @@
       "later_count": 1
     },
     {
+      "id": "pancasila",
+      "term_thai": "เบญจศีล",
+      "later_count": 1
+    },
+    {
+      "id": "panna",
+      "term_thai": "ปัญญา",
+      "later_count": 2
+    },
+    {
       "id": "paticcasamuppada",
       "term_thai": "ปฏิจจสมุปบาท",
       "later_count": 2
+    },
+    {
+      "id": "peta",
+      "term_thai": "เปรต",
+      "later_count": 1
     },
     {
       "id": "phalanana",
@@ -166,14 +236,29 @@
       "later_count": 1
     },
     {
+      "id": "saddha",
+      "term_thai": "ศรัทธา",
+      "later_count": 2
+    },
+    {
       "id": "sakadagami",
       "term_thai": "สกทาคามี",
       "later_count": 2
     },
     {
+      "id": "sakkayaditthi",
+      "term_thai": "สักกายทิฏฐิ",
+      "later_count": 1
+    },
+    {
       "id": "salayatana",
       "term_thai": "สฬายตนะ",
       "later_count": 2
+    },
+    {
+      "id": "samadhi",
+      "term_thai": "สมาธิ",
+      "later_count": 1
     },
     {
       "id": "sammakammanta",
@@ -186,9 +271,19 @@
       "later_count": 1
     },
     {
+      "id": "samyojana",
+      "term_thai": "สังโยชน์",
+      "later_count": 1
+    },
+    {
       "id": "sanditthiko",
       "term_thai": "สันทิฏฐิโก",
       "later_count": 2
+    },
+    {
+      "id": "sangha",
+      "term_thai": "สงฆ์",
+      "later_count": 1
     },
     {
       "id": "sankhara",
@@ -196,8 +291,28 @@
       "later_count": 2
     },
     {
+      "id": "satipatthana",
+      "term_thai": "สติปัฏฐาน",
+      "later_count": 2
+    },
+    {
+      "id": "sila",
+      "term_thai": "ศีล",
+      "later_count": 1
+    },
+    {
+      "id": "silabbataparamasa",
+      "term_thai": "สีลัพพตปรามาส",
+      "later_count": 1
+    },
+    {
       "id": "sotapanna",
       "term_thai": "โสดาบัน",
+      "later_count": 1
+    },
+    {
+      "id": "sotapatti",
+      "term_thai": "โสดาปัตติ",
       "later_count": 1
     },
     {
@@ -221,9 +336,19 @@
       "later_count": 2
     },
     {
+      "id": "vicikiccha",
+      "term_thai": "วิจิกิจฉา",
+      "later_count": 1
+    },
+    {
       "id": "vinnana",
       "term_thai": "วิญญาณ",
       "later_count": 2
+    },
+    {
+      "id": "yonisomanasikara",
+      "term_thai": "โยนิโสมนสิการ",
+      "later_count": 1
     }
   ]
 }

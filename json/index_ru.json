@@ -26,6 +26,21 @@
       "later_count": 2
     },
     {
+      "id": "ariyakantasila",
+      "term_ru": "Ариякантани силани",
+      "later_count": 1
+    },
+    {
+      "id": "ariyasaccanadassana",
+      "term_ru": "Ариясаччана дассанам",
+      "later_count": 1
+    },
+    {
+      "id": "ariyasavaka",
+      "term_ru": "Ариясавака",
+      "later_count": 1
+    },
+    {
       "id": "avijja",
       "term_ru": "Авиджжа",
       "later_count": 1
@@ -36,8 +51,38 @@
       "later_count": 1
     },
     {
+      "id": "bhavana",
+      "term_ru": "Бхавана",
+      "later_count": 1
+    },
+    {
+      "id": "caga",
+      "term_ru": "Чага",
+      "later_count": 1
+    },
+    {
       "id": "cattariariyasaccani",
       "term_ru": "Чаттари ариясаччани",
+      "later_count": 1
+    },
+    {
+      "id": "dana",
+      "term_ru": "Дана",
+      "later_count": 1
+    },
+    {
+      "id": "dhamma",
+      "term_ru": "Дхамма",
+      "later_count": 2
+    },
+    {
+      "id": "dhammacakkhu",
+      "term_ru": "Дхаммачаккху",
+      "later_count": 1
+    },
+    {
+      "id": "dhammadasa",
+      "term_ru": "Дхаммадаса",
       "later_count": 1
     },
     {
@@ -126,8 +171,18 @@
       "later_count": 1
     },
     {
+      "id": "nibbana",
+      "term_ru": "Ниббана",
+      "later_count": 2
+    },
+    {
       "id": "nirodha",
       "term_ru": "Ниродха",
+      "later_count": 2
+    },
+    {
+      "id": "nivarana",
+      "term_ru": "Ниварана",
       "later_count": 2
     },
     {
@@ -141,9 +196,24 @@
       "later_count": 1
     },
     {
+      "id": "pancasila",
+      "term_ru": "Панчасила",
+      "later_count": 1
+    },
+    {
+      "id": "panna",
+      "term_ru": "Панья",
+      "later_count": 2
+    },
+    {
       "id": "paticcasamuppada",
       "term_ru": "Патиччасамуппада",
       "later_count": 3
+    },
+    {
+      "id": "peta",
+      "term_ru": "Пета",
+      "later_count": 1
     },
     {
       "id": "phalanana",
@@ -166,13 +236,28 @@
       "later_count": 2
     },
     {
+      "id": "saddha",
+      "term_ru": "Саддха",
+      "later_count": 2
+    },
+    {
       "id": "sakadagami",
       "term_ru": "Сакадагами",
       "later_count": 1
     },
     {
+      "id": "sakkayaditthi",
+      "term_ru": "Саккая-диттхи",
+      "later_count": 1
+    },
+    {
       "id": "salayatana",
       "term_ru": "Салаятана",
+      "later_count": 1
+    },
+    {
+      "id": "samadhi",
+      "term_ru": "Самадхи",
       "later_count": 1
     },
     {
@@ -186,8 +271,18 @@
       "later_count": 0
     },
     {
+      "id": "samyojana",
+      "term_ru": "Самйоджана",
+      "later_count": 1
+    },
+    {
       "id": "sanditthiko",
       "term_ru": "Сандиттхико",
+      "later_count": 1
+    },
+    {
+      "id": "sangha",
+      "term_ru": "Сангха",
       "later_count": 1
     },
     {
@@ -196,8 +291,28 @@
       "later_count": 2
     },
     {
+      "id": "satipatthana",
+      "term_ru": "Сатипаттхана",
+      "later_count": 2
+    },
+    {
+      "id": "sila",
+      "term_ru": "Сила",
+      "later_count": 1
+    },
+    {
+      "id": "silabbataparamasa",
+      "term_ru": "Силаббата-параманса",
+      "later_count": 1
+    },
+    {
       "id": "sotapanna",
       "term_ru": "Сотапанна",
+      "later_count": 1
+    },
+    {
+      "id": "sotapatti",
+      "term_ru": "Сотапатти",
       "later_count": 1
     },
     {
@@ -221,8 +336,18 @@
       "later_count": 2
     },
     {
+      "id": "vicikiccha",
+      "term_ru": "Вичикиччха",
+      "later_count": 1
+    },
+    {
       "id": "vinnana",
       "term_ru": "Винняна",
+      "later_count": 1
+    },
+    {
+      "id": "yonisomanasikara",
+      "term_ru": "Йонисо манасикара",
       "later_count": 1
     }
   ]
