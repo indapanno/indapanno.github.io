@@ -85,7 +85,7 @@ const DIGEST_URL = SITE + '/new/2026-10-30_ru.html';
 {
   const long = 'Очень длинный заголовок публикации, который никак не помещается в уведомление целиком';
   const m = message(digest({ publications: [pub(1, long, 'Слово '.repeat(60).trim())] }), 'ru', ALL);
-  check('заголовок ≤ 60, обрезан по слову, «…»', m && m.title.length <= 60 && m.title.endsWith('…') && !/\s…$/.test(m.title) && long.startsWith(m.title.slice('Новая публикация: «'.length, -1).replace(/[…»]+$/, '').trim()), m && m.title);
+  check('заголовок ≤ 60, обрезано название по слову, «…», кавычка закрыта', m && m.title.length <= 60 && m.title.endsWith('…»') && !/\s…$/.test(m.title) && long.startsWith(m.title.slice('Новая публикация: «'.length, -1).replace(/[…»]+$/, '').trim()), m && m.title);
   check('текст ≤ 120, обрезан по слову, «…»', m && m.body.length <= 120 && m.body.endsWith('…') && /Слово…$/.test(m.body), m && m.body);
   const many = message(digest({ publications: Array.from({ length: 9 }, (_, i) => pub(i + 1, 'Довольно длинное название статьи номер ' + (i + 1))) }), 'ru', ALL);
   check('много названий: текст ≤ 120', many && many.body.length <= 120, many && many.body);

@@ -1,11 +1,16 @@
 name: News
 
-# Раздел «Что нового» (ТЗ: push_TZ.md). Независим от остальных сборок:
+# Раздел «Что нового» и рассылка пушей (ТЗ: push_TZ.md). Независим от остальных сборок:
 # читает готовый сайт и пишет только в new/, _src/news/ и sitemap_news.xml.
-# Расписание (ru 16:00 UTC, thai 12:00 UTC) и рассылка пушей — этап 5.
+# Порядок: сводка за день → страницы → коммит → ждём, пока страница сводки откроется на сайте →
+# пуши (OneSignal) → отметка «отправлено» в данных сводки. Ошибка рассылки не откатывает сводку и страницы.
 on:
+  # Ежедневно: ru — 19:00 по Москве (16:00 UTC), thai — 19:00 по Бангкоку (12:00 UTC).
+  # GitHub может запускать расписание с задержкой до часа — это допустимо.
+  schedule:
+    - cron: '0 16 * * *'
+    - cron: '0 12 * * *'
   # Правки сборщика или шаблонов раздела: только пересборка страниц
-  # (и снимки, если их ещё нет — первый запуск, без сводки)
   push:
     branches: [main]
     paths:
@@ -25,6 +30,15 @@ on:
         description: 'Дата сводки ГГГГ-ММ-ДД (пусто — сегодня по Москве для ru, по Бангкоку для thai)'
         required: false
         default: ''
+      send:
+        description: 'Пуши: none — не отправлять; test — только тестерам; all — всем подписчикам'
+        type: choice
+        options: [none, test, all]
+        default: none
+      resend:
+        description: 'Повторить отправку уже отправленной сводки (дошлёт недошедшие группы)'
+        type: boolean
+        default: false
 
 # Сборки идут по очереди, без отмены уже идущих
 concurrency:
@@ -49,12 +63,45 @@ jobs:
           node-version: '20'
 
       - name: Run tests
-        run: node .github/scripts/test-news.js
+        run: |
+          node .github/scripts/test-news.js
+          node .github/scripts/test-push.js
+
+      # Что делать в этом запуске: язык, дата, режим рассылки
+      - name: Resolve run parameters
+        id: run
+        env:
+          EVENT: ${{ github.event_name }}
+          SCHEDULE: ${{ github.event.schedule }}
+          IN_LANG: ${{ github.event.inputs.lang }}
+          IN_DATE: ${{ github.event.inputs.date }}
+          IN_SEND: ${{ github.event.inputs.send }}
+          IN_RESEND: ${{ github.event.inputs.resend }}
+        run: |
+          case "$EVENT" in
+            schedule)
+              if [ "$SCHEDULE" = '0 16 * * *' ]; then lang=ru; else lang=thai; fi
+              mode=all; resend=false ;;
+            workflow_dispatch)
+              lang="$IN_LANG"; mode="$IN_SEND"; resend="$IN_RESEND" ;;
+            *)
+              lang=pages; mode=none; resend=false ;;
+          esac
+          [ "$lang" = pages ] && mode=none
+          date="$IN_DATE"
+          if [ "$lang" != pages ] && [ -z "$date" ]; then
+            date=$(node -e "console.log(require('./.github/scripts/build-news.js').todayIn('$lang'))")
+          fi
+          echo "lang=$lang" >> "$GITHUB_OUTPUT"
+          echo "date=$date" >> "$GITHUB_OUTPUT"
+          echo "mode=$mode" >> "$GITHUB_OUTPUT"
+          echo "resend=$resend" >> "$GITHUB_OUTPUT"
+          echo "Язык: $lang, дата: ${date:-—}, рассылка: $mode, повтор: $resend"
 
       - name: Build news
         env:
-          NEWS_LANG: ${{ github.event.inputs.lang || 'pages' }}
-          NEWS_DATE: ${{ github.event.inputs.date }}
+          NEWS_LANG: ${{ steps.run.outputs.lang }}
+          NEWS_DATE: ${{ steps.run.outputs.date }}
         run: node .github/scripts/build-news.js
 
       - name: Commit and push generated files
@@ -66,6 +113,51 @@ jobs:
             echo "Нет изменений для коммита"
           else
             git commit -m "Автосборка «Что нового» [skip ci]"
+            ok=0
+            for i in 1 2 3 4 5 6; do
+              if git pull --rebase origin ${{ github.ref_name }} && git push origin HEAD; then ok=1; break; fi
+              echo "Отправка не удалась (попытка $i), повтор"; sleep $((RANDOM % 5 + 2))
+            done
+            [ "$ok" = 1 ] || exit 1
+          fi
+
+      # Пуш ведёт на страницу сводки — ждём, пока GitHub Pages её опубликует (до 10 минут)
+      - name: Wait for digest page
+        id: wait
+        if: steps.run.outputs.mode != 'none'
+        env:
+          LANG_: ${{ steps.run.outputs.lang }}
+          DATE_: ${{ steps.run.outputs.date }}
+        run: |
+          f="_src/news/digests/${DATE_}_${LANG_}.json"
+          if [ ! -f "$f" ]; then echo "Сводки $DATE_ $LANG_ нет — рассылать нечего"; echo "has=0" >> "$GITHUB_OUTPUT"; exit 0; fi
+          echo "has=1" >> "$GITHUB_OUTPUT"
+          url="https://indapanno.github.io/new/${DATE_}_${LANG_}.html"
+          for i in $(seq 1 40); do
+            if curl -sf -o /dev/null "https://indapanno.github.io/new/${DATE_}_${LANG_}.html"; then echo "Страница сводки открывается: $url"; exit 0; fi
+            sleep 15
+          done
+          echo "::error title=Рассылка пушей::страница $url не открылась за 10 минут; пуши не отправлены (повтор — ручным запуском)"
+          exit 1
+
+      - name: Send push notifications
+        if: steps.run.outputs.mode != 'none' && steps.wait.outputs.has == '1'
+        env:
+          ONESIGNAL_REST_API_KEY: ${{ secrets.ONESIGNAL_REST_API_KEY }}
+          NEWS_LANG: ${{ steps.run.outputs.lang }}
+          NEWS_DATE: ${{ steps.run.outputs.date }}
+          PUSH_MODE: ${{ steps.run.outputs.mode }}
+          PUSH_RESEND: ${{ steps.run.outputs.resend }}
+        run: node .github/scripts/push/send.js
+
+      - name: Commit "sent" mark
+        if: steps.run.outputs.mode == 'all' && steps.wait.outputs.has == '1'
+        run: |
+          git add -A -- _src/news/digests
+          if git diff --staged --quiet; then
+            echo "Нет изменений для коммита"
+          else
+            git commit -m "Пуши отправлены: ${{ steps.run.outputs.date }} ${{ steps.run.outputs.lang }} [skip ci]"
             ok=0
             for i in 1 2 3 4 5 6; do
               if git pull --rebase origin ${{ github.ref_name }} && git push origin HEAD; then ok=1; break; fi
