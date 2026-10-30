@@ -32,6 +32,7 @@ const S = {
     back1: '← Назад', next1: 'Далее →', pages: 'Страницы', pageWord: 'страница',
     toc: 'Содержание',
     more: 'Читать далее',
+    cta: { q: 'Хотите узнавать о новых публикациях?', note: 'Не чаще раза в день.', btn: 'Подписаться' },
     callout: { key: 'Ключевая мысль', practice: 'Практика', important: 'Важно' }
   },
   thai: {
@@ -41,6 +42,7 @@ const S = {
     back1: '← ย้อนกลับ', next1: 'ถัดไป →', pages: 'หน้า', pageWord: 'หน้า',
     toc: 'สารบัญ',
     more: 'อ่านต่อ',
+    cta: { q: 'อยากรู้เมื่อมีบทความใหม่ไหม?', note: 'แจ้งเตือนไม่เกินวันละครั้ง', btn: 'ติดตาม' },
     callout: { key: 'ประเด็นสำคัญ', practice: 'ลงมือปฏิบัติ', important: 'โปรดทราบ' }
   }
 };
@@ -590,7 +592,10 @@ function articlePage(lang, pub, art, layout) {
     + '<figure class="pub-cover"><img src="' + escapeHtml(cfg.coverPath(d.cover)) + '" alt="' + escAttr(d.headline) + '" width="1200" height="630"></figure>'
     + '<p class="pub-lead">' + escapeHtml(d.lead) + '</p>'
     + toc
-    + '<div class="pub-body">' + art.html + '</div></article>';
+    + '<div class="pub-body">' + art.html + '</div></article>'
+    // Подписка на уведомления: карточку показывает js/push.js (если браузер умеет веб-пуш и читатель не подписан)
+    + '<aside class="push-cta" data-push-cta hidden><p>' + st.cta.q + '<small>' + st.cta.note + '</small></p>'
+    + '<button type="button" class="push-btn" data-push-open>' + st.cta.btn + '</button></aside>';
   const url = cfg.articleUrl(d.html);
   const head = metaTags(lang, {
     url, desc: clipMeta(d.lead, META_DESC_MAX, lang), type: 'article', title: d.headline, image: cfg.coverUrl(d.cover)

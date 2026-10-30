@@ -235,5 +235,20 @@ function langTarget(p, target) { // повторяет buildTargetUrl из js/la
   check('A12: robots.txt ссылается на sitemap_news.xml', /^Sitemap: https:\/\/indapanno\.github\.io\/sitemap_news\.xml$/m.test(fs.existsSync(path.join(ROOT, 'robots.txt')) ? read('robots.txt') : ''));
 }
 
+// A13: подписка на уведомления — на всех страницах с меню подключены push.js, стили, манифест своего языка и иконка
+{
+  const withMenu = files.filter(f => read(f).includes('id="nav-menu-list"'));
+  const need = l => ['<script src="/js/push-config.js"></script>', '<script src="/js/push.js"></script>', '<link rel="stylesheet" href="/css/push.css">',
+    '<link rel="manifest" href="/manifest_' + l + '.webmanifest">', '<link rel="apple-touch-icon" href="/img/apple-touch-icon.png">'];
+  const bad = withMenu.filter(f => { const h = read(f); return need(pageLang(h)).some(x => !h.includes(x)); });
+  check('A13: подписка, манифест и иконка подключены на всех страницах с меню', bad.length === 0, bad.length + ': ' + bad.slice(0, 6).join(' | '));
+  const okManifest = ['ru', 'thai'].every(l => { try { const m = JSON.parse(read('manifest_' + l + '.webmanifest')); return m.icons.every(i => fs.existsSync(path.join(ROOT, i.src.slice(1)))) && fs.existsSync(path.join(ROOT, m.start_url === '/' ? 'index.html' : m.start_url.slice(1))); } catch (e) { return false; } });
+  check('A13: манифесты ru/thai корректны, иконки и стартовые страницы существуют', okManifest);
+  check('A13: service worker OneSignal в корне', fs.existsSync(path.join(ROOT, 'OneSignalSDKWorker.js')));
+  const arts = files.filter(f => /^publications\/[^/]+\.html$/.test(f) && !/^publications\/(index|publications_)/.test(f) && !info[f].redirect);
+  const noCta = arts.filter(f => !read(f).includes('data-push-cta'));
+  check('A13: карточка подписки в конце каждой статьи', arts.length > 0 && noCta.length === 0, noCta.join(','));
+}
+
 console.log(failed ? 'ПРОВАЛЕНО: ' + failed + ', пройдено: ' + passed : 'ВСЕ ТЕСТЫ ПРОЙДЕНЫ: ' + passed);
 process.exitCode = failed ? 1 : 0;
