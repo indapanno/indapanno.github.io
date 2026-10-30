@@ -11,6 +11,7 @@
     "avijja",
     "bhava",
     "bhavana",
+    "brahmavihara",
     "caga",
     "cattariariyasaccani",
     "dana",
@@ -30,9 +31,12 @@
     "kammapatisarana",
     "kammassaka",
     "kammayoni",
+    "karuna",
     "kusalakamma",
     "magga",
     "manokamma",
+    "metta",
+    "mudita",
     "namarupa",
     "nibbana",
     "nirodha",
@@ -66,6 +70,7 @@
     "svakkhato",
     "tanha",
     "upadana",
+    "upekkha",
     "vedana",
     "vicikiccha",
     "vinnana",
@@ -76,7 +81,8 @@
     2,
     3,
     4,
-    5
+    5,
+    6
   ],
   "publications": [
     7
