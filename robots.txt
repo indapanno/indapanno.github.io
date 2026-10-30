@@ -3,3 +3,4 @@ Allow: /
 
 Sitemap: https://indapanno.github.io/sitemap.xml
 Sitemap: https://indapanno.github.io/sitemap_publications.xml
+Sitemap: https://indapanno.github.io/sitemap_bundles.xml

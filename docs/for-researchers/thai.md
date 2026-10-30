@@ -77,6 +77,7 @@ indapanno.github.io/                  # root ของ repository = root ขอ�
 │   └── <ชื่อ>.html              # สร้างอัตโนมัติ: หน้าบทความ
 ├── sitemap.xml                 # สร้างอัตโนมัติ ห้ามแก้ด้วยมือ
 ├── sitemap_publications.xml    # สร้างอัตโนมัติ ห้ามแก้ด้วยมือ
+├── sitemap_bundles.xml         # สร้างอัตโนมัติ ห้ามแก้ด้วยมือ
 ├── robots.txt, 404.html, _config.yml, .gitignore   # แก้ด้วยมือ
 ├── yandex_<code>.html          # ไฟล์ยืนยันความเป็นเจ้าของ (Yandex) อย่าแตะต้อง
 ├── _src/                       # ไฟล์ต้นทางของการ build; Pages ไม่เผยแพร่ (โฟลเดอร์ขึ้นต้นด้วย «_»)
@@ -113,11 +114,11 @@ indapanno.github.io/                  # root ของ repository = root ขอ�
 ไปยังที่อยู่ใหม่) ส่วนเดโม `share/branching/` ยังอยู่ที่นั่นโดยไม่เปลี่ยนแปลง
 
 **กฎสำคัญ:** `terms/`, `bundle/`, `index.html`, `nav_*.html`, `publications/*.html`,
-`sitemap.xml` และ `sitemap_publications.xml` เป็นผลลัพธ์จากการ build การแก้ด้วยมือจะอยู่ได้
+`sitemap.xml`, `sitemap_publications.xml` และ `sitemap_bundles.xml` เป็นผลลัพธ์จากการ build การแก้ด้วยมือจะอยู่ได้
 จนกว่าจะมีการ build ครั้งถัดไป แล้วจะถูกเขียนทับ ไฟล์ที่แก้ไขด้วยมือได้มีเพียง `_src/**`,
 `json/<id>_*.json`, `js/*.js`, `css/*.css`, `schema/*.json`, `how/how-to-*.html`, `my/progress_*.html`,
 `404.html`, `robots.txt`, `docs/**` และ `publications/covers/**` โดย `terms/`, `index.html`,
-`nav_*.html` และ `sitemap.xml` เป็นผลลัพธ์ของการ build คำศัพท์ `bundle/` ของการ build ชุดศัพท์ที่เกี่ยวข้อง
+`nav_*.html` และ `sitemap.xml` เป็นผลลัพธ์ของการ build คำศัพท์ `bundle/` และ `sitemap_bundles.xml` ของการ build ชุดศัพท์ที่เกี่ยวข้อง
 `publications/*.html` และ `sitemap_publications.xml` ของการ build บทความ การ build ทุกแบบทำงานฝั่ง GitHub (Actions)
 เท่านั้น ไม่ต้อง build และ commit ไฟล์ที่สร้างอัตโนมัติด้วยตนเองในเครื่อง
 
@@ -250,7 +251,7 @@ Node) ผ่านการเทียบผลกับ library อ้าง�
 `terms` ในไฟล์ `_ru` และ `_thai` ของชุดเดียวกันต้องตรงกันทั้งองค์ประกอบและลำดับ
 คำศัพท์หนึ่งคำอยู่ได้หลายชุด
 
-**หน้าเว็บ** (อยู่ใน `bundle/` ทั้งหมด `noindex` และมี breadcrumb):
+**หน้าเว็บ** (อยู่ใน `bundle/` ทั้งหมด มี breadcrumb และถูก index ยกเว้นหน้าแจ้งว่ายังไม่มีคำแปลและหน้ารายการที่ว่าง ซึ่งเป็น `noindex`):
 - `bundle/index.html` (ที่อยู่ `/bundle/` หน้าแรกภาษารัสเซีย), `bundles_ru_2.html`…, `bundles_thai.html`, `bundles_thai_2.html`… — รายการชุด (`bundle/bundles_ru.html` เป็นหน้าแจ้งย้าย → `/bundle/`): การ์ดแสดงชื่อ คำอธิบาย
   จำนวนคำศัพท์ และรายการคำ (สูงสุด 5 คำ ที่เหลือแสดงเป็น «และอีก N») แบ่งหน้าละ 10
   เรียงจากใหม่ไปเก่า คือตามหมายเลขในชื่อไฟล์จากมากไปน้อย (หมายเลขมากอยู่บนสุด) ระยะห่างระหว่างการ์ดเท่ากับหน้านำทางคำศัพท์
@@ -473,13 +474,19 @@ workflow จะแสดงสถานะสีแดงในตอนท้�
 - `sitemap.xml` สร้างขึ้นอัตโนมัติ (ขั้นตอนที่ 7 ของการ build) และส่งเข้า Google Search
   Console, Bing Webmaster Tools และ Yandex Webmaster แล้ว
 - หน้า `my/progress_*.html` เป็นหน้าส่วนตัว: `noindex` และไม่อยู่ใน `sitemap.xml`
-- หน้าชุดศัพท์ที่เกี่ยวข้อง (`bundle/*` ยกเว้นหน้าแจ้งย้าย `bundles_ru.html` รวมถึงหน้าแจ้งว่ายังไม่มีคำแปล) เป็น `noindex`
-  ไม่มี `canonical` และ `hreflang` และไม่อยู่ใน `sitemap.xml` (สร้างโดย `build-terms.js` เท่านั้น)
+- หน้าชุดศัพท์ที่เกี่ยวข้องถูก index: มี `canonical`, `prev`/`next` ในหน้า 2 ขึ้นไป, `hreflang`
+  ในหน้าแรกของชุดและของรายการ (เมื่อมีทั้งสองภาษา), `description` และ Open Graph
+  หน้าแจ้งว่ายังไม่มีคำแปลและหน้ารายการที่ว่างเป็น `noindex` URL อยู่ในไฟล์แยก
+  `sitemap_bundles.xml` ซึ่งสร้างโดย `build-bundles.js` เท่านั้น
+- เมนู (`#nav-menu-list`) และตัวสลับภาษา (`#lang-switch`) เป็นลิงก์สำเร็จรูปใน HTML เพื่อให้
+  search engine เห็นได้โดยไม่ต้องใช้ JavaScript รายการเมนูเขียนไว้ในเทมเพลตและหน้าที่แก้ด้วยมือ
+  ส่วนที่อยู่ของตัวสลับภาษา build ใส่ให้ (`withLangSwitch` ใน `site-config.js` กฎเดียวกับ
+  `buildTargetUrl` ใน `js/lang.js`) `burger-menu.js` สร้างเมนูเองเฉพาะหน้าที่รายการว่างเท่านั้น
 - หน้าบทความ (`publications/*.html`) ถูก index (หน้ารายการที่ไม่มีบทความเป็น `noindex`) URL ของหน้าเหล่านี้อยู่ในไฟล์แยก
   `sitemap_publications.xml` ที่ `build-publications.js` สร้างเท่านั้น — ดูหัวข้อ «บทความ»
 - การ์ดคำศัพท์และหน้านำทางยังไม่มีรูปสำหรับพรีวิวลิงก์ (`og:image`) — วาง Open Graph ไว้แล้ว แต่พรีวิวในแอปแชท
   ยังเป็นแบบข้อความล้วน ส่วนบทความใช้ภาพปกเป็น `og:image`
-- `robots.txt` อยู่ที่ root ของเว็บไซต์: `Allow: /` และสองบรรทัด `Sitemap:` (`sitemap.xml`, `sitemap_publications.xml`)
+- `robots.txt` อยู่ที่ root ของเว็บไซต์: `Allow: /` และสามบรรทัด `Sitemap:` (`sitemap.xml`, `sitemap_publications.xml`, `sitemap_bundles.xml`)
 - ทุกหน้าที่ถูก index มี `canonical` หนึ่งตัวที่ตรงกับที่อยู่ของหน้านั้น หน้าแจ้งย้ายที่ที่อยู่เดิมใน repository `buddhism` มี `canonical` ไปยังที่อยู่ใหม่และ `meta refresh` ทันที ไม่มี `noindex` ตรวจโดย `test-seo.js` และ `test-links.js`
 
 ## การติดตั้งด้วยตนเอง (fork)

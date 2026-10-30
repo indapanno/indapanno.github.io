@@ -98,8 +98,32 @@ function stubHtml(targetUrl, lang) {
     + '</html>\n';
 }
 
+// Переключатель языка: адрес той же страницы на другом языке (pagePath — путь от корня).
+// Повторяет buildTargetUrl из js/lang.js; сборщики вписывают адрес прямо в HTML,
+// чтобы поисковики видели ссылку без JavaScript.
+function langTargetPath(pagePath, target) {
+  const thai = target === 'thai';
+  const dir = pagePath.substring(0, pagePath.lastIndexOf('/') + 1);
+  const name = pagePath.substring(pagePath.lastIndexOf('/') + 1);
+  if (pagePath === '/' || /^\/nav\/nav_(?:ru|thai)(?:_\d+)?\.html$/.test(pagePath)) return thai ? '/nav/nav_thai.html' : '/';
+  if (pagePath === '/bundle/' || /^\/bundle\/bundles_(?:ru|thai)(?:_\d+)?\.html$/.test(pagePath)) return thai ? '/bundle/bundles_thai.html' : '/bundle/';
+  const b = pagePath.match(/^\/bundle\/bundle_(\d+)_(?:ru|thai)(?:_\d+)?\.html$/);
+  if (b) return '/bundle/bundle_' + b[1] + '_' + target + '.html';
+  if (pagePath === '/publications/' || /^\/publications\/[^/]+\.html$/.test(pagePath)) return thai ? '/publications/publications_thai.html' : '/publications/';
+  const c = name.match(/^(.+)_(ru|thai)\.html$/);
+  return c ? dir + c[1] + '_' + target + '.html' : null;
+}
+
+// Вписывает href в ссылки #lang-switch: свой язык — адрес самой страницы, другой — langTargetPath.
+function withLangSwitch(html, pagePath, lang) {
+  return html.replace(/<a data-lang-value="(ru|thai)" lang="(ru|th)">/g, (m, l, code) => {
+    const href = l === lang ? pagePath : langTargetPath(pagePath, l);
+    return href ? '<a data-lang-value="' + l + '" lang="' + code + '" href="' + escAttr(href) + '">' : m;
+  });
+}
+
 module.exports = {
   SITE_URL, RESERVED_ROOT, absUrl, nav, bundles, publications,
   cardPath, cardUrl, bundlePath, bundleUrl, articlePath, articleUrl, coverPath, coverUrl,
-  navHomePath, stubHtml, escAttr, HOW_PAGES, howName, howPath, howUrl
+  navHomePath, stubHtml, escAttr, HOW_PAGES, howName, howPath, howUrl, langTargetPath, withLangSwitch
 };

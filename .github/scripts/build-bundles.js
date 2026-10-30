@@ -1,7 +1,7 @@
 'use strict';
 // Сборка страниц «Связанные термины» (ТЗ: bundles_TZ.md).
 // Независим от build-terms.js: только ЧИТАЕТ термины из json/,
-// пишет только в bundle/. Исходники связок: _src/bundle/json, шаблоны: _src/bundle/template.
+// пишет только в bundle/ и sitemap_bundles.xml (корень сайта). Исходники связок: _src/bundle/json, шаблоны: _src/bundle/template.
 // Ошибочная связка не публикуется;
 // остальные собираются, в конце процесс завершается с кодом 1.
 const fs = require('fs');
@@ -18,6 +18,11 @@ const GH_JSON = 'https://github.com/indapanno/indapanno.github.io/%s/main/_src/b
 const NAME_KEY = { ru: 'term_ru', thai: 'term_thai' };
 const ALPHABET = { ru: /[А-Яа-яЁё]/, thai: /[\u0E00-\u0E7F]/ };
 const BUNDLE_KEYS = ['name', 'description', 'terms'];
+// SEO: как у навигатора и публикаций
+const SITE_NAME = { ru: 'Навигатор по палийским терминам', thai: 'นำทางคำศัพท์บาลี' };
+const OG_LOCALE = { ru: 'ru_RU', thai: 'th_TH' };
+const HREFLANG = { ru: 'ru', thai: 'th' }; // код тайского в hreflang — «th»
+const META_DESC_MAX = { ru: 155, thai: 120 };
 
 function ruPlural(n, f) {
   const a = n % 10, b = n % 100;
@@ -94,11 +99,47 @@ function validateFile(file, lang, text, terms, allIds) {
 }
 
 // --- HTML ---
+const NOINDEX = '<meta name="robots" content="noindex">';
+
 function fill(layout, v) {
-  const rep = { '{{TITLE}}': v.title, '{{HEAD}}': '<meta name="robots" content="noindex">', '{{H1}}': v.h1, '{{INTRO}}': v.intro, '{{MAIN}}': v.main };
+  const rep = { '{{TITLE}}': v.title, '{{HEAD}}': v.head || NOINDEX, '{{H1}}': v.h1, '{{INTRO}}': v.intro, '{{MAIN}}': v.main };
   let s = layout;
   Object.keys(rep).forEach(k => { s = s.split(k).join(rep[k]); });
   return s;
+}
+
+// Обрезка description по границе слова (тайский — по словам через Intl.Segmenter)
+function clipMeta(text, max, lang) {
+  const t = text.replace(/\s+/g, ' ').trim();
+  if (t.length <= max) return t;
+  if (lang === 'thai' && typeof Intl !== 'undefined' && Intl.Segmenter) {
+    let acc = '';
+    for (const seg of new Intl.Segmenter('th', { granularity: 'word' }).segment(t)) {
+      if ((acc + seg.segment).length > max) break;
+      acc += seg.segment;
+    }
+    return acc.trim() + '…';
+  }
+  return t.slice(0, max).replace(/\s+\S*$/, '') + '…';
+}
+
+// SEO-теги страницы: canonical, prev/next, hreflang (alt: [{lang, url}] — только при двух языках), description, Open Graph
+function seoHead(lang, o) {
+  const t = ['<link rel="canonical" href="' + o.url + '">'];
+  if (o.prev) t.push('<link rel="prev" href="' + o.prev + '">');
+  if (o.next) t.push('<link rel="next" href="' + o.next + '">');
+  if (o.alt && o.alt.length > 1) {
+    o.alt.forEach(a => t.push('<link rel="alternate" hreflang="' + HREFLANG[a.lang] + '" href="' + a.url + '">'));
+    t.push('<link rel="alternate" hreflang="x-default" href="' + o.alt[0].url + '">');
+  }
+  t.push('<meta name="description" content="' + escapeHtml(o.desc) + '">');
+  t.push('<meta property="og:type" content="website">');
+  t.push('<meta property="og:site_name" content="' + escapeHtml(SITE_NAME[lang]) + '">');
+  t.push('<meta property="og:title" content="' + escapeHtml(o.title) + '">');
+  t.push('<meta property="og:description" content="' + escapeHtml(o.desc) + '">');
+  t.push('<meta property="og:url" content="' + o.url + '">');
+  t.push('<meta property="og:locale" content="' + OG_LOCALE[lang] + '">');
+  return t.join('\n');
 }
 
 // Хлебные крошки как на других страницах: ссылки + последний элемент без ссылки
@@ -145,7 +186,8 @@ function pageSuffix(lang, page) {
   return page > 1 ? ' — ' + S[lang].pageWord + ' ' + (lang === 'thai' ? toThaiNumerals(page) : page) : '';
 }
 
-function listPages(lang, items, terms, layout) {
+// listLangs — языки, на которых список связок не пуст (для hreflang)
+function listPages(lang, items, terms, layout, listLangs) {
   const st = S[lang];
   const total = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
   const pages = [];
@@ -165,12 +207,22 @@ function listPages(lang, items, terms, layout) {
       main = '<ul class="term-list bundle-list">' + li + '</ul>' + pagination(lang, p => cfg.bundles.path(lang, p), page, total);
     }
     main = crumbs(lang, [{ text: st.title }]) + main;
-    pages.push({ file: cfg.bundles.file(lang, page), html: fill(layout, { title: escapeHtml(st.title + pageSuffix(lang, page)), h1: st.title, intro: st.intro, main }) });
+    const title = st.title + pageSuffix(lang, page);
+    const url = cfg.bundles.url(lang, page);
+    const head = !items.length ? NOINDEX : seoHead(lang, {
+      url, title, desc: clipMeta(st.intro + pageSuffix(lang, page), META_DESC_MAX[lang], lang),
+      prev: page > 1 ? cfg.bundles.url(lang, page - 1) : null, next: page < total ? cfg.bundles.url(lang, page + 1) : null,
+      alt: page === 1 ? listLangs.map(l => ({ lang: l, url: cfg.bundles.url(l, 1) })) : null
+    });
+    pages.push({ file: cfg.bundles.file(lang, page), path: cfg.bundles.path(lang, page), url, indexable: items.length > 0, lang,
+      alts: page === 1 && items.length ? listLangs.map(l => ({ lang: l, url: cfg.bundles.url(l, 1) })) : [],
+      html: fill(layout, { title: escapeHtml(title), head, h1: st.title, intro: st.intro, main }) });
   }
   return pages;
 }
 
-function bundlePages(lang, b, terms, layout) {
+// langs — языки, на которых опубликована эта связка (для hreflang)
+function bundlePages(lang, b, terms, layout, langs) {
   const st = S[lang];
   const ids = b.data.terms;
   const total = Math.max(1, Math.ceil(ids.length / PAGE_SIZE));
@@ -188,7 +240,15 @@ function bundlePages(lang, b, terms, layout) {
     const main = crumbs(lang, [{ text: st.title, href: cfg.bundles.path(lang, 1) }, { text: b.data.name }])
       + '<p class="nav-intro" id="learned-nav-note"></p>\n  '
       + '<ul id="term-list" class="term-list">' + li + '</ul>' + pagination(lang, p => cfg.bundlePath(b.n, lang, p), page, total);
-    pages.push({ file: cfg.bundlePath(b.n, lang, page).split('/').pop(), html: fill(layout, { title: escapeHtml(b.data.name + pageSuffix(lang, page)), h1: escapeHtml(b.data.name), intro: escapeHtml(b.data.description), main }) });
+    const title = b.data.name + pageSuffix(lang, page);
+    const url = cfg.bundleUrl(b.n, lang, page);
+    const alts = page === 1 && langs.length > 1 ? langs.map(l => ({ lang: l, url: cfg.bundleUrl(b.n, l, 1) })) : [];
+    const head = seoHead(lang, {
+      url, title, desc: clipMeta(b.data.description, META_DESC_MAX[lang], lang),
+      prev: page > 1 ? cfg.bundleUrl(b.n, lang, page - 1) : null, next: page < total ? cfg.bundleUrl(b.n, lang, page + 1) : null, alt: alts
+    });
+    pages.push({ file: cfg.bundlePath(b.n, lang, page).split('/').pop(), path: cfg.bundlePath(b.n, lang, page), url, indexable: true, lang, alts,
+      html: fill(layout, { title: escapeHtml(title), head, h1: escapeHtml(b.data.name), intro: escapeHtml(b.data.description), main }) });
   }
   return pages;
 }
@@ -225,7 +285,8 @@ function stubPage(target, n, layout) {
   const main = crumbs(target, [{ text: st.title, href: cfg.bundles.path(target, 1) }, { text: st.stubTitle }])
     + '<div class="term-card bundle-stub"><h2>' + st.stubTitle + '</h2><p class="field-text">' + lead + '</p><ol>'
     + steps.map(x => '<li>' + x + '</li>').join('') + '</ol></div>';
-  return { file: cfg.bundlePath(n, target, 1).split('/').pop(), html: fill(layout, { title: escapeHtml(S[target].title), h1: S[target].title, intro: '', main }) };
+  return { file: cfg.bundlePath(n, target, 1).split('/').pop(), path: cfg.bundlePath(n, target, 1), lang: target, indexable: false,
+    html: fill(layout, { title: escapeHtml(S[target].title), head: NOINDEX, h1: S[target].title, intro: '', main }) };
 }
 
 // --- Основная сборка ---
@@ -274,14 +335,35 @@ function build(opts) {
   fs.mkdirSync(htmlDir, { recursive: true });
   fs.readdirSync(htmlDir).filter(f => /^(?:index|bundles?_.*)\.html$/.test(f)).forEach(f => fs.unlinkSync(path.join(htmlDir, f)));
   const pages = [];
+  const listLangs = LANGS.filter(l => published[l].length > 0);
+  const langsOf = n => LANGS.filter(l => published[l].some(b => b.n === n));
   LANGS.forEach(lang => {
-    pages.push(...listPages(lang, published[lang].slice().sort((x, y) => y.n - x.n), terms, layouts[lang])); // список: новые (больший номер) сверху
-    published[lang].forEach(b => pages.push(...bundlePages(lang, b, terms, layouts[lang])));
+    pages.push(...listPages(lang, published[lang].slice().sort((x, y) => y.n - x.n), terms, layouts[lang], listLangs)); // список: новые (больший номер) сверху
+    published[lang].forEach(b => pages.push(...bundlePages(lang, b, terms, layouts[lang], langsOf(b.n))));
   });
   stubs.forEach(s => pages.push(stubPage(s.target, s.n, layouts[s.target])));
+  // Переключатель языка: готовые адреса в HTML (видны поисковикам без JavaScript)
+  pages.forEach(p => { p.html = cfg.withLangSwitch(p.html, p.path, p.lang); });
   // Заглушка на прежнем адресе первой страницы списка ru (bundles_ru.html -> /bundle/)
   const redirects = [{ file: cfg.bundles.name('ru', 1), html: cfg.stubHtml(cfg.bundles.url('ru', 1), 'ru') }];
   pages.concat(redirects).forEach(p => fs.writeFileSync(path.join(htmlDir, p.file), p.html, 'utf8'));
+
+  // sitemap_bundles.xml: опубликованные страницы связок и непустые списки (заглушки — нет); lastmod не пишем
+  const xmlEscape = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  const entries = pages.filter(p => p.indexable).sort((a, b) => (a.url < b.url ? -1 : a.url > b.url ? 1 : 0));
+  const xml = ['<?xml version="1.0" encoding="UTF-8"?>',
+    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">'];
+  entries.forEach(e => {
+    xml.push('  <url>', '    <loc>' + xmlEscape(e.url) + '</loc>');
+    if (e.alts.length > 1) {
+      e.alts.forEach(a => xml.push('    <xhtml:link rel="alternate" hreflang="' + HREFLANG[a.lang] + '" href="' + xmlEscape(a.url) + '"/>'));
+      xml.push('    <xhtml:link rel="alternate" hreflang="x-default" href="' + xmlEscape(e.alts[0].url) + '"/>');
+    }
+    xml.push('  </url>');
+  });
+  xml.push('</urlset>', '');
+  fs.writeFileSync(opts.sitemapPath || path.join(termsDir, 'sitemap_bundles.xml'), xml.join('\n'), 'utf8');
+
   return { errors, published, stubs, pages: pages.map(p => p.file), redirects: redirects.map(p => p.file) };
 }
 

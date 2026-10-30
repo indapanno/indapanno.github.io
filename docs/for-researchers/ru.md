@@ -77,6 +77,7 @@ indapanno.github.io/                  # корень репозитория = к
 │   └── <имя>.html              # ГЕНЕРИРУЕТСЯ: готовая статья
 ├── sitemap.xml                 # ГЕНЕРИРУЕТСЯ, не редактировать
 ├── sitemap_publications.xml    # ГЕНЕРИРУЕТСЯ, не редактировать
+├── sitemap_bundles.xml         # ГЕНЕРИРУЕТСЯ, не редактировать
 ├── robots.txt, 404.html, _config.yml, .gitignore   # вручную
 ├── yandex_<код>.html           # подтверждение владения (Яндекс), не трогать
 ├── _src/                       # исходники сборки; Pages их не публикует (папка с «_» в начале)
@@ -114,12 +115,12 @@ indapanno.github.io/                  # корень репозитория = к
 осталось там без изменений.
 
 **Правило:** `terms/`, `bundle/`, `index.html`, `nav_*.html`, `publications/*.html`,
-`sitemap.xml` и `sitemap_publications.xml` — вывод сборки. Ручная правка переживёт
+`sitemap.xml`, `sitemap_publications.xml` и `sitemap_bundles.xml` — вывод сборки. Ручная правка переживёт
 до следующей сборки, после которой будет перезаписана. Редактируются вручную только
 `_src/**`, `json/<id>_*.json`, `js/*.js`, `css/*.css`, `schema/*.json`, `how/how-to-*.html`,
 `my/progress_*.html`, `404.html`, `robots.txt`, `docs/**` и `publications/covers/**`.
 `terms/`, `index.html`, `nav_*.html` и `sitemap.xml` — вывод сборки терминов;
-`bundle/` — связанных терминов; `publications/*.html` и `sitemap_publications.xml` —
+`bundle/` и `sitemap_bundles.xml` — связанных терминов; `publications/*.html` и `sitemap_publications.xml` —
 публикаций. Сборка всех видов страниц выполняется только на
 стороне GitHub (Actions); локально собирать и коммитить сгенерированные файлы не нужно.
 
@@ -255,7 +256,7 @@ draft-07 (без сторонних библиотек, доступна и в �
 номер берутся только из имени файла. Состав и порядок `terms` в `_ru` и `_thai` версиях
 одной связки обязаны совпадать. Один термин может входить в несколько связок.
 
-**Страницы** (все в `bundle/`, `noindex`, с хлебными крошками):
+**Страницы** (все в `bundle/`, с хлебными крошками; индексируются, кроме заглушек перевода и пустого списка — у них `noindex`):
 - `bundle/index.html` (адрес `/bundle/`, русская первая страница), `bundles_ru_2.html`…, `bundles_thai.html`, `bundles_thai_2.html`… — список связок (`bundle/bundles_ru.html` — заглушка → `/bundle/`): плитка с названием,
   описанием, числом терминов и перечнем (до 5, дальше «и ещё N»), пагинация 10 на странице.
   Порядок: новые сверху, то есть по убыванию номера в имени файла (больший номер — выше);
@@ -496,14 +497,20 @@ draft-07 (без сторонних библиотек, доступна и в �
 - `sitemap.xml` собирается автоматически (шаг 7 сборки) и подан в Google Search
   Console, Bing Webmaster Tools и Яндекс.Вебмастер.
 - Страницы `my/progress_*.html` личные: `noindex`, в `sitemap.xml` не входят.
-- Страницы связанных терминов (`bundle/*`, кроме заглушки `bundles_ru.html`) — `noindex`, без
-  `canonical` и `hreflang`, в `sitemap.xml` не входят (его строит только `build-terms.js`).
+- Страницы связанных терминов индексируются: `canonical`, `prev`/`next` на страницах 2+, `hreflang`
+  на первой странице связки и списка (если они есть на обоих языках), `description` и Open Graph.
+  Заглушки «перевод отсутствует» и пустой список — `noindex`. Адреса лежат в отдельном
+  `sitemap_bundles.xml`, который строит только `build-bundles.js`.
+- Меню (`#nav-menu-list`) и переключатель языка (`#lang-switch`) — готовые ссылки в HTML, чтобы
+  поисковики видели их без JavaScript. Пункты меню вписаны в шаблоны и ручные страницы; адреса
+  переключателя языка вписывают сборщики (`withLangSwitch` в `site-config.js`, правила — как у
+  `buildTargetUrl` в `js/lang.js`). `burger-menu.js` строит меню сам только на странице, где список пуст.
 - Страницы публикаций (`publications/*.html`) индексируются (список без публикаций — `noindex`);
   их адреса лежат в отдельном `sitemap_publications.xml`, который строит только
   `build-publications.js` — подробнее в разделе «Публикации».
 - Картинки для превью ссылок (`og:image`) у карточек терминов и навигатора пока нет: Open Graph
   настроен, но без неё превью в мессенджерах остаётся текстовым. У публикаций `og:image` — их обложка.
-- `robots.txt` лежит в корне сайта: `Allow: /` и две строки `Sitemap:` (`sitemap.xml`, `sitemap_publications.xml`).
+- `robots.txt` лежит в корне сайта: `Allow: /` и три строки `Sitemap:` (`sitemap.xml`, `sitemap_publications.xml`, `sitemap_bundles.xml`).
 - Каждая индексируемая страница имеет ровно один `canonical`, равный её собственному адресу; заглушки на старых адресах в репозитории `buddhism` содержат `canonical` на новый адрес и мгновенный `meta refresh`, без `noindex`. Проверяют `test-seo.js` и `test-links.js`.
 
 ## Развёртывание у себя (fork)

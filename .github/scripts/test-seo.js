@@ -7,6 +7,8 @@ const path = require('path');
 const ROOT = process.env.SITE_ROOT || path.resolve(__dirname, '../..');
 const SITE = 'https://indapanno.github.io';
 const SKIP_TOP = new Set(['_src', '.github', 'docs', 'help', '.git', 'node_modules']);
+// Служебные файлы подтверждения прав в вебмастерах (Яндекс, Google) — не страницы сайта
+const VERIFY_FILE = /^(yandex_[0-9a-f]+|google[0-9a-f]+)\.html$/;
 
 let passed = 0, failed = 0;
 function check(name, cond, extra) {
@@ -17,7 +19,7 @@ function walk(dir, rel, out) {
   fs.readdirSync(dir, { withFileTypes: true }).forEach(e => {
     const r = rel ? rel + '/' + e.name : e.name;
     if (e.isDirectory()) { if (!(rel === '' && SKIP_TOP.has(e.name))) walk(path.join(dir, e.name), r, out); }
-    else if (r.endsWith('.html') && r !== 'yandex_9adf84726f5490a0.html') out.push(r);
+    else if (r.endsWith('.html') && !VERIFY_FILE.test(r)) out.push(r);
   });
   return out;
 }
@@ -106,7 +108,7 @@ function sitemapLocs(file) {
   const t = fs.readFileSync(path.join(ROOT, file), 'utf8');
   return { locs: [...t.matchAll(/<loc>([^<]*)<\/loc>/g)].map(m => m[1]), alts: [...t.matchAll(/<xhtml:link[^>]*href="([^"]*)"/g)].map(m => m[1]) };
 }
-['sitemap.xml', 'sitemap_publications.xml'].forEach(sm => {
+['sitemap.xml', 'sitemap_publications.xml', 'sitemap_bundles.xml'].forEach(sm => {
   const ok = fs.existsSync(path.join(ROOT, sm));
   check('A7: ' + sm + ' существует', ok);
   if (!ok) return;
@@ -138,7 +140,78 @@ function sitemapLocs(file) {
 {
   const ok = fs.existsSync(path.join(ROOT, 'robots.txt'));
   const t = ok ? fs.readFileSync(path.join(ROOT, 'robots.txt'), 'utf8') : '';
-  check('A8: robots.txt: Allow: / и обе строки Sitemap', ok && /^Allow: \/\s*$/m.test(t) && t.includes('Sitemap: ' + SITE + '/sitemap.xml') && t.includes('Sitemap: ' + SITE + '/sitemap_publications.xml'));
+  check('A8: robots.txt: Allow: / и три строки Sitemap', ok && /^Allow: \/\s*$/m.test(t) && ['sitemap.xml', 'sitemap_publications.xml', 'sitemap_bundles.xml'].every(x => t.includes('Sitemap: ' + SITE + '/' + x)));
+}
+
+// A9: связки открыты для поиска (заглушки перевода — нет)
+{
+  const pagesB = files.filter(f => /^bundle\/(index|bundles_thai|bundle_\d+_(ru|thai)(_\d+)?)\.html$/.test(f) && !info[f].redirect);
+  const stubs = pagesB.filter(f => read(f).includes('class="term-card bundle-stub"'));
+  const real = pagesB.filter(f => !stubs.includes(f));
+  check('A9: связки: найдены опубликованные страницы', real.length >= 3, String(real.length));
+  check('A9: опубликованные связки и списки без noindex', real.every(f => !info[f].noindex), real.filter(f => info[f].noindex).join(','));
+  check('A9: заглушки перевода связок — noindex', stubs.every(f => info[f].noindex), stubs.filter(f => !info[f].noindex).join(','));
+  if (fs.existsSync(path.join(ROOT, 'sitemap_bundles.xml'))) {
+    const { locs } = sitemapLocs('sitemap_bundles.xml');
+    const miss = real.filter(f => !locs.includes(ownUrl(f)));
+    check('A9: все опубликованные страницы связок есть в sitemap_bundles.xml', miss.length === 0, miss.join(','));
+  }
+}
+
+// A10: меню — готовые ссылки в HTML на всех страницах с меню (поисковики без JavaScript их видят)
+const MENU = {
+  ru: ['/', '/bundle/', '/my/progress_ru.html', '/publications/', '/how/how-to-add-term_ru.html'],
+  thai: ['/nav/nav_thai.html', '/bundle/bundles_thai.html', '/my/progress_thai.html', '/publications/publications_thai.html', '/how/how-to-add-term_thai.html']
+};
+const pageLang = h => (/<html lang="th"/.test(h) ? 'thai' : 'ru');
+{
+  const withMenu = files.filter(f => read(f).includes('id="nav-menu-list"'));
+  const bad = withMenu.filter(f => {
+    const h = read(f);
+    const m = h.match(/<ul id="nav-menu-list" class="nav-menu-list">([\s\S]*?)<\/ul>/);
+    const hrefs = m ? [...m[1].matchAll(/<a href="([^"]*)">/g)].map(x => x[1]) : [];
+    return hrefs.join() !== MENU[pageLang(h)].join();
+  });
+  check('A10: найдены страницы с меню', withMenu.length > 100, String(withMenu.length));
+  check('A10: в меню 5 готовых ссылок своего языка', bad.length === 0, bad.length + ': ' + bad.slice(0, 6).join(' | '));
+}
+
+// A11: переключатель языка — готовые адреса в HTML (те же, что ставит js/lang.js)
+function ownPath(file) {
+  if (file === 'index.html') return '/';
+  if (file.endsWith('/index.html')) return '/' + file.slice(0, -'index.html'.length);
+  return '/' + file;
+}
+function langTarget(p, target) { // повторяет buildTargetUrl из js/lang.js
+  const thai = target === 'thai';
+  const dir = p.substring(0, p.lastIndexOf('/') + 1), name = p.substring(p.lastIndexOf('/') + 1);
+  if (p === '/' || /^\/nav\/nav_(?:ru|thai)(?:_\d+)?\.html$/.test(p)) return thai ? '/nav/nav_thai.html' : '/';
+  if (p === '/bundle/' || /^\/bundle\/bundles_(?:ru|thai)(?:_\d+)?\.html$/.test(p)) return thai ? '/bundle/bundles_thai.html' : '/bundle/';
+  const b = p.match(/^\/bundle\/bundle_(\d+)_(?:ru|thai)(?:_\d+)?\.html$/);
+  if (b) return '/bundle/bundle_' + b[1] + '_' + target + '.html';
+  if (p === '/publications/' || /^\/publications\/[^/]+\.html$/.test(p)) return thai ? '/publications/publications_thai.html' : '/publications/';
+  const c = name.match(/^(.+)_(ru|thai)\.html$/);
+  return c ? dir + c[1] + '_' + target + '.html' : null;
+}
+{
+  const withSwitch = files.filter(f => read(f).includes('id="lang-switch"'));
+  const bad = [];
+  withSwitch.forEach(f => {
+    const h = read(f), cur = pageLang(h), own = ownPath(f);
+    const sw = {};
+    [...h.matchAll(/<a data-lang-value="(ru|thai)" lang="(?:ru|th)"(?: href="([^"]*)")?>/g)].forEach(m => { sw[m[1]] = m[2] || null; });
+    ['ru', 'thai'].forEach(l => {
+      const want = l === cur ? own : langTarget(own, l);
+      if (sw[l] !== want) bad.push(f + ': ' + l + '=' + sw[l] + ' (ожидается ' + want + ')');
+    });
+  });
+  check('A11: найдены страницы с переключателем языка', withSwitch.length > 100, String(withSwitch.length));
+  check('A11: у обеих ссылок переключателя готовый адрес (свой язык — своя страница)', bad.length === 0, bad.length + ': ' + bad.slice(0, 6).join(' | '));
+  const sw = f => { const o = {}; [...read(f).matchAll(/<a data-lang-value="(ru|thai)" lang="(?:ru|th)"(?: href="([^"]*)")?>/g)].forEach(m => { o[m[1]] = m[2] || null; }); return o; };
+  check('A11: примеры: карточка, навигатор, публикация, инструкция, «Мой прогресс»',
+    sw('terms/dukkha_ru.html').thai === '/terms/dukkha_thai.html' && sw('index.html').thai === '/nav/nav_thai.html' && sw('nav/nav_ru_2.html').thai === '/nav/nav_thai.html'
+    && sw('publications/chetyre-blagorodnye-istiny.html').thai === '/publications/publications_thai.html' && sw('how/how-to-add-term_ru.html').thai === '/how/how-to-add-term_thai.html'
+    && sw('my/progress_thai.html').ru === '/my/progress_ru.html');
 }
 
 console.log(failed ? 'ПРОВАЛЕНО: ' + failed + ', пройдено: ' + passed : 'ВСЕ ТЕСТЫ ПРОЙДЕНЫ: ' + passed);

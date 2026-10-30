@@ -1,4 +1,4 @@
-// Бургер-меню: кнопка + выезжающая панель с пунктами
+// Бургер-меню: кнопка + выезжающая панель с пунктами (пункты — готовые ссылки в HTML)
 // ("Навигатор", "Связанные термины", "Мой прогресс", "Публикации", "Добавить термин"). Определяет язык
 // по имени файла текущей страницы, строит ссылки на соответствующие
 // языковые версии страниц.
@@ -45,9 +45,13 @@ document.addEventListener('DOMContentLoaded', function () {
     { href: window.TermsLang.url('how/how-to-add-term_' + lang + '.html'), text: strings.addTerm }
   ];
 
-  list.innerHTML = items.map(function (item) {
-    return '<li><a href="' + item.href + '">' + item.text + '</a></li>';
-  }).join('');
+  // Сборщики вписывают пункты меню прямо в HTML (их видят поисковики без JavaScript).
+  // Список строится здесь только на старых страницах, где он пустой.
+  if (!list.querySelector('li')) {
+    list.innerHTML = items.map(function (item) {
+      return '<li><a href="' + item.href + '">' + item.text + '</a></li>';
+    }).join('');
+  }
 
   function openMenu() {
     backdrop.hidden = false;

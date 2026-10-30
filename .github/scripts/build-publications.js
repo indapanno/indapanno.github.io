@@ -571,7 +571,8 @@ function listPages(lang, items, layout) {
       const desc = st.desc + (page > 1 ? ' ' + (lang === 'thai' ? 'หน้า ' : 'Страница ') + digits(lang, page) + '.' : '');
       head = metaTags(lang, { url, extra, desc, type: 'website', title });
     }
-    pages.push({ file: cfg.publications.file(lang, page), html: fill(layout, { title: escapeHtml(title), head, h1: st.title, main }), indexable: items.length > 0, url });
+    const html = cfg.withLangSwitch(fill(layout, { title: escapeHtml(title), head, h1: st.title, main }), cfg.publications.path(lang, page), lang);
+    pages.push({ file: cfg.publications.file(lang, page), html, indexable: items.length > 0, url });
   }
   return pages;
 }
@@ -594,7 +595,7 @@ function articlePage(lang, pub, art, layout) {
   const head = metaTags(lang, {
     url, desc: clipMeta(d.lead, META_DESC_MAX, lang), type: 'article', title: d.headline, image: cfg.coverUrl(d.cover)
   });
-  return { file: d.html, html: fill(layout, { title: escapeHtml(d.headline), head, h1: escapeHtml(d.headline), main }), url };
+  return { file: d.html, html: cfg.withLangSwitch(fill(layout, { title: escapeHtml(d.headline), head, h1: escapeHtml(d.headline), main }), cfg.articlePath(d.html), lang), url };
 }
 
 // Текст заголовка для оглавления: теги внутри h2 убираем, текст оставляем как есть

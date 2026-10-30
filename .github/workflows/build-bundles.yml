@@ -1,7 +1,7 @@
 name: Build bundles
 
 # Сборка страниц «Связанные термины». Независима от сборки обычных терминов:
-# только читает термины и пишет в bundle/.
+# только читает термины и пишет в bundle/ и sitemap_bundles.xml.
 on:
   push:
     branches: [main]
@@ -54,7 +54,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add -A -- bundle/
+          git add -A -- bundle/ sitemap_bundles.xml
           if git diff --staged --quiet; then
             echo "Нет изменений для коммита"
           else

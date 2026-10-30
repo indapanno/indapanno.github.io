@@ -11,6 +11,8 @@ const SKIP_DIRS = new Set(['_src', '.github', 'docs', 'help', '.git', 'node_modu
 // Тесты ссылок/SEO/заглушек сами содержат искомые строки в коде
 const SELF_TESTS = /^\.github\/scripts\/test-(links|seo|stubs)\.js$/;
 const ALLOWED_OLD = ['https://indapanno.github.io/buddhism/share/branching/'];
+// Служебные файлы подтверждения прав в вебмастерах (Яндекс, Google) — не страницы сайта
+const VERIFY_FILE = /^(yandex_[0-9a-f]+|google[0-9a-f]+)\.html$/;
 
 let passed = 0, failed = 0;
 function check(name, cond, extra) {
@@ -26,7 +28,7 @@ function walk(dir, rel, out, filter) {
   return out;
 }
 
-const pages = walk(ROOT, '', [], f => f.endsWith('.html') && f !== 'yandex_9adf84726f5490a0.html');
+const pages = walk(ROOT, '', [], f => f.endsWith('.html') && !VERIFY_FILE.test(f));
 const exists = p => fs.existsSync(path.join(ROOT, p));
 
 // Адрес вида /a/b/ -> a/b/index.html; /a/b.html -> a/b.html; null, если пусто
@@ -77,7 +79,7 @@ check('каждая внутренняя ссылка указывает на с
 
 // A3: старые адреса и пути не встречаются в страницах, шаблонах, скриптах и JS
 const textFiles = walk(ROOT, '', [], f => /\.(html|js|css|yml|json)$/.test(f) && !/^json\/|^schema\/|^_src\/(bundle|publications)\/json\//.test(f)
-  && !SELF_TESTS.test(f) && f !== 'yandex_9adf84726f5490a0.html');
+  && !SELF_TESTS.test(f) && !VERIFY_FILE.test(f));
 // _src с шаблонами и статьями проверяем отдельно (в SKIP_DIRS он пропущен для страниц)
 const srcFiles = walk(path.join(ROOT, '_src'), '_src', [], f => /\.(html|js|css)$/.test(f));
 const ghFiles = walk(path.join(ROOT, '.github'), '.github', [], f => /\.(js|yml)$/.test(f) && !SELF_TESTS.test(f));

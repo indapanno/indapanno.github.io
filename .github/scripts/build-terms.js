@@ -198,7 +198,7 @@ const cardCounts = { ru: 0, thai: 0 };
 allIds.forEach(id => {
   LANGS.forEach(lang => {
     const data = dataByLang[lang][id];
-    const html = buildCardHtml(lang, id, data);
+    const html = cfg.withLangSwitch(buildCardHtml(lang, id, data), cfg.cardPath(id, lang), lang);
     fs.writeFileSync(path.join(HTML_DIR, id + '_' + lang + '.html'), html, 'utf8');
     cardCounts[lang]++;
   });
@@ -306,7 +306,7 @@ LANGS.forEach(lang => {
 
     const navTarget = path.join(REPO_ROOT, cfg.nav.file(lang, page));
     fs.mkdirSync(path.dirname(navTarget), { recursive: true });
-    fs.writeFileSync(navTarget, html, 'utf8');
+    fs.writeFileSync(navTarget, cfg.withLangSwitch(html, cfg.nav.path(lang, page), lang), 'utf8');
   }
   console.log('Навигационных страниц (' + lang + ') собрано:', totalPages);
 });

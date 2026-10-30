@@ -56,7 +56,7 @@ const count = (s, sub) => s.split(sub).length - 1;
   check('крошки на странице связки (thai)', r.read('bundle_1_thai.html').includes('<a href="/nav/nav_thai.html">นำทางคำศัพท์</a><span class="sep">/</span><a href="/bundle/bundles_thai.html">ชุดศัพท์ที่เกี่ยวข้อง</a><span class="sep">/</span><span class="current">หัวข้อ</span>'));
   check('крошки на списке: последний элемент без ссылки', r.read('index.html').includes('<a href="/">Навигатор по терминам</a><span class="sep">/</span><span class="current">Связанные термины</span>') && r.read('bundles_thai.html').includes('<span class="current">ชุดศัพท์ที่เกี่ยวข้อง</span>'));
   check('страница связки: кнопки «Изучен»', count(p, 'data-learned-id="t') === 3 && p.includes('id="learned-nav-note"'));
-  check('все страницы: noindex, без canonical/hreflang', r.pages.every(f => { const h = r.read(f); return h.includes('<meta name="robots" content="noindex">') && !h.includes('canonical') && !h.includes('hreflang'); }));
+  check('опубликованные страницы и списки: без noindex', r.pages.every(f => !r.read(f).includes('noindex')));
   check('нет незаполненных меток', r.pages.every(f => !/\{\{[A-Z]+\}\}/.test(r.read(f))));
   check('sitemap не создаётся', !fs.existsSync(path.join(r.termsDir, 'sitemap.xml')));
 }
@@ -159,7 +159,72 @@ check('.gitkeep игнорируется', makeEnv({ '.gitkeep': '' }).errors.le
 {
   const r = makeEnv({ 'bundle_1_ru.json': ru() });
   const snap = d => fs.readdirSync(d, { withFileTypes: true }).filter(e => e.name !== 'bundle' && e.name !== '_src').map(e => e.name).sort().join();
-  check('родительские файлы не тронуты (нет sitemap/html/nav)', snap(r.termsDir) === 'json');
+  check('родительские файлы не тронуты (рядом появляется только sitemap_bundles.xml)', snap(r.termsDir) === 'json,sitemap_bundles.xml', snap(r.termsDir));
+}
+
+// 6. SEO: canonical, hreflang, description, Open Graph, sitemap_bundles.xml
+const SITE = 'https://indapanno.github.io';
+const head = h => h.slice(0, h.indexOf('</head>'));
+const canonOf = h => [...head(h).matchAll(/<link rel="canonical" href="([^"]*)">/g)].map(m => m[1]);
+const altsOf = h => [...head(h).matchAll(/<link rel="alternate" hreflang="([^"]*)" href="([^"]*)">/g)].map(m => m[1] + '=' + m[2]).sort().join('|');
+const metaOf = (h, attr, name) => { const m = head(h).match(new RegExp('<meta ' + attr + '="' + name + '" content="([^"]*)">')); return m ? m[1] : null; };
+{
+  const r = makeEnv({ 'bundle_1_ru.json': ru(ids(25)), 'bundle_1_thai.json': th(ids(25)), 'bundle_2_ru.json': ru(null, { name: 'Только ru' }) });
+  const p1 = r.read('bundle_1_ru.html'), p2 = r.read('bundle_1_ru_2.html'), t1 = r.read('bundle_1_thai.html');
+  check('SEO: canonical у страницы связки = свой адрес', canonOf(p1).join() === SITE + '/bundle/bundle_1_ru.html' && canonOf(t1).join() === SITE + '/bundle/bundle_1_thai.html');
+  check('SEO: canonical у страницы 2 связки = свой адрес', canonOf(p2).join() === SITE + '/bundle/bundle_1_ru_2.html');
+  check('SEO: canonical у списков', canonOf(r.read('index.html')).join() === SITE + '/bundle/' && canonOf(r.read('bundles_thai.html')).join() === SITE + '/bundle/bundles_thai.html');
+  const pair = 'ru=' + SITE + '/bundle/bundle_1_ru.html|th=' + SITE + '/bundle/bundle_1_thai.html|x-default=' + SITE + '/bundle/bundle_1_ru.html';
+  check('SEO: hreflang ru/th/x-default на стр. 1 связки, взаимно', altsOf(p1) === pair && altsOf(t1) === pair, altsOf(p1));
+  check('SEO: стр. 2+ связки без hreflang, с prev/next', altsOf(p2) === '' && p2.includes('<link rel="prev" href="' + SITE + '/bundle/bundle_1_ru.html">') && p2.includes('<link rel="next" href="' + SITE + '/bundle/bundle_1_ru_3.html">'));
+  check('SEO: стр. 1 связки: next на стр. 2', p1.includes('<link rel="next" href="' + SITE + '/bundle/bundle_1_ru_2.html">') && !p1.includes('rel="prev"'));
+  const only = r.read('bundle_2_ru.html');
+  check('SEO: связка только на ru: без hreflang', altsOf(only) === '');
+  const lpair = 'ru=' + SITE + '/bundle/|th=' + SITE + '/bundle/bundles_thai.html|x-default=' + SITE + '/bundle/';
+  check('SEO: hreflang у списков ru/th/x-default', altsOf(r.read('index.html')) === lpair && altsOf(r.read('bundles_thai.html')) === lpair);
+  check('SEO: description у связки = описание', metaOf(p1, 'name', 'description') === 'Описание темы' && metaOf(t1, 'name', 'description') === 'คำอธิบาย');
+  check('SEO: description у списка = вводный текст', (metaOf(r.read('index.html'), 'name', 'description') || '').startsWith('Связанные термины — это темы'));
+  check('SEO: Open Graph у связки', metaOf(p1, 'property', 'og:url') === SITE + '/bundle/bundle_1_ru.html' && metaOf(p1, 'property', 'og:title') === 'Тема'
+    && metaOf(p1, 'property', 'og:type') === 'website' && metaOf(p1, 'property', 'og:locale') === 'ru_RU' && metaOf(t1, 'property', 'og:locale') === 'th_TH'
+    && metaOf(p1, 'property', 'og:site_name') === 'Навигатор по палийским терминам' && metaOf(p1, 'property', 'og:description') === 'Описание темы');
+  const stub = r.read('bundle_2_thai.html');
+  check('SEO: заглушка перевода: noindex, без canonical и hreflang', stub.includes('<meta name="robots" content="noindex">') && canonOf(stub).length === 0 && altsOf(stub) === '');
+  const sm = fs.existsSync(path.join(r.termsDir, 'sitemap_bundles.xml')) ? fs.readFileSync(path.join(r.termsDir, 'sitemap_bundles.xml'), 'utf8') : '';
+  const locs = [...sm.matchAll(/<loc>([^<]*)<\/loc>/g)].map(m => m[1]).sort();
+  const want = ['/bundle/', '/bundle/bundle_1_ru.html', '/bundle/bundle_1_ru_2.html', '/bundle/bundle_1_ru_3.html', '/bundle/bundle_1_thai.html', '/bundle/bundle_1_thai_2.html',
+    '/bundle/bundle_1_thai_3.html', '/bundle/bundle_2_ru.html', '/bundle/bundles_thai.html'].map(u => SITE + u).sort();
+  check('sitemap_bundles.xml: все опубликованные страницы и списки, без заглушек', locs.join() === want.join(), locs.join(' '));
+  check('sitemap_bundles.xml: hreflang у пары связки и у списков', sm.includes('<xhtml:link rel="alternate" hreflang="th" href="' + SITE + '/bundle/bundle_1_thai.html"/>')
+    && sm.includes('<xhtml:link rel="alternate" hreflang="th" href="' + SITE + '/bundle/bundles_thai.html"/>') && sm.startsWith('<?xml'));
+}
+{
+  const r = makeEnv({});
+  const f = path.join(r.termsDir, 'sitemap_bundles.xml');
+  const sm = fs.existsSync(f) ? fs.readFileSync(f, 'utf8') : '';
+  check('пустые списки: noindex и пустой sitemap_bundles.xml', r.read('index.html').includes('noindex') && r.read('bundles_thai.html').includes('noindex') && sm.includes('<urlset') && !sm.includes('<loc>'));
+}
+{
+  const r = makeEnv({ 'bundle_1_ru.json': ru() });
+  check('только ru: список thai пуст → noindex, без hreflang у списка ru', r.read('bundles_thai.html').includes('noindex') && altsOf(r.read('index.html')) === '');
+}
+
+// 7. Меню и переключатель языка — готовые ссылки в HTML (без JavaScript)
+const MENU = {
+  ru: ['/', '/bundle/', '/my/progress_ru.html', '/publications/', '/how/how-to-add-term_ru.html'],
+  thai: ['/nav/nav_thai.html', '/bundle/bundles_thai.html', '/my/progress_thai.html', '/publications/publications_thai.html', '/how/how-to-add-term_thai.html']
+};
+const menuOf = h => { const m = h.match(/<ul id="nav-menu-list" class="nav-menu-list">([\s\S]*?)<\/ul>/); return m ? [...m[1].matchAll(/<a href="([^"]*)">/g)].map(x => x[1]) : null; };
+const switchOf = h => { const o = {}; [...h.matchAll(/<a data-lang-value="(ru|thai)" lang="(?:ru|th)"(?: href="([^"]*)")?>/g)].forEach(m => { o[m[1]] = m[2] || null; }); return o; };
+{
+  const r = makeEnv({ 'bundle_1_ru.json': ru(ids(25)), 'bundle_1_thai.json': th(ids(25)), 'bundle_2_ru.json': ru(null, { name: 'Вторая' }) });
+  const badMenu = r.pages.filter(f => { const lang = /_thai(_\d+)?\.html$/.test(f) ? 'thai' : 'ru'; return (menuOf(r.read(f)) || []).join() !== MENU[lang].join(); });
+  check('меню: 5 готовых ссылок на всех страницах', badMenu.length === 0, badMenu.join(','));
+  const sw = f => switchOf(r.read(f));
+  check('язык: страница связки → та же связка', sw('bundle_1_ru.html').thai === '/bundle/bundle_1_thai.html' && sw('bundle_1_ru.html').ru === '/bundle/bundle_1_ru.html'
+    && sw('bundle_1_thai.html').ru === '/bundle/bundle_1_ru.html' && sw('bundle_1_thai.html').thai === '/bundle/bundle_1_thai.html');
+  check('язык: стр. 2 связки → стр. 1 связки другого языка, себя — свой адрес', sw('bundle_1_ru_2.html').thai === '/bundle/bundle_1_thai.html' && sw('bundle_1_ru_2.html').ru === '/bundle/bundle_1_ru_2.html');
+  check('язык: списки', sw('index.html').thai === '/bundle/bundles_thai.html' && sw('index.html').ru === '/bundle/' && sw('bundles_thai.html').ru === '/bundle/' && sw('bundles_thai.html').thai === '/bundle/bundles_thai.html');
+  check('язык: связка только ru → заглушка thai', sw('bundle_2_ru.html').thai === '/bundle/bundle_2_thai.html' && sw('bundle_2_thai.html').ru === '/bundle/bundle_2_ru.html');
 }
 
 console.log(failed ? 'ПРОВАЛЕНО: ' + failed + ', пройдено: ' + passed : 'ВСЕ ТЕСТЫ ПРОЙДЕНЫ: ' + passed);
