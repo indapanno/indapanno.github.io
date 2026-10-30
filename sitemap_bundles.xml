@@ -73,6 +73,18 @@
     <xhtml:link rel="alternate" hreflang="x-default" href="https://indapanno.github.io/bundle/bundle_5_ru.html"/>
   </url>
   <url>
+    <loc>https://indapanno.github.io/bundle/bundle_6_ru.html</loc>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://indapanno.github.io/bundle/bundle_6_ru.html"/>
+    <xhtml:link rel="alternate" hreflang="th" href="https://indapanno.github.io/bundle/bundle_6_thai.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://indapanno.github.io/bundle/bundle_6_ru.html"/>
+  </url>
+  <url>
+    <loc>https://indapanno.github.io/bundle/bundle_6_thai.html</loc>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://indapanno.github.io/bundle/bundle_6_ru.html"/>
+    <xhtml:link rel="alternate" hreflang="th" href="https://indapanno.github.io/bundle/bundle_6_thai.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://indapanno.github.io/bundle/bundle_6_ru.html"/>
+  </url>
+  <url>
     <loc>https://indapanno.github.io/bundle/bundles_thai.html</loc>
     <xhtml:link rel="alternate" hreflang="ru" href="https://indapanno.github.io/bundle/"/>
     <xhtml:link rel="alternate" hreflang="th" href="https://indapanno.github.io/bundle/bundles_thai.html"/>
