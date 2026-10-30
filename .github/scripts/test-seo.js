@@ -250,5 +250,29 @@ function langTarget(p, target) { // повторяет buildTargetUrl из js/la
   check('A13: карточка подписки в конце каждой статьи', arts.length > 0 && noCta.length === 0, noCta.join(','));
 }
 
+// A14: инструкции how/ — служебные: noindex, follow (в карты сайта не входят)
+{
+  const how = files.filter(f => /^how\/how-to-[^/]+\.html$/.test(f));
+  check('A14: найдены инструкции how/', how.length >= 6, String(how.length));
+  check('A14: инструкции how/ — noindex, follow', how.every(f => read(f).includes('<meta name="robots" content="noindex, follow">')), how.filter(f => !read(f).includes('noindex, follow')).join(','));
+  const sm = ['sitemap.xml', 'sitemap_publications.xml', 'sitemap_bundles.xml', 'sitemap_news.xml'].filter(x => fs.existsSync(path.join(ROOT, x))).map(x => read(x)).join('');
+  check('A14: инструкций how/ нет в картах сайта', !/\/how\//.test(sm));
+}
+
+// A15: карточки терминов и навигатор — og:image (картинка сайта на языке страницы) и JSON-LD; весь JSON-LD на сайте разбирается
+{
+  const ldBlocks = h => [...h.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].map(x => x[1]);
+  const badLd = files.filter(f => ldBlocks(read(f)).some(b => { try { JSON.parse(b); return false; } catch (e) { return true; } }));
+  check('A15: весь JSON-LD на сайте — корректный JSON', badLd.length === 0, badLd.slice(0, 5).join(','));
+  const cards = files.filter(f => /^terms\/[^/]+_(ru|thai)\.html$/.test(f) && !info[f].noindex && !info[f].redirect);
+  const navs = files.filter(f => (f === 'index.html' || /^nav\/nav_(ru|thai)(_\d+)?\.html$/.test(f)) && !info[f].noindex && !info[f].redirect);
+  const og = f => { const h = read(f); return h.includes('<meta property="og:image" content="' + SITE + '/img/og-' + pageLang(h) + '.png">') && h.includes('<meta name="twitter:card" content="summary_large_image">'); };
+  check('A15: найдены карточки и страницы навигатора', cards.length > 50 && navs.length >= 2, cards.length + '/' + navs.length);
+  check('A15: og:image и twitter:card на всех карточках и страницах навигатора', cards.concat(navs).every(og), cards.concat(navs).filter(f => !og(f)).slice(0, 5).join(','));
+  check('A15: JSON-LD (крошки и термин) на всех карточках', cards.every(f => { const h = read(f); return h.includes('"BreadcrumbList"') && h.includes('"DefinedTerm"'); }), cards.filter(f => !read(f).includes('"DefinedTerm"')).slice(0, 5).join(','));
+  check('A15: JSON-LD WebSite на первых страницах навигатора', ['index.html', 'nav/nav_thai.html'].every(f => read(f).includes('"WebSite"')));
+  check('A15: картинки og-ru.png и og-thai.png есть', ['img/og-ru.png', 'img/og-thai.png'].every(x => fs.existsSync(path.join(ROOT, x))));
+}
+
 console.log(failed ? 'ПРОВАЛЕНО: ' + failed + ', пройдено: ' + passed : 'ВСЕ ТЕСТЫ ПРОЙДЕНЫ: ' + passed);
 process.exitCode = failed ? 1 : 0;
