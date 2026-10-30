@@ -1,5 +1,5 @@
 // Бургер-меню: кнопка + выезжающая панель с пунктами (пункты — готовые ссылки в HTML)
-// ("Навигатор", "Связанные термины", "Мой прогресс", "Публикации", "Добавить термин"). Определяет язык
+// ("Навигатор", "Связанные термины", "Мой прогресс", "Публикации", "Что нового", "Добавить термин"). Определяет язык
 // по имени файла текущей страницы, строит ссылки на соответствующие
 // языковые версии страниц.
 
@@ -10,6 +10,7 @@ var BURGER_UI_STRINGS = {
     bundles: 'Связанные термины',
     progress: 'Мой прогресс',
     publications: 'Публикации',
+    news: 'Что нового',
     addTerm: 'Добавить термин'
   },
   thai: {
@@ -18,6 +19,7 @@ var BURGER_UI_STRINGS = {
     bundles: 'ชุดศัพท์ที่เกี่ยวข้อง',
     progress: 'ความคืบหน้าของฉัน',
     publications: 'บทความ',
+    news: 'มีอะไรใหม่',
     addTerm: 'เพิ่มคำศัพท์'
   }
 };
@@ -42,6 +44,7 @@ document.addEventListener('DOMContentLoaded', function () {
     { href: window.TermsLang.url(lang === 'ru' ? 'bundle/' : 'bundle/bundles_thai.html'), text: strings.bundles },
     { href: window.TermsLang.url('my/progress_' + lang + '.html'), text: strings.progress },
     { href: window.TermsLang.url(lang === 'ru' ? 'publications/' : 'publications/publications_thai.html'), text: strings.publications },
+    { href: window.TermsLang.url(lang === 'ru' ? 'new/' : 'new/news_thai.html'), text: strings.news },
     { href: window.TermsLang.url('how/how-to-add-term_' + lang + '.html'), text: strings.addTerm }
   ];
 

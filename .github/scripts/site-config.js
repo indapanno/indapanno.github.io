@@ -12,13 +12,13 @@ const SITE_URL = 'https://indapanno.github.io';
 
 // Имена, которые нельзя использовать для файлов терминов и статей (раздел 6 ТЗ).
 const RESERVED_ROOT = ['nav_', 'progress_', 'how-to-', 'how', 'my', 'nav', 'terms', 'bundle', 'publications', 'css', 'js', 'json',
-  'schema', 'docs', 'sitemap', 'robots', 'favicon', '404', 'index', 'img'];
+  'schema', 'docs', 'sitemap', 'robots', 'favicon', '404', 'index', 'img', 'new'];
 
 const absUrl = p => SITE_URL + p;
 const pageSuffix = page => (page > 1 ? '_' + page : '');
 
-// Страницы-списки: nav (корень), bundle/bundles_*, publications/publications_*.
-// Первая страница русского списка — index.html (адрес «/», «/bundle/», «/publications/»).
+// Страницы-списки: nav (корень), bundle/bundles_*, publications/publications_*, new/news_*.
+// Первая страница русского списка — index.html (адрес «/», «/bundle/», «/publications/», «/new/»).
 function makeList(dir, prefix) {
   const base = dir ? '/' + dir + '/' : '/';
   const name = (lang, page) => prefix + '_' + lang + pageSuffix(page) + '.html';
@@ -53,6 +53,11 @@ const nav = (function () {
 })();
 const bundles = makeList('bundle', 'bundles');
 const publications = makeList('publications', 'publications');
+// «Что нового»: список /new/ (ru, стр. 1), /new/news_<язык>[_N].html; сводка за день — /new/<ГГГГ-ММ-ДД>_<язык>.html
+const news = makeList('new', 'news');
+const newsDigestName = (date, lang) => date + '_' + lang + '.html';
+const newsDigestPath = (date, lang) => '/new/' + newsDigestName(date, lang);
+const newsDigestUrl = (date, lang) => absUrl(newsDigestPath(date, lang));
 
 const cardPath = (id, lang) => '/terms/' + id + '_' + lang + '.html';
 const cardUrl = (id, lang) => absUrl(cardPath(id, lang));
@@ -110,6 +115,7 @@ function langTargetPath(pagePath, target) {
   const b = pagePath.match(/^\/bundle\/bundle_(\d+)_(?:ru|thai)(?:_\d+)?\.html$/);
   if (b) return '/bundle/bundle_' + b[1] + '_' + target + '.html';
   if (pagePath === '/publications/' || /^\/publications\/[^/]+\.html$/.test(pagePath)) return thai ? '/publications/publications_thai.html' : '/publications/';
+  if (pagePath === '/new/' || /^\/new\/[^/]+\.html$/.test(pagePath)) return thai ? '/new/news_thai.html' : '/new/';
   const c = name.match(/^(.+)_(ru|thai)\.html$/);
   return c ? dir + c[1] + '_' + target + '.html' : null;
 }
@@ -123,7 +129,7 @@ function withLangSwitch(html, pagePath, lang) {
 }
 
 module.exports = {
-  SITE_URL, RESERVED_ROOT, absUrl, nav, bundles, publications,
+  SITE_URL, RESERVED_ROOT, absUrl, nav, bundles, publications, news, newsDigestName, newsDigestPath, newsDigestUrl,
   cardPath, cardUrl, bundlePath, bundleUrl, articlePath, articleUrl, coverPath, coverUrl,
   navHomePath, stubHtml, escAttr, HOW_PAGES, howName, howPath, howUrl, langTargetPath, withLangSwitch
 };

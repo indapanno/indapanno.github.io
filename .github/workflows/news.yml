@@ -1,0 +1,75 @@
+name: News
+
+# Раздел «Что нового» (ТЗ: push_TZ.md). Независим от остальных сборок:
+# читает готовый сайт и пишет только в new/, _src/news/ и sitemap_news.xml.
+# Расписание (ru 16:00 UTC, thai 12:00 UTC) и рассылка пушей — этап 5.
+on:
+  # Правки сборщика или шаблонов раздела: только пересборка страниц
+  # (и снимки, если их ещё нет — первый запуск, без сводки)
+  push:
+    branches: [main]
+    paths:
+      - '_src/news/template/**'
+      - '.github/scripts/build-news.js'
+      - '.github/scripts/test-news.js'
+      - '.github/scripts/site-config.js'
+  # Ручной запуск (Actions → News → Run workflow)
+  workflow_dispatch:
+    inputs:
+      lang:
+        description: 'pages — только страницы; ru / thai — сводка за день на этом языке'
+        type: choice
+        options: [pages, ru, thai]
+        default: pages
+      date:
+        description: 'Дата сводки ГГГГ-ММ-ДД (пусто — сегодня по Москве для ru, по Бангкоку для thai)'
+        required: false
+        default: ''
+
+# Сборки идут по очереди, без отмены уже идущих
+concurrency:
+  group: build-news
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run tests
+        run: node .github/scripts/test-news.js
+
+      - name: Build news
+        env:
+          NEWS_LANG: ${{ github.event.inputs.lang || 'pages' }}
+          NEWS_DATE: ${{ github.event.inputs.date }}
+        run: node .github/scripts/build-news.js
+
+      - name: Commit and push generated files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A -- new _src/news sitemap_news.xml
+          if git diff --staged --quiet; then
+            echo "Нет изменений для коммита"
+          else
+            git commit -m "Автосборка «Что нового» [skip ci]"
+            ok=0
+            for i in 1 2 3 4 5 6; do
+              if git pull --rebase origin ${{ github.ref_name }} && git push origin HEAD; then ok=1; break; fi
+              echo "Отправка не удалась (попытка $i), повтор"; sleep $((RANDOM % 5 + 2))
+            done
+            [ "$ok" = 1 ] || exit 1
+          fi

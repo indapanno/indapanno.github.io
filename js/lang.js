@@ -66,6 +66,10 @@
     if (path === '/publications/' || /^\/publications\/[^\/]+\.html$/.test(path)) {
       return thai ? '/publications/publications_thai.html' : '/publications/';
     }
+    // «Что нового»: список (любая страница) и сводки за день -> список другого языка.
+    if (path === '/new/' || /^\/new\/[^\/]+\.html$/.test(path)) {
+      return thai ? '/new/news_thai.html' : '/new/';
+    }
     // Карточка термина, «Мой прогресс», инструкции: то же имя с другим суффиксом языка.
     var card = filename.match(/^(.+)_(ru|thai)\.html$/);
     if (card) return dir + card[1] + '_' + targetLang + '.html';

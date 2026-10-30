@@ -210,15 +210,15 @@ const metaOf = (h, attr, name) => { const m = head(h).match(new RegExp('<meta ' 
 
 // 7. Меню и переключатель языка — готовые ссылки в HTML (без JavaScript)
 const MENU = {
-  ru: ['/', '/bundle/', '/my/progress_ru.html', '/publications/', '/how/how-to-add-term_ru.html'],
-  thai: ['/nav/nav_thai.html', '/bundle/bundles_thai.html', '/my/progress_thai.html', '/publications/publications_thai.html', '/how/how-to-add-term_thai.html']
+  ru: ['/', '/bundle/', '/my/progress_ru.html', '/publications/', '/new/', '/how/how-to-add-term_ru.html'],
+  thai: ['/nav/nav_thai.html', '/bundle/bundles_thai.html', '/my/progress_thai.html', '/publications/publications_thai.html', '/new/news_thai.html', '/how/how-to-add-term_thai.html']
 };
 const menuOf = h => { const m = h.match(/<ul id="nav-menu-list" class="nav-menu-list">([\s\S]*?)<\/ul>/); return m ? [...m[1].matchAll(/<a href="([^"]*)">/g)].map(x => x[1]) : null; };
 const switchOf = h => { const o = {}; [...h.matchAll(/<a data-lang-value="(ru|thai)" lang="(?:ru|th)"(?: href="([^"]*)")?>/g)].forEach(m => { o[m[1]] = m[2] || null; }); return o; };
 {
   const r = makeEnv({ 'bundle_1_ru.json': ru(ids(25)), 'bundle_1_thai.json': th(ids(25)), 'bundle_2_ru.json': ru(null, { name: 'Вторая' }) });
   const badMenu = r.pages.filter(f => { const lang = /_thai(_\d+)?\.html$/.test(f) ? 'thai' : 'ru'; return (menuOf(r.read(f)) || []).join() !== MENU[lang].join(); });
-  check('меню: 5 готовых ссылок на всех страницах', badMenu.length === 0, badMenu.join(','));
+  check('меню: 6 готовых ссылок на всех страницах', badMenu.length === 0, badMenu.join(','));
   const sw = f => switchOf(r.read(f));
   check('язык: страница связки → та же связка', sw('bundle_1_ru.html').thai === '/bundle/bundle_1_thai.html' && sw('bundle_1_ru.html').ru === '/bundle/bundle_1_ru.html'
     && sw('bundle_1_thai.html').ru === '/bundle/bundle_1_ru.html' && sw('bundle_1_thai.html').thai === '/bundle/bundle_1_thai.html');
