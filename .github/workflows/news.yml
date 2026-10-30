@@ -27,7 +27,7 @@ on:
         options: [pages, ru, thai]
         default: pages
       date:
-        description: 'Дата сводки ГГГГ-ММ-ДД (пусто — сегодня по Москве для ru, по Бангкоку для thai)'
+        description: 'Дата сводки ГГГГ-ММ-ДД (пусто: для test — последняя сводка; иначе — сегодня по Москве для ru, по Бангкоку для thai)'
         required: false
         default: ''
       send:
@@ -89,6 +89,12 @@ jobs:
           esac
           [ "$lang" = pages ] && mode=none
           date="$IN_DATE"
+          # Тест без даты — последняя существующая сводка языка (сегодняшней может не быть)
+          if [ "$mode" = test ] && [ -z "$date" ]; then
+            date=$(node -e "console.log(require('./.github/scripts/push/send.js').latestDigestDate(null, '$lang') || '')")
+            if [ -z "$date" ]; then echo "::error title=Тест пушей::сводок на языке $lang ещё нет — тестировать нечего"; exit 1; fi
+            echo "Тест без даты: берём последнюю сводку $date"
+          fi
           if [ "$lang" != pages ] && [ -z "$date" ]; then
             date=$(node -e "console.log(require('./.github/scripts/build-news.js').todayIn('$lang'))")
           fi
@@ -128,9 +134,15 @@ jobs:
         env:
           LANG_: ${{ steps.run.outputs.lang }}
           DATE_: ${{ steps.run.outputs.date }}
+          MODE_: ${{ steps.run.outputs.mode }}
         run: |
           f="_src/news/digests/${DATE_}_${LANG_}.json"
-          if [ ! -f "$f" ]; then echo "Сводки $DATE_ $LANG_ нет — рассылать нечего"; echo "has=0" >> "$GITHUB_OUTPUT"; exit 0; fi
+          if [ ! -f "$f" ]; then
+            echo "Сводки $DATE_ $LANG_ нет — рассылать нечего"; echo "has=0" >> "$GITHUB_OUTPUT"
+            # В тестовом режиме это ошибка: человек ждёт пуш
+            if [ "$MODE_" = test ]; then echo "::error title=Тест пушей::сводки $DATE_ $LANG_ нет — пуш не отправлен (укажите дату существующей сводки)"; exit 1; fi
+            exit 0
+          fi
           echo "has=1" >> "$GITHUB_OUTPUT"
           url="https://indapanno.github.io/new/${DATE_}_${LANG_}.html"
           for i in $(seq 1 40); do

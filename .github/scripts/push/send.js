@@ -94,7 +94,15 @@ async function run(opts) {
   return { ok: !errors.length, sent: results.length, results, errors, plan };
 }
 
-module.exports = { planSends, run, providerName, uuidFrom };
+// Дата последней сводки языка (для теста без даты) или null, если сводок нет
+function latestDigestDate(root, lang) {
+  const dir = path.join(root || REPO_ROOT, '_src/news/digests');
+  if (!fs.existsSync(dir)) return null;
+  const dates = fs.readdirSync(dir).map(f => f.match(/^(\d{4}-\d{2}-\d{2})_(ru|thai)\.json$/)).filter(m => m && m[2] === lang).map(m => m[1]).sort();
+  return dates.length ? dates[dates.length - 1] : null;
+}
+
+module.exports = { planSends, run, providerName, uuidFrom, latestDigestDate };
 
 if (require.main === module) {
   const { todayIn } = require('../build-news.js');

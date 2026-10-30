@@ -229,11 +229,22 @@ const runs = (async () => {
     check('CLI: режим none → ничего не шлёт, код 0', n.status === 0, n.status + ' ' + n.stderr);
   } else check('CLI: push/send.js существует', false);
 
+  // Тест без даты — последняя сводка языка
+  {
+    const root = makeRoot(D());
+    fs.writeFileSync(path.join(root, '_src/news/digests/2026-10-28_ru.json'), '{}');
+    fs.writeFileSync(path.join(root, '_src/news/digests/2026-11-02_thai.json'), '{}');
+    check('latestDigestDate: последняя сводка языка', tryv(() => sendMod.latestDigestDate(root, 'ru')) === '2026-10-30' && tryv(() => sendMod.latestDigestDate(root, 'thai')) === '2026-11-02');
+    check('latestDigestDate: сводок нет → null', tryv(() => sendMod.latestDigestDate(makeRoot(null), 'ru')) === null);
+  }
+
   // Workflow: расписание и секрет
   const wf = fs.readFileSync(path.resolve(__dirname, '../workflows/news.yml'), 'utf8');
   check('news.yml: расписание ru 16:00 UTC и thai 12:00 UTC', /cron:\s*'0 16 \* \* \*'/.test(wf) && /cron:\s*'0 12 \* \* \*'/.test(wf));
   check('news.yml: ключ из секрета ONESIGNAL_REST_API_KEY, ручной режим отправки и «повторить»', /secrets\.ONESIGNAL_REST_API_KEY/.test(wf) && /send:/.test(wf) && /resend:/.test(wf));
   check('news.yml: перед отправкой ждём, пока страница сводки откроется на сайте', /curl[^\n]*new\//.test(wf));
+  check('news.yml: тест без даты берёт последнюю сводку', /latestDigestDate/.test(wf));
+  check('news.yml: тест без сводки — красный запуск', /MODE_" = test[\s\S]{0,200}exit 1/.test(wf));
 })();
 
 Promise.all([runs, module.exports.pending]).catch(e => { failed++; console.error('ПРОВАЛ: тесты упали — ' + e.message); }).then(() => {
