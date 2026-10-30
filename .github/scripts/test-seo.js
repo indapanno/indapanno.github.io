@@ -160,8 +160,8 @@ function sitemapLocs(file) {
 
 // A10: меню — готовые ссылки в HTML на всех страницах с меню (поисковики без JavaScript их видят)
 const MENU = {
-  ru: ['/', '/bundle/', '/my/progress_ru.html', '/publications/', '/how/how-to-add-term_ru.html'],
-  thai: ['/nav/nav_thai.html', '/bundle/bundles_thai.html', '/my/progress_thai.html', '/publications/publications_thai.html', '/how/how-to-add-term_thai.html']
+  ru: ['/', '/bundle/', '/my/progress_ru.html', '/publications/', '/new/', '/how/how-to-add-term_ru.html'],
+  thai: ['/nav/nav_thai.html', '/bundle/bundles_thai.html', '/my/progress_thai.html', '/publications/publications_thai.html', '/new/news_thai.html', '/how/how-to-add-term_thai.html']
 };
 const pageLang = h => (/<html lang="th"/.test(h) ? 'thai' : 'ru');
 {
@@ -173,7 +173,7 @@ const pageLang = h => (/<html lang="th"/.test(h) ? 'thai' : 'ru');
     return hrefs.join() !== MENU[pageLang(h)].join();
   });
   check('A10: найдены страницы с меню', withMenu.length > 100, String(withMenu.length));
-  check('A10: в меню 5 готовых ссылок своего языка', bad.length === 0, bad.length + ': ' + bad.slice(0, 6).join(' | '));
+  check('A10: в меню 6 готовых ссылок своего языка («Что нового» после «Публикаций»)', bad.length === 0, bad.length + ': ' + bad.slice(0, 6).join(' | '));
 }
 
 // A11: переключатель языка — готовые адреса в HTML (те же, что ставит js/lang.js)
@@ -190,6 +190,8 @@ function langTarget(p, target) { // повторяет buildTargetUrl из js/la
   const b = p.match(/^\/bundle\/bundle_(\d+)_(?:ru|thai)(?:_\d+)?\.html$/);
   if (b) return '/bundle/bundle_' + b[1] + '_' + target + '.html';
   if (p === '/publications/' || /^\/publications\/[^/]+\.html$/.test(p)) return thai ? '/publications/publications_thai.html' : '/publications/';
+  // «Что нового»: список и сводки → список другого языка
+  if (p === '/new/' || /^\/new\/[^/]+\.html$/.test(p)) return thai ? '/new/news_thai.html' : '/new/';
   const c = name.match(/^(.+)_(ru|thai)\.html$/);
   return c ? dir + c[1] + '_' + target + '.html' : null;
 }
@@ -212,6 +214,25 @@ function langTarget(p, target) { // повторяет buildTargetUrl из js/la
     sw('terms/dukkha_ru.html').thai === '/terms/dukkha_thai.html' && sw('index.html').thai === '/nav/nav_thai.html' && sw('nav/nav_ru_2.html').thai === '/nav/nav_thai.html'
     && sw('publications/chetyre-blagorodnye-istiny.html').thai === '/publications/publications_thai.html' && sw('how/how-to-add-term_ru.html').thai === '/how/how-to-add-term_thai.html'
     && sw('my/progress_thai.html').ru === '/my/progress_ru.html');
+}
+
+// A12: раздел «Что нового»: список индексируется, сводки — noindex, follow; sitemap_news.xml и robots.txt
+{
+  const pagesN = files.filter(f => f.startsWith('new/'));
+  const digests = pagesN.filter(f => /^new\/\d{4}-\d{2}-\d{2}_(ru|thai)\.html$/.test(f));
+  const lists = pagesN.filter(f => !digests.includes(f));
+  check('A12: страницы списка /new/ и /new/news_thai.html есть', pagesN.includes('new/index.html') && pagesN.includes('new/news_thai.html'), pagesN.join(','));
+  check('A12: в /new/ нет посторонних файлов', lists.every(f => /^new\/(index|news_(ru|thai)(_\d+)?)\.html$/.test(f)), lists.join(','));
+  check('A12: сводки — noindex, follow', digests.every(f => read(f).includes('<meta name="robots" content="noindex, follow">')), digests.filter(f => !read(f).includes('noindex, follow')).join(','));
+  const empty = lists.filter(f => !/\/new\/\d{4}-\d{2}-\d{2}_/.test(read(f)));
+  check('A12: список без сводок — noindex; со сводками — индексируется', lists.every(f => empty.includes(f) === info[f].noindex), lists.map(f => f + ':' + info[f].noindex).join(','));
+  check('A12: sitemap_news.xml есть', fs.existsSync(path.join(ROOT, 'sitemap_news.xml')));
+  if (fs.existsSync(path.join(ROOT, 'sitemap_news.xml'))) {
+    const { locs } = sitemapLocs('sitemap_news.xml');
+    const want = lists.filter(f => !info[f].noindex).map(ownUrl);
+    check('A12: в sitemap_news.xml ровно индексируемые страницы списка', locs.slice().sort().join() === want.sort().join(), locs.join(',') + ' / ' + want.join(','));
+  }
+  check('A12: robots.txt ссылается на sitemap_news.xml', /^Sitemap: https:\/\/indapanno\.github\.io\/sitemap_news\.xml$/m.test(fs.existsSync(path.join(ROOT, 'robots.txt')) ? read('robots.txt') : ''));
 }
 
 console.log(failed ? 'ПРОВАЛЕНО: ' + failed + ', пройдено: ' + passed : 'ВСЕ ТЕСТЫ ПРОЙДЕНЫ: ' + passed);
