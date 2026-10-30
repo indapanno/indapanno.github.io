@@ -56,6 +56,11 @@
       "later_count": 1
     },
     {
+      "id": "brahmavihara",
+      "term_thai": "พรหมวิหาร",
+      "later_count": 2
+    },
+    {
       "id": "caga",
       "term_thai": "จาคะ",
       "later_count": 1
@@ -151,6 +156,11 @@
       "later_count": 1
     },
     {
+      "id": "karuna",
+      "term_thai": "กรุณา",
+      "later_count": 1
+    },
+    {
       "id": "kusalakamma",
       "term_thai": "กุศลกรรม",
       "later_count": 1
@@ -163,6 +173,16 @@
     {
       "id": "manokamma",
       "term_thai": "มโนกรรม",
+      "later_count": 1
+    },
+    {
+      "id": "metta",
+      "term_thai": "เมตตา",
+      "later_count": 1
+    },
+    {
+      "id": "mudita",
+      "term_thai": "มุทิตา",
       "later_count": 1
     },
     {
@@ -328,6 +348,11 @@
     {
       "id": "upadana",
       "term_thai": "อุปาทาน",
+      "later_count": 1
+    },
+    {
+      "id": "upekkha",
+      "term_thai": "อุเบกขา",
       "later_count": 1
     },
     {

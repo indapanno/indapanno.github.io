@@ -56,6 +56,11 @@
       "later_count": 1
     },
     {
+      "id": "brahmavihara",
+      "term_ru": "Брахмавихара",
+      "later_count": 2
+    },
+    {
       "id": "caga",
       "term_ru": "Чага",
       "later_count": 1
@@ -151,6 +156,11 @@
       "later_count": 1
     },
     {
+      "id": "karuna",
+      "term_ru": "Каруна",
+      "later_count": 1
+    },
+    {
       "id": "kusalakamma",
       "term_ru": "Кусала-камма",
       "later_count": 1
@@ -163,6 +173,16 @@
     {
       "id": "manokamma",
       "term_ru": "Мано-камма",
+      "later_count": 1
+    },
+    {
+      "id": "metta",
+      "term_ru": "Метта",
+      "later_count": 1
+    },
+    {
+      "id": "mudita",
+      "term_ru": "Мудита",
       "later_count": 1
     },
     {
@@ -328,6 +348,11 @@
     {
       "id": "upadana",
       "term_ru": "Упадана",
+      "later_count": 1
+    },
+    {
+      "id": "upekkha",
+      "term_ru": "Упеккха",
       "later_count": 1
     },
     {
