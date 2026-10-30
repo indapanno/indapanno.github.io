@@ -4,6 +4,7 @@
 // (комбинации трёх галочек) — каждый получает ровно одно уведомление со своим текстом.
 // Защита от повторов: отметка sent в данных сводки + ключ идемпотентности OneSignal
 // (одинаковый при повторе: OneSignal не отправит ту же группу дважды; «повторить» дошлёт недошедшие).
+// В тестовом режиме ключ уникален для каждого запуска (nonce): тест можно повторять сколько угодно.
 // Режимы: all — всем подписчикам языка; test — только с тегом tester (отметку sent не ставит); none — ничего.
 //
 // Запуск: NEWS_LANG=ru|thai [NEWS_DATE=ГГГГ-ММ-ДД] PUSH_MODE=all|test|none [PUSH_RESEND=true] node .github/scripts/push/send.js
@@ -33,6 +34,7 @@ function uuidFrom(s) {
 
 function planSends(digest, lang, opts) {
   const test = !!(opts && opts.test);
+  const nonce = test ? String((opts && opts.nonce) || crypto.randomUUID()) : '';
   const plan = [];
   for (let mask = 1; mask < 8; mask++) {
     const categories = {};
@@ -45,7 +47,7 @@ function planSends(digest, lang, opts) {
     const combo = CATS.map(k => (categories[k] ? 1 : 0)).join('');
     plan.push({
       lang, categories, title: m.title, body: m.body, url: m.url, tag: 'news-' + lang, test, filters,
-      idempotencyKey: uuidFrom(['news', digest.date, lang, combo, test ? 'test' : 'all'].join('|'))
+      idempotencyKey: uuidFrom(['news', digest.date, lang, combo, test ? 'test:' + nonce : 'all'].join('|'))
     });
   }
   return plan;
@@ -79,7 +81,7 @@ async function run(opts) {
   if (mode === 'all' && digest.sent && !opts.resend) return { ok: true, skipped: 'already-sent', sent: 0, errors: [] };
 
   const provider = opts.provider || defaultProvider(root);
-  const plan = planSends(digest, opts.lang, { test: mode === 'test' });
+  const plan = planSends(digest, opts.lang, { test: mode === 'test', nonce: opts.nonce });
   const errors = [], results = [];
   for (const msg of plan) {
     try { results.push(Object.assign({ combo: msg.categories }, await provider.send(msg))); }

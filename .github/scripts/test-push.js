@@ -125,6 +125,10 @@ const tagOf = (filters, key) => { const f = (filters || []).find(x => x.field ==
     check('план: ключи одинаковы при повторе (OneSignal не отправит дважды)', again.join() === keys.join());
     const testPlan = sendMod.planSends(d, 'ru', { test: true });
     check('тестовый режим: фильтр tester=1, свои ключи', testPlan.every(p => tagOf(p.filters, 'tester') === '=1' && p.test === true) && testPlan.every(p => keys.indexOf(p.idempotencyKey) < 0));
+    const t2 = sendMod.planSends(d, 'ru', { test: true }).map(p => p.idempotencyKey);
+    check('тестовый режим: каждый запуск — новые ключи (иначе OneSignal молча отбросит повторный тест)', t2.every(k => testPlan.map(p => p.idempotencyKey).indexOf(k) < 0));
+    const fixed = n => sendMod.planSends(d, 'ru', { test: true, nonce: n }).map(p => p.idempotencyKey).join();
+    check('тестовый режим: один и тот же запуск (nonce) — одни и те же ключи', fixed('run-1') === fixed('run-1') && fixed('run-1') !== fixed('run-2'));
   }
   const thaiPlan = tryv(() => sendMod.planSends(digest({ terms: terms(2, 'thai') }, 'thai'), 'thai', { test: false }));
   check('план thai: 4 группы с терминами, метка news-thai, lang=thai', Array.isArray(thaiPlan) && thaiPlan.length === 4 && thaiPlan.every(p => p.tag === 'news-thai' && tagOf(p.filters, 'lang') === '=thai'), show(thaiPlan && thaiPlan.length));
@@ -198,6 +202,9 @@ const runs = (async () => {
   root = makeRoot(sentD); pr = fakeProvider();
   r = await runP({ root, lang: 'ru', date: '2026-10-30', mode: 'test', provider: pr });
   check('тест разрешён и после реальной отправки', r.ok === true && pr.calls.length === 6);
+  const firstKeys = pr.calls.map(c => c.idempotencyKey).join(); pr = fakeProvider();
+  r = await runP({ root, lang: 'ru', date: '2026-10-30', mode: 'test', provider: pr });
+  check('повторный тест той же сводки уходит с новыми ключами', r.ok === true && pr.calls.length === 6 && pr.calls.map(c => c.idempotencyKey).join() !== firstKeys);
 
   root = makeRoot(D()); pr = fakeProvider((m, n) => n === 3);
   r = await runP({ root, lang: 'ru', date: '2026-10-30', mode: 'all', provider: pr });
