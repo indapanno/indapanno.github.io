@@ -144,6 +144,8 @@ let cs = null, csErr = '';
 try { cs = require('./check-sources.js'); } catch (e) { csErr = e.message; }
 check('check-sources.js загружается и экспортирует checkLocation, checkTerms', !!(cs && cs.checkLocation && cs.checkTerms), csErr);
 const warnOf = loc => { try { return cs.checkLocation(loc); } catch (e) { return 'ОШИБКА ' + e.message; } };
+const warnOf2 = (loc, title) => { try { return cs.checkLocation(loc, title); } catch (e) { return 'ОШИБКА ' + e.message; } };
+const loadRepoTerms = () => { const o = {}; fs.readdirSync(path.join(REPO, 'json')).filter(f => /^[a-z0-9]+_(ru|thai)\.json$/.test(f) && !f.startsWith('index_')).forEach(f => { o[f.slice(0, -5)] = JSON.parse(fs.readFileSync(path.join(REPO, 'json', f), 'utf8')); }); return o; };
 const OK = ['Majjhima Nikāya 118', 'Dīgha Nikāya 34', 'Saṃyutta Nikāya 56.11', 'Samyutta Nikāya 12.1', 'Saṁyutta Nikāya 22.59', 'Aṅguttara Nikāya 10.60',
   'Aṅguttara Nikāya 4.1–4.5', 'Sutta Nipāta 1.8; Khuddakapāṭha 9', 'Dhammapada 1–20', 'Itivuttaka 112', 'Udāna 8.1–8.4', 'Маджхима-никая 118', 'Ангуттара-никая 4.1',
   'статья «Magga»', 'Visuddhimagga XVI', 'Vinaya Mahāvagga I.6 (Vin I 10)', 'Majjhima Nikāya 141 (MN 141)', 'Khuddaka Nikāya, Petavatthu'];
@@ -156,6 +158,10 @@ check('check-sources: подозрительные ссылки — предуп
   cs && BAD.filter(([l, why]) => !(typeof warnOf(l) === 'string' && warnOf(l).includes(why))).map(([l]) => JSON.stringify(l) + ' → ' + warnOf(l)).join(' | '));
 if (cs && cs.checkTerms) {
   const w = cs.checkTerms({ dukkha_ru: { sources: [{ location: 'Majjhima Nikāya 200' }, { location: 'Majjhima Nikāya 1' }] }, sila_thai: { sources: [{ location: '' }] }, x_ru: {} });
+  check('check-sources: номера без названия, но с названием в title — без предупреждения', warnOf2('4.4.14', 'Bṛhadāraṇyaka Upaniṣad') === null && warnOf2('VII.78–79', 'Visuddhimagga') === null);
+  check('check-sources: номер из title проверяется по границам собрания', typeof warnOf2('200', 'Majjhima Nikāya') === 'string' && warnOf2('200', 'Majjhima Nikāya').includes('MN 1–152') && warnOf2('118', 'Majjhima Nikāya') === null);
+  check('check-sources: на репозитории нет ложных предупреждений о названии', cs.checkTerms(loadRepoTerms()).filter(w => /нет названия/.test(w.warning)).length === 0,
+    JSON.stringify(cs.checkTerms(loadRepoTerms()).filter(w => /нет названия/.test(w.warning))));
   check('check-sources: checkTerms — файл, номер источника и причина', Array.isArray(w) && w.length === 2 && w[0].file === 'dukkha_ru.json' && w[0].index === 1 && w[1].file === 'sila_thai.json',
     JSON.stringify(w));
 }

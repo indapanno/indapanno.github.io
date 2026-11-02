@@ -67,25 +67,28 @@ async function send(urls, opts) {
   return results;
 }
 
-module.exports = { fileToUrl, sitemapLocs, pickUrls, findKey, buildRequest, send };
+// Ждём, пока GitHub Pages опубликует новую версию: страница на сайте должна совпасть с файлом коммита
+// целиком (заголовок и прочие части при правке часто не меняются). По умолчанию до 10 минут.
+async function waitLive(url, expected, opts) {
+  const o = opts || {};
+  const doFetch = o.fetch || globalThis.fetch;
+  const attempts = o.attempts || 40, interval = o.interval === undefined ? 15000 : o.interval;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      const res = await doFetch(url + (url.includes('?') ? '&' : '?') + 'v=' + Date.now(), { cache: 'no-store' });
+      if (res.ok && (await res.text()) === expected) return true;
+    } catch (e) { /* ещё не доступна */ }
+    if (i < attempts - 1) await new Promise(r => setTimeout(r, interval));
+  }
+  return false;
+}
+
+module.exports = { fileToUrl, sitemapLocs, pickUrls, findKey, buildRequest, send, waitLive };
 
 // --- Запуск из workflow ---
 const git = args => execFileSync('git', args, { cwd: REPO_ROOT, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
 const gitShow = (rev, file) => { try { return git(['show', rev + ':' + file]); } catch (e) { return ''; } };
 const warn = msg => { console.log('ПРЕДУПРЕЖДЕНИЕ IndexNow: ' + msg); if (process.env.GITHUB_ACTIONS) console.log('::warning title=IndexNow::' + msg); };
-const sleep = ms => new Promise(r => setTimeout(r, ms));
-
-// Ждём, пока GitHub Pages опубликует изменения: проверяем первую живую страницу (до 10 минут)
-async function waitLive(url, marker) {
-  for (let i = 0; i < 40; i++) {
-    try {
-      const res = await fetch(url, { cache: 'no-store' });
-      if (res.ok && (!marker || (await res.text()).includes(marker))) return true;
-    } catch (e) { /* ещё не доступна */ }
-    await sleep(15000);
-  }
-  return false;
-}
 
 async function main(from, to) {
   const key = findKey(REPO_ROOT);
@@ -105,8 +108,7 @@ async function main(from, to) {
   const liveFile = changed.find(f => fileToUrl(f) && urls.includes(fileToUrl(f)));
   if (liveFile) {
     const text = fs.readFileSync(path.join(REPO_ROOT, liveFile), 'utf8');
-    const marker = (text.match(/<title>[^<]*<\/title>/) || [])[0] || '';
-    if (!(await waitLive(fileToUrl(liveFile), marker))) warn('страница ' + fileToUrl(liveFile) + ' не обновилась на сайте за 10 минут; адреса всё равно отправлены');
+    if (!(await waitLive(fileToUrl(liveFile), text))) warn('страница ' + fileToUrl(liveFile) + ' не обновилась на сайте за 10 минут; адреса всё равно отправлены');
   }
   await send(urls, { key });
   console.log('IndexNow: отправлено адресов — ' + urls.length);

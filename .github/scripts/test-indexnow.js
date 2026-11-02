@@ -24,7 +24,7 @@ try { m = require('./indexnow.js'); } catch (e) { loadErr = e.message; }
 const tryv = f => { try { return f(); } catch (e) { return { __error: e.message }; } };
 const show = v => JSON.stringify(v);
 
-check('indexnow.js загружается и экспортирует функции', !!(m && ['fileToUrl', 'sitemapLocs', 'pickUrls', 'findKey', 'buildRequest', 'send'].every(k => typeof m[k] === 'function')), loadErr);
+check('indexnow.js загружается и экспортирует функции', !!(m && ['fileToUrl', 'sitemapLocs', 'pickUrls', 'findKey', 'buildRequest', 'send', 'waitLive'].every(k => typeof m[k] === 'function')), loadErr);
 const f = (name, ...a) => tryv(() => m[name](...a));
 
 // fileToUrl
@@ -72,10 +72,21 @@ check('sitemapLocs: только <loc>, без hreflang-ссылок', show(f('s
 // send
 const fakeFetch = (status, calls) => (url, opt) => { calls.push({ url, body: JSON.parse(opt.body) }); return Promise.resolve({ ok: status < 300, status }); };
 const sendP = (urls, status) => { const calls = []; return Promise.resolve().then(() => m.send(urls, { key: 'k'.repeat(32), fetch: fakeFetch(status, calls) })).then(r => ({ ok: true, r, calls }), e => ({ ok: false, e: e.message, calls })); };
-Promise.all([
+// waitLive: ждём, пока страница на сайте совпадёт с файлом коммита целиком
+const liveFetch = (seq, calls) => () => { const v = seq[Math.min(calls.n++, seq.length - 1)]; return v instanceof Error ? Promise.reject(v) : Promise.resolve({ ok: v !== null, status: v === null ? 404 : 200, text: () => Promise.resolve(v || '') }); };
+const waitP = (seq, attempts) => { const calls = { n: 0 }; return Promise.resolve().then(() => m.waitLive(SITE + '/a.html', '<title>T</title>НОВОЕ', { fetch: liveFetch(seq, calls), interval: 0, attempts })).then(r => ({ r, n: calls.n }), e => ({ r: 'ОШИБКА ' + e.message, n: calls.n })); };
+const waits = Promise.all([
+  waitP(['<title>T</title>СТАРОЕ', null, new Error('сеть'), '<title>T</title>НОВОЕ'], 10),
+  waitP(['<title>T</title>СТАРОЕ'], 5)
+]).then(([late, never]) => {
+  check('waitLive: старая версия с тем же <title> — не готово; ждёт до совпадения целиком', late.r === true && late.n === 4, show(late));
+  check('waitLive: так и не обновилась — false после всех попыток', never.r === false && never.n === 5, show(never));
+}).catch(e => check('waitLive: тесты не упали', false, e.message));
+
+Promise.all([waits,
   sendP([SITE + '/a.html'], 200), sendP([SITE + '/a.html'], 202), sendP([], 200), sendP([SITE + '/a.html'], 403),
   sendP(Array.from({ length: 10001 }, (_, i) => SITE + '/p' + i + '.html'), 200)
-]).then(([ok200, ok202, empty, bad, big]) => {
+]).then(([, ok200, ok202, empty, bad, big]) => {
   check('send: 200 и 202 — успех', ok200.ok && ok202.ok && ok200.calls.length === 1, show([ok200, ok202]));
   check('send: пустой список — без запроса', empty.ok && empty.calls.length === 0);
   check('send: 403 и прочие ошибки — исключение с кодом', !bad.ok && /403/.test(bad.e || ''), show(bad));
