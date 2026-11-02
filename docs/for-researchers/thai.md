@@ -114,6 +114,10 @@ indapanno.github.io/                  # root ของ repository = root ขอ�
 ├── scripts/test-widgets.js    # ตรวจ js/publication-widgets.js การเชื่อมเข้าโครงหน้า และสไตล์แบบเบา (รันใน workflow ก่อน build)
 ├── scripts/test-links.js      # ตรวจลิงก์ของเว็บไซต์ที่ build แล้ว (รันด้วยมือ)
 ├── scripts/test-seo.js        # ตรวจ canonical, hreflang, sitemap, robots.txt (รันด้วยมือ)
+├── scripts/test-terms.js      # ชุดทดสอบ build-terms.js: smoke test ของการ build, JSON-LD, og:image, check-sources (รันใน workflow ก่อน build)
+├── scripts/check-sources.js   # ตรวจรูปแบบ sources[].location — แจ้งเตือนเท่านั้น (รันใน workflow ก่อน build)
+├── scripts/indexnow.js        # ส่ง URL ใหม่และที่เปลี่ยนไปยัง IndexNow อัตโนมัติ (ทุกการ build หลัง commit ของบอต)
+├── scripts/test-indexnow.js   # ชุดทดสอบ indexnow.js
 ├── scripts/build-news.js      # «มีอะไรใหม่»: สรุป หน้า new/ และ sitemap_news.xml
 ├── scripts/test-news.js       # ชุดทดสอบของ build-news.js
 ├── scripts/push/              # การส่งการแจ้งเตือน: send.js, text.js (ข้อความ), onesignal.js (ผู้ให้บริการ)
@@ -589,8 +593,15 @@ service worker ของผู้ให้บริการคือ `OneSignal
   `buildTargetUrl` ใน `js/lang.js`) `burger-menu.js` สร้างเมนูเองเฉพาะหน้าที่รายการว่างเท่านั้น
 - หน้าบทความ (`publications/*.html`) ถูก index (หน้ารายการที่ไม่มีบทความเป็น `noindex`) URL ของหน้าเหล่านี้อยู่ในไฟล์แยก
   `sitemap_publications.xml` ที่ `build-publications.js` สร้างเท่านั้น — ดูหัวข้อ «บทความ»
-- การ์ดคำศัพท์และหน้านำทางยังไม่มีรูปสำหรับพรีวิวลิงก์ (`og:image`) — วาง Open Graph ไว้แล้ว แต่พรีวิวในแอปแชท
-  ยังเป็นแบบข้อความล้วน ส่วนบทความใช้ภาพปกเป็น `og:image`
+- รูปพรีวิวลิงก์ (`og:image`, 1200×630) ของการ์ดคำศัพท์และทุกหน้านำทาง — ภาพเดียวต่อภาษา: `img/og-ru.png`, `img/og-thai.png`
+  (+ `og:image:width/height/alt`, `twitter:card` = `summary_large_image`) ส่วนบทความใช้ภาพปกเป็น `og:image`
+- JSON-LD (`<script type="application/ld+json">`, schema.org): การ์ดคำศัพท์มี breadcrumb (`BreadcrumbList`: หน้านำทาง → คำศัพท์)
+  และ `DefinedTerm` (ชื่อ IAST ความหมาย ที่อยู่ ภาษา) หน้าแรกของหน้านำทางมี `WebSite` หน้าแจ้งว่ายังไม่มีคำแปลไม่มี markup
+  อักขระ «<» ใน JSON ถูก escape (`\u003c`) สร้างโดย `build-terms.js`
+- หน้าคำแนะนำ `how/how-to-*.html` เป็นหน้าบริการ: `noindex, follow` ไม่อยู่ใน sitemap
+- IndexNow: หลัง commit ของบอตทุกครั้ง (คำศัพท์ ชุดศัพท์ บทความ «มีอะไรใหม่») `indexnow.js` ส่ง URL ใหม่ ที่เปลี่ยน และที่ถูกลบ
+  จาก sitemap (คีย์คือไฟล์ `<32 hex>.txt` ที่ root) ก่อนส่งจะรอจน GitHub Pages เผยแพร่การเปลี่ยนแปลง (ไม่เกิน 10 นาที)
+  ส่งไม่สำเร็จเป็นเพียงคำเตือน ไม่ทำให้การ build ล้มเหลว
 - รายการ «มีอะไรใหม่» (`/new/`, `new/news_*.html`) ถูก index URL อยู่ใน `sitemap_news.xml` (สร้างโดย `build-news.js` เท่านั้น) สรุปประจำวันเป็น `noindex, follow` ไม่อยู่ใน sitemap รายการว่างเป็น `noindex`
 - `robots.txt` อยู่ที่ root ของเว็บไซต์: `Allow: /` และสี่บรรทัด `Sitemap:` (`sitemap.xml`, `sitemap_publications.xml`, `sitemap_bundles.xml`, `sitemap_news.xml`)
 - ทุกหน้าที่ถูก index มี `canonical` หนึ่งตัวที่ตรงกับที่อยู่ของหน้านั้น หน้าแจ้งย้ายที่ที่อยู่เดิมใน repository `buddhism` มี `canonical` ไปยังที่อยู่ใหม่และ `meta refresh` ทันที ไม่มี `noindex` ตรวจโดย `test-seo.js` และ `test-links.js` (`test-seo.js` ตรวจเมนู 6 รายการ หมวด «มีอะไรใหม่» และการเชื่อมการสมัครแจ้งเตือนกับ manifest ในทุกหน้าที่มีเมนูด้วย)
@@ -619,8 +630,6 @@ service worker ของผู้ให้บริการคือ `OneSignal
 
 1. **ลิงก์เชื่อมโยงระหว่างคำศัพท์ (cross-references).** ให้ขั้นตอน build แปลงการกล่าวถึง id ของคำศัพท์ที่มีอยู่แล้ว (ใน `later_mentions[].source.title`, `term_composition`, หรือข้อความในฟิลด์ต่าง ๆ) ให้เป็น `<a href="<id>_thai.html">` โดยอัตโนมัติ — เมื่อคลังคำศัพท์เติบโตขึ้น จะกลายเป็นเครือข่ายความเชื่อมโยงระหว่างแนวคิดโดยไม่ต้องกำกับลิงก์ด้วยมือ
 2. **GitHub Action บน pull_request** — ตรวจสอบตาม JSON Schema แบบเดียวกับที่ `json-validator.js` ทำในเบราว์เซอร์ แต่ทำอัตโนมัติฝั่ง PR แสดงข้อผิดพลาดเป็นคอมเมนต์ให้ผู้ส่งเห็นเอง และอาจตั้งค่าให้ merge อัตโนมัติหากไม่พบข้อผิดพลาด schema และตัวตรวจสอบพร้อมใช้แล้ว เหลือแค่ทำตัว Action เอง
-3. **การตรวจสอบความสมเหตุสมผลของแหล่งอ้างอิง** — ตรวจรูปแบบของ `sources[].location` เชิง heuristic (เช่น ช่วงเลขที่ของนิกาย) เพื่อจับความผิดปกติที่ชัดเจน โดยไม่ได้อ้างว่าเป็นการตรวจสอบข้อเท็จจริงแบบสมบูรณ์
-4. **ชุดทดสอบสำหรับ `build-terms.js`** — smoke test ด้วย `node:test` ในตัว (Node 18+ ไม่ต้องติดตั้งเพิ่ม): การสร้างการ์ดไม่ error เมื่อ JSON ถูกต้อง, การทำตัวพิมพ์ใหญ่ทำงานถูกต้อง, `renderComposition` คืนค่าว่างเมื่อ `is_compound: false`
-5. **`og:image`** — รูป 1200×630 สำหรับพรีวิวลิงก์ในแอปแชทและโซเชียล โครงสร้าง Open Graph รองรับไว้แล้ว ขาดแต่ตัวรูป สำหรับบทความทำแล้ว: พรีวิวใช้ภาพปก
+ทำแล้ว (เคยอยู่ในรายการนี้): ตรวจรูปแบบแหล่งอ้างอิง (`check-sources.js` แจ้งเตือนเท่านั้น: ว่าง ไม่มีชื่อแหล่ง หมายเลขเกินขอบเขต — DN 1–34, MN 1–152, SN 1–56, AN 1–11, Dhp 1–423, Sn 1–5, Khp 1–9, Iti 1–112, Ud 1–8), smoke test ของการ build คำศัพท์ (`test-terms.js`), `og:image` ของคำศัพท์และหน้านำทาง
 
 Repository: https://github.com/indapanno/indapanno.github.io

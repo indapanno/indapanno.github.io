@@ -124,6 +124,24 @@ function buildMetaDescription(lang, data) {
   return truncateForMeta(capitalize(String(source).trim().replace(/\s+/g, ' ')), META_DESC_MAX[lang], lang);
 }
 
+// Картинка для превью ссылок (одна на язык, 1200×630) — img/og-<язык>.png
+function ogImageTags(lang) {
+  return [
+    '<meta property="og:image" content="' + cfg.absUrl('/img/og-' + lang + '.png') + '">',
+    '<meta property="og:image:width" content="1200">',
+    '<meta property="og:image:height" content="630">',
+    '<meta property="og:image:alt" content="' + escapeHtml(NAV_TITLE_TEXT[lang]) + '">',
+    '<meta name="twitter:card" content="summary_large_image">'
+  ].join('\n');
+}
+
+// JSON-LD: «<» экранируется, чтобы текст не мог закрыть тег <script>
+function jsonLd(obj) {
+  return '<script type="application/ld+json">' + JSON.stringify(obj).replace(/</g, '\\u003c') + '</script>';
+}
+const CRUMB_HOME = { ru: 'Навигатор по терминам', thai: 'นำทางคำศัพท์' };
+const LD_LANG = { ru: 'ru', thai: 'th' };
+
 function buildSeoTags(lang, id, data, titleText) {
   if (!data) return '<meta name="robots" content="noindex">';
   const urlOf = l => cfg.cardUrl(id, l);
@@ -142,6 +160,18 @@ function buildSeoTags(lang, id, data, titleText) {
   tags.push('<meta property="og:url" content="' + urlOf(lang) + '">');
   tags.push('<meta property="og:locale" content="' + OG_LOCALE[lang] + '">');
   present.filter(l => l !== lang).forEach(l => tags.push('<meta property="og:locale:alternate" content="' + OG_LOCALE[l] + '">'));
+  tags.push(ogImageTags(lang));
+  // Разметка для поисковиков: хлебные крошки (Навигатор → термин) и «термин словаря»
+  const name = capitalize(data[lang === 'thai' ? 'term_thai' : 'term_ru'] || id);
+  const term = { '@type': 'DefinedTerm', name, url: urlOf(lang), inLanguage: LD_LANG[lang],
+    inDefinedTermSet: { '@type': 'DefinedTermSet', name: NAV_TITLE_TEXT[lang], url: cfg.nav.url(lang, 1) } };
+  if (data.term_iast) term.alternateName = data.term_iast;
+  if (desc) term.description = desc;
+  tags.push(jsonLd({ '@context': 'https://schema.org', '@graph': [
+    { '@type': 'BreadcrumbList', itemListElement: [
+      { '@type': 'ListItem', position: 1, name: CRUMB_HOME[lang], item: cfg.nav.url(lang, 1) },
+      { '@type': 'ListItem', position: 2, name, item: urlOf(lang) }] },
+    term] }));
   return tags.join('\n');
 }
 
@@ -295,6 +325,9 @@ LANGS.forEach(lang => {
       linkTags += '\n<meta property="og:description" content="' + escapeHtml(navDesc) + '">';
       linkTags += '\n<meta property="og:url" content="' + canonicalUrl + '">';
       linkTags += '\n<meta property="og:locale" content="' + NAV_OG_LOCALE[lang] + '">';
+      linkTags += '\n' + ogImageTags(lang);
+      // Первая страница списка — разметка «сайт»
+      if (page === 1) linkTags += '\n' + jsonLd({ '@context': 'https://schema.org', '@type': 'WebSite', name: NAV_TITLE_TEXT[lang], url: canonicalUrl, inLanguage: LD_LANG[lang] });
     }
     html = replaceOnce(html, '<link rel="stylesheet" href="/css/style.css">',
       '<link rel="stylesheet" href="/css/style.css">\n' + linkTags, lang + ' nav p' + page, 'canonical');

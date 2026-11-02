@@ -9,6 +9,8 @@ on:
       - 'js/render-term.js'
       - 'js/thai-numerals.js'
       - '.github/scripts/build-terms.js'
+      - '.github/scripts/test-terms.js'
+      - '.github/scripts/check-sources.js'
       - '.github/scripts/site-config.js'
   # Ручной запуск (Actions → Build terms → Run workflow): нужен после правок шаблонов
   workflow_dispatch:
@@ -30,10 +32,18 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Run tests
+        run: node .github/scripts/test-terms.js
+
+      # Ссылки на источники: только предупреждения, сборку не останавливает
+      - name: Check sources
+        run: node .github/scripts/check-sources.js
+
       - name: Build terms
         run: node .github/scripts/build-terms.js
 
       - name: Commit and push generated files
+        id: commit
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -48,4 +58,10 @@ jobs:
               echo "Отправка не удалась (попытка $i), повтор"; sleep $((RANDOM % 5 + 2))
             done
             [ "$ok" = 1 ] || exit 1
+            echo "committed=1" >> "$GITHUB_OUTPUT"
           fi
+
+      # Новые и изменённые страницы — в IndexNow (Bing, Яндекс). Ошибка только предупреждает.
+      - name: Notify IndexNow
+        if: steps.commit.outputs.committed == '1'
+        run: node .github/scripts/indexnow.js HEAD~1 HEAD

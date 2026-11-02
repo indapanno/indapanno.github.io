@@ -111,6 +111,7 @@ jobs:
         run: node .github/scripts/build-news.js
 
       - name: Commit and push generated files
+        id: commit
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -125,7 +126,13 @@ jobs:
               echo "Отправка не удалась (попытка $i), повтор"; sleep $((RANDOM % 5 + 2))
             done
             [ "$ok" = 1 ] || exit 1
+            echo "committed=1" >> "$GITHUB_OUTPUT"
           fi
+
+      # Новые и изменённые страницы — в IndexNow (Bing, Яндекс). Ошибка только предупреждает.
+      - name: Notify IndexNow
+        if: steps.commit.outputs.committed == '1'
+        run: node .github/scripts/indexnow.js HEAD~1 HEAD
 
       # Пуш ведёт на страницу сводки — ждём, пока GitHub Pages её опубликует (до 10 минут)
       - name: Wait for digest page
