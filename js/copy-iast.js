@@ -1,13 +1,16 @@
 // Клик (или Enter/пробел, раз это h2, а не нативная кнопка) по транслитерации
 // IAST под заголовком — копирует её в буфер обмена. Обратная связь — временная
 // смена текста самого элемента (не добавляет новых узлов на странице).
+// Текст подтверждения — по языку страницы (<html lang>): th → тайский, иначе русский.
+
+var COPIED_TEXT = document.documentElement.lang === 'th' ? 'คัดลอกแล้ว ✓' : 'Скопировано ✓';
 
 function copyIastText(btn) {
   if (!btn || !navigator.clipboard) return;
   var text = btn.dataset.copyText || btn.textContent;
   navigator.clipboard.writeText(text).then(function () {
     var original = btn.textContent;
-    btn.textContent = 'Скопировано ✓';
+    btn.textContent = COPIED_TEXT;
     btn.classList.add('copied');
     setTimeout(function () {
       btn.textContent = original;
