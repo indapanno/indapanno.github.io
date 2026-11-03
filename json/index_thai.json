@@ -16,6 +16,11 @@
       "later_count": 1
     },
     {
+      "id": "anumodana",
+      "term_thai": "อนุโมทนา",
+      "later_count": 2
+    },
+    {
       "id": "arahant",
       "term_thai": "พระอรหันต์",
       "later_count": 2
@@ -84,6 +89,11 @@
       "id": "dhammacakkhu",
       "term_thai": "ธรรมจักษุ",
       "later_count": 1
+    },
+    {
+      "id": "dhammadana",
+      "term_thai": "ธรรมทาน",
+      "later_count": 2
     },
     {
       "id": "dhammadasa",
@@ -246,6 +256,11 @@
       "later_count": 2
     },
     {
+      "id": "punna",
+      "term_thai": "บุญ",
+      "later_count": 2
+    },
+    {
       "id": "puthujjana",
       "term_thai": "ปุถุชน",
       "later_count": 1
@@ -311,6 +326,16 @@
       "later_count": 2
     },
     {
+      "id": "sanna",
+      "term_thai": "สัญญา",
+      "later_count": 2
+    },
+    {
+      "id": "sati",
+      "term_thai": "สติ",
+      "later_count": 3
+    },
+    {
       "id": "satipatthana",
       "term_thai": "สติปัฏฐาน",
       "later_count": 2
@@ -346,6 +371,11 @@
       "later_count": 2
     },
     {
+      "id": "tathagata",
+      "term_thai": "ตถาคต",
+      "later_count": 2
+    },
+    {
       "id": "upadana",
       "term_thai": "อุปาทาน",
       "later_count": 1
@@ -369,6 +399,11 @@
       "id": "vinnana",
       "term_thai": "วิญญาณ",
       "later_count": 2
+    },
+    {
+      "id": "vipassana",
+      "term_thai": "วิปัสสนา",
+      "later_count": 3
     },
     {
       "id": "yonisomanasikara",

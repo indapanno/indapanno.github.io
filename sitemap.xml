@@ -30,6 +30,9 @@
     <loc>https://indapanno.github.io/nav/nav_ru_8.html</loc>
   </url>
   <url>
+    <loc>https://indapanno.github.io/nav/nav_ru_9.html</loc>
+  </url>
+  <url>
     <loc>https://indapanno.github.io/nav/nav_thai.html</loc>
     <xhtml:link rel="alternate" hreflang="ru" href="https://indapanno.github.io/"/>
     <xhtml:link rel="alternate" hreflang="th" href="https://indapanno.github.io/nav/nav_thai.html"/>
@@ -54,6 +57,9 @@
   </url>
   <url>
     <loc>https://indapanno.github.io/nav/nav_thai_8.html</loc>
+  </url>
+  <url>
+    <loc>https://indapanno.github.io/nav/nav_thai_9.html</loc>
   </url>
   <url>
     <loc>https://indapanno.github.io/terms/akalika_ru.html</loc>
@@ -84,6 +90,16 @@
     <loc>https://indapanno.github.io/terms/anagami_thai.html</loc>
     <xhtml:link rel="alternate" hreflang="ru" href="https://indapanno.github.io/terms/anagami_ru.html"/>
     <xhtml:link rel="alternate" hreflang="th" href="https://indapanno.github.io/terms/anagami_thai.html"/>
+  </url>
+  <url>
+    <loc>https://indapanno.github.io/terms/anumodana_ru.html</loc>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://indapanno.github.io/terms/anumodana_ru.html"/>
+    <xhtml:link rel="alternate" hreflang="th" href="https://indapanno.github.io/terms/anumodana_thai.html"/>
+  </url>
+  <url>
+    <loc>https://indapanno.github.io/terms/anumodana_thai.html</loc>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://indapanno.github.io/terms/anumodana_ru.html"/>
+    <xhtml:link rel="alternate" hreflang="th" href="https://indapanno.github.io/terms/anumodana_thai.html"/>
   </url>
   <url>
     <loc>https://indapanno.github.io/terms/arahant_ru.html</loc>
@@ -224,6 +240,16 @@
     <loc>https://indapanno.github.io/terms/dhammacakkhu_thai.html</loc>
     <xhtml:link rel="alternate" hreflang="ru" href="https://indapanno.github.io/terms/dhammacakkhu_ru.html"/>
     <xhtml:link rel="alternate" hreflang="th" href="https://indapanno.github.io/terms/dhammacakkhu_thai.html"/>
+  </url>
+  <url>
+    <loc>https://indapanno.github.io/terms/dhammadana_ru.html</loc>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://indapanno.github.io/terms/dhammadana_ru.html"/>
+    <xhtml:link rel="alternate" hreflang="th" href="https://indapanno.github.io/terms/dhammadana_thai.html"/>
+  </url>
+  <url>
+    <loc>https://indapanno.github.io/terms/dhammadana_thai.html</loc>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://indapanno.github.io/terms/dhammadana_ru.html"/>
+    <xhtml:link rel="alternate" hreflang="th" href="https://indapanno.github.io/terms/dhammadana_thai.html"/>
   </url>
   <url>
     <loc>https://indapanno.github.io/terms/dhammadasa_ru.html</loc>
@@ -546,6 +572,16 @@
     <xhtml:link rel="alternate" hreflang="th" href="https://indapanno.github.io/terms/phassa_thai.html"/>
   </url>
   <url>
+    <loc>https://indapanno.github.io/terms/punna_ru.html</loc>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://indapanno.github.io/terms/punna_ru.html"/>
+    <xhtml:link rel="alternate" hreflang="th" href="https://indapanno.github.io/terms/punna_thai.html"/>
+  </url>
+  <url>
+    <loc>https://indapanno.github.io/terms/punna_thai.html</loc>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://indapanno.github.io/terms/punna_ru.html"/>
+    <xhtml:link rel="alternate" hreflang="th" href="https://indapanno.github.io/terms/punna_thai.html"/>
+  </url>
+  <url>
     <loc>https://indapanno.github.io/terms/puthujjana_ru.html</loc>
     <xhtml:link rel="alternate" hreflang="ru" href="https://indapanno.github.io/terms/puthujjana_ru.html"/>
     <xhtml:link rel="alternate" hreflang="th" href="https://indapanno.github.io/terms/puthujjana_thai.html"/>
@@ -676,6 +712,26 @@
     <xhtml:link rel="alternate" hreflang="th" href="https://indapanno.github.io/terms/sankhara_thai.html"/>
   </url>
   <url>
+    <loc>https://indapanno.github.io/terms/sanna_ru.html</loc>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://indapanno.github.io/terms/sanna_ru.html"/>
+    <xhtml:link rel="alternate" hreflang="th" href="https://indapanno.github.io/terms/sanna_thai.html"/>
+  </url>
+  <url>
+    <loc>https://indapanno.github.io/terms/sanna_thai.html</loc>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://indapanno.github.io/terms/sanna_ru.html"/>
+    <xhtml:link rel="alternate" hreflang="th" href="https://indapanno.github.io/terms/sanna_thai.html"/>
+  </url>
+  <url>
+    <loc>https://indapanno.github.io/terms/sati_ru.html</loc>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://indapanno.github.io/terms/sati_ru.html"/>
+    <xhtml:link rel="alternate" hreflang="th" href="https://indapanno.github.io/terms/sati_thai.html"/>
+  </url>
+  <url>
+    <loc>https://indapanno.github.io/terms/sati_thai.html</loc>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://indapanno.github.io/terms/sati_ru.html"/>
+    <xhtml:link rel="alternate" hreflang="th" href="https://indapanno.github.io/terms/sati_thai.html"/>
+  </url>
+  <url>
     <loc>https://indapanno.github.io/terms/satipatthana_ru.html</loc>
     <xhtml:link rel="alternate" hreflang="ru" href="https://indapanno.github.io/terms/satipatthana_ru.html"/>
     <xhtml:link rel="alternate" hreflang="th" href="https://indapanno.github.io/terms/satipatthana_thai.html"/>
@@ -746,6 +802,16 @@
     <xhtml:link rel="alternate" hreflang="th" href="https://indapanno.github.io/terms/tanha_thai.html"/>
   </url>
   <url>
+    <loc>https://indapanno.github.io/terms/tathagata_ru.html</loc>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://indapanno.github.io/terms/tathagata_ru.html"/>
+    <xhtml:link rel="alternate" hreflang="th" href="https://indapanno.github.io/terms/tathagata_thai.html"/>
+  </url>
+  <url>
+    <loc>https://indapanno.github.io/terms/tathagata_thai.html</loc>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://indapanno.github.io/terms/tathagata_ru.html"/>
+    <xhtml:link rel="alternate" hreflang="th" href="https://indapanno.github.io/terms/tathagata_thai.html"/>
+  </url>
+  <url>
     <loc>https://indapanno.github.io/terms/upadana_ru.html</loc>
     <xhtml:link rel="alternate" hreflang="ru" href="https://indapanno.github.io/terms/upadana_ru.html"/>
     <xhtml:link rel="alternate" hreflang="th" href="https://indapanno.github.io/terms/upadana_thai.html"/>
@@ -794,6 +860,16 @@
     <loc>https://indapanno.github.io/terms/vinnana_thai.html</loc>
     <xhtml:link rel="alternate" hreflang="ru" href="https://indapanno.github.io/terms/vinnana_ru.html"/>
     <xhtml:link rel="alternate" hreflang="th" href="https://indapanno.github.io/terms/vinnana_thai.html"/>
+  </url>
+  <url>
+    <loc>https://indapanno.github.io/terms/vipassana_ru.html</loc>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://indapanno.github.io/terms/vipassana_ru.html"/>
+    <xhtml:link rel="alternate" hreflang="th" href="https://indapanno.github.io/terms/vipassana_thai.html"/>
+  </url>
+  <url>
+    <loc>https://indapanno.github.io/terms/vipassana_thai.html</loc>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://indapanno.github.io/terms/vipassana_ru.html"/>
+    <xhtml:link rel="alternate" hreflang="th" href="https://indapanno.github.io/terms/vipassana_thai.html"/>
   </url>
   <url>
     <loc>https://indapanno.github.io/terms/yonisomanasikara_ru.html</loc>

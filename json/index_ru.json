@@ -16,6 +16,11 @@
       "later_count": 1
     },
     {
+      "id": "anumodana",
+      "term_ru": "Анумодана",
+      "later_count": 2
+    },
+    {
       "id": "arahant",
       "term_ru": "Арахант",
       "later_count": 1
@@ -84,6 +89,11 @@
       "id": "dhammacakkhu",
       "term_ru": "Дхаммачаккху",
       "later_count": 1
+    },
+    {
+      "id": "dhammadana",
+      "term_ru": "Дхаммадана",
+      "later_count": 2
     },
     {
       "id": "dhammadasa",
@@ -246,6 +256,11 @@
       "later_count": 1
     },
     {
+      "id": "punna",
+      "term_ru": "Пунья",
+      "later_count": 2
+    },
+    {
       "id": "puthujjana",
       "term_ru": "Путудджхана",
       "later_count": 1
@@ -311,6 +326,16 @@
       "later_count": 2
     },
     {
+      "id": "sanna",
+      "term_ru": "Сання",
+      "later_count": 2
+    },
+    {
+      "id": "sati",
+      "term_ru": "Сати",
+      "later_count": 3
+    },
+    {
       "id": "satipatthana",
       "term_ru": "Сатипаттхана",
       "later_count": 2
@@ -346,6 +371,11 @@
       "later_count": 0
     },
     {
+      "id": "tathagata",
+      "term_ru": "Татхагата",
+      "later_count": 2
+    },
+    {
       "id": "upadana",
       "term_ru": "Упадана",
       "later_count": 1
@@ -369,6 +399,11 @@
       "id": "vinnana",
       "term_ru": "Винняна",
       "later_count": 1
+    },
+    {
+      "id": "vipassana",
+      "term_ru": "Випассана",
+      "later_count": 3
     },
     {
       "id": "yonisomanasikara",
