@@ -421,6 +421,12 @@ LANGS.forEach(lang => {
     }
   });
 
+  // Ручные индексируемые страницы: в карту — только если файл есть.
+  // «О монахе» пока только на тайском (phra_ru.html — заглушка с noindex, в карту не входит).
+  ['about/phra_thai.html'].forEach(file => {
+    if (fs.existsSync(path.join(REPO_ROOT, file))) entries.push({ url: cfg.absUrl('/' + file), file, alternates: [] });
+  });
+
   entries.sort((a, b) => (a.url < b.url ? -1 : a.url > b.url ? 1 : 0));
 
   entries.forEach(e => {

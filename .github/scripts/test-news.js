@@ -229,7 +229,7 @@ const FULL_RU = {
   terms: [{ id: 't2', name: 'Самудая', iast: 'samudaya', snippet: 'Возникновение страдания.', url: '/terms/t2_ru.html' }]
 };
 const MENU_RU = ['/', '/bundle/', '/my/progress_ru.html', '/publications/', '/new/', '/how/how-to-add-term_ru.html'];
-const MENU_TH = ['/nav/nav_thai.html', '/bundle/bundles_thai.html', '/my/progress_thai.html', '/publications/publications_thai.html', '/new/news_thai.html', '/how/how-to-add-term_thai.html'];
+const MENU_TH = ['/nav/nav_thai.html', '/bundle/bundles_thai.html', '/my/progress_thai.html', '/publications/publications_thai.html', '/new/news_thai.html', '/how/how-to-add-term_thai.html', '/about/phra_thai.html'];
 const menuOf = h => { const m = h.match(/<ul id="nav-menu-list" class="nav-menu-list">([\s\S]*?)<\/ul>/); return m ? [...m[1].matchAll(/<a href="([^"]*)">/g)].map(x => x[1]) : []; };
 const switchOf = h => { const o = {}; [...h.matchAll(/<a data-lang-value="(ru|thai)" lang="(?:ru|th)"(?: href="([^"]*)")?>/g)].forEach(m => { o[m[1]] = m[2] || null; }); return o; };
 {
@@ -267,7 +267,7 @@ const switchOf = h => { const o = {}; [...h.matchAll(/<a data-lang-value="(ru|th
   const h = r.read('new/2026-10-30_thai.html');
   check('thai: lang="th", заголовок «มีอะไรใหม่» с тайской датой', h.includes('<html lang="th"') && h.includes('มีอะไรใหม่ — ๓๐ ตุลาคม ๒๕๖๙'));
   check('thai: noindex, follow; canonical', h.includes('<meta name="robots" content="noindex, follow">') && h.includes('<link rel="canonical" href="' + SITE + '/new/2026-10-30_thai.html">'));
-  check('thai: меню из 6 пунктов', menuOf(h).join() === MENU_TH.join(), menuOf(h).join());
+  check('thai: меню из 7 пунктов («О монахе» последним)', menuOf(h).join() === MENU_TH.join(), menuOf(h).join());
   check('thai: переключатель → /new/', switchOf(h).ru === '/new/' && switchOf(h).thai === '/new/2026-10-30_thai.html', JSON.stringify(switchOf(h)));
 }
 
