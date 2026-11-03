@@ -6,7 +6,9 @@ name: News
 # пуши (OneSignal) → отметка «отправлено» в данных сводки. Ошибка рассылки не откатывает сводку и страницы.
 on:
   # Ежедневно: ru — 19:00 по Москве (16:00 UTC), thai — 19:00 по Бангкоку (12:00 UTC).
-  # GitHub может запускать расписание с задержкой до часа — это допустимо.
+  # Основной запуск — внешний таймер cron-job.org (ручной запуск через API с slot=true, точно в 19:00);
+  # расписание GitHub — запасное: оно бывает с опозданием на несколько часов. Двойной рассылки нет:
+  # сводка за день создаётся один раз, а отправленная помечена sent.
   schedule:
     - cron: '0 16 * * *'
     - cron: '0 12 * * *'
@@ -37,6 +39,10 @@ on:
         default: none
       resend:
         description: 'Повторить отправку уже отправленной сводки (дошлёт недошедшие группы)'
+        type: boolean
+        default: false
+      slot:
+        description: 'Запуск по расписанию (ставит внешний таймер): дата — день запуска, ночью пуши не отправляются'
         type: boolean
         default: false
 
@@ -77,6 +83,7 @@ jobs:
           IN_DATE: ${{ github.event.inputs.date }}
           IN_SEND: ${{ github.event.inputs.send }}
           IN_RESEND: ${{ github.event.inputs.resend }}
+          IN_SLOT: ${{ github.event.inputs.slot }}
         run: |
           case "$EVENT" in
             schedule)
@@ -89,6 +96,16 @@ jobs:
           esac
           [ "$lang" = pages ] && mode=none
           date="$IN_DATE"
+          # Запуск по расписанию (GitHub или внешний таймер): дата — день назначенного запуска, даже если
+          # старт опоздал за полночь; если на часах языка 22:00–07:00 — сводку собираем, пуши не отправляем
+          if [ "$lang" != pages ] && { [ "$EVENT" = schedule ] || [ "$IN_SLOT" = true ]; }; then
+            [ -z "$date" ] && date=$(node -e "console.log(require('./.github/scripts/build-news.js').slotDate('$lang'))")
+            hour=$(node -e "console.log(require('./.github/scripts/build-news.js').localHour('$lang'))")
+            if [ "$mode" = all ] && { [ "$hour" -ge 22 ] || [ "$hour" -lt 7 ]; }; then
+              mode=none
+              echo "::warning title=Пуши не отправлены (ночь)::запуск опоздал, на часах языка $lang уже $hour ч. Сводка $date собрана. Дослать пуши утром: Actions → News → Run workflow, lang: $lang, date: $date, send: all"
+            fi
+          fi
           # Тест без даты — последняя существующая сводка языка (сегодняшней может не быть)
           if [ "$mode" = test ] && [ -z "$date" ]; then
             date=$(node -e "console.log(require('./.github/scripts/push/send.js').latestDigestDate(null, '$lang') || '')")

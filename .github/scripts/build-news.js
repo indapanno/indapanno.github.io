@@ -87,6 +87,25 @@ function todayIn(lang) {
   return new Intl.DateTimeFormat('en-CA', { timeZone: TIMEZONE[lang], year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
 }
 
+// Запуск по расписанию (19:00 в поясе языка) может опоздать: GitHub задерживает расписание на часы.
+// Дата сводки — день назначенного запуска, а не момент старта: если на часах языка уже 18:00 или позже —
+// сегодня, иначе (опоздание за полночь) — вчера. Верно при опоздании до 23 часов.
+const SLOT_FROM_HOUR = 18;
+function localParts(lang, now) {
+  const p = {};
+  new Intl.DateTimeFormat('en-CA', { timeZone: TIMEZONE[lang], year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', hourCycle: 'h23' })
+    .formatToParts(now || new Date()).forEach(x => { p[x.type] = x.value; });
+  return { date: p.year + '-' + p.month + '-' + p.day, hour: Number(p.hour) };
+}
+function localHour(lang, now) { return localParts(lang, now).hour; }
+function slotDate(lang, now) {
+  const { date, hour } = localParts(lang, now);
+  if (hour >= SLOT_FROM_HOUR) return date;
+  const d = new Date(date + 'T00:00:00Z');
+  d.setUTCDate(d.getUTCDate() - 1);
+  return d.toISOString().slice(0, 10);
+}
+
 function clip(text, max, lang) {
   const t = String(text).replace(/\s+/g, ' ').trim();
   if (t.length <= max) return t;
@@ -357,7 +376,7 @@ function build(opts) {
   return { errors, firstRun, digest, pages: p.pages, sitemapUrls: p.sitemapUrls, counts: { ru: p.digests.ru.length, thai: p.digests.thai.length } };
 }
 
-module.exports = { build, plural, summaryLine, formatDate, validDate, todayIn };
+module.exports = { build, plural, summaryLine, formatDate, validDate, todayIn, slotDate, localHour };
 
 // Запуск: NEWS_LANG=ru|thai|pages [NEWS_DATE=ГГГГ-ММ-ДД] node .github/scripts/build-news.js
 // Без NEWS_DATE дата — сегодня в поясе языка (ru — Москва, thai — Бангкок).

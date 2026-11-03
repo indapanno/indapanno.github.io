@@ -359,5 +359,22 @@ check('formatDate thai: тайские цифры, буддийская эра',
   check('изоляция: остальные файлы сайта не изменены', diff.length === 0, diff.join(','));
 }
 
+// 16. Дата запуска по расписанию и час в поясе языка (опоздание расписания GitHub)
+{
+  const slotDate = mod && mod.slotDate ? mod.slotDate : noop;
+  const localHour = mod && mod.localHour ? mod.localHour : noop;
+  const at = s => new Date(s);
+  // thai: 19:00 по Бангкоку = 12:00 UTC; ru: 19:00 по Москве = 16:00 UTC
+  check('дата: thai вовремя (19:00 Бангкок) — тот же день', tryv(() => slotDate('thai', at('2026-11-03T12:00:00Z'))) === '2026-11-03');
+  check('дата: thai с опозданием до 23:59 — тот же день', tryv(() => slotDate('thai', at('2026-11-03T16:59:00Z'))) === '2026-11-03');
+  check('дата: thai с опозданием за полночь (01:52 Бангкок) — вчера', tryv(() => slotDate('thai', at('2026-11-03T18:52:00Z'))) === '2026-11-03');
+  check('дата: ru с опозданием за полночь (00:36 Москва) — вчера', tryv(() => slotDate('ru', at('2026-11-03T21:36:00Z'))) === '2026-11-03');
+  check('дата: ru вовремя (19:00 Москва) — тот же день', tryv(() => slotDate('ru', at('2026-11-03T16:00:00Z'))) === '2026-11-03');
+  check('дата: переход через месяц и год', tryv(() => slotDate('thai', at('2027-01-01T03:00:00Z'))) === '2026-12-31');
+  check('час: Бангкок 01 в 18:52 UTC', tryv(() => localHour('thai', at('2026-11-03T18:52:00Z'))) === 1);
+  check('час: Москва 19 в 16:00 UTC', tryv(() => localHour('ru', at('2026-11-03T16:00:00Z'))) === 19);
+  check('час: полночь — 0, а не 24', tryv(() => localHour('thai', at('2026-11-03T17:00:00Z'))) === 0);
+}
+
 console.log(failed ? 'ПРОВАЛЕНО: ' + failed + ', пройдено: ' + passed : 'ВСЕ ТЕСТЫ ПРОЙДЕНЫ: ' + passed);
 process.exitCode = failed ? 1 : 0;

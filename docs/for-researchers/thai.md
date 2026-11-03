@@ -131,7 +131,7 @@ indapanno.github.io/                  # root ของ repository = root ขอ�
 └── workflows/
     ├── build-terms.yml        # trigger: push เข้า json/**, _src/templates/**, render-term.js, thai-numerals.js, build-terms.js, site-config.js หรือสั่งด้วยมือ (Actions → Build terms → Run workflow)
     ├── build-bundles.yml      # trigger: push เข้า _src/bundle/**, build-bundles.js, site-config.js และหลัง build คำศัพท์
-    ├── news.yml               # ตารางเวลา ru 16:00 UTC และ thai 12:00 UTC (สรุป + แจ้งเตือน) สั่งด้วยมือได้; push เข้า _src/news/template/**, build-news.js, test-news.js, site-config.js — build เฉพาะหน้า
+    ├── news.yml               # 19:00 ตามเวลามอสโก (ru) และกรุงเทพฯ (thai): ตัวตั้งเวลา cron-job.org + ตารางเวลาสำรองของ GitHub (สรุป + แจ้งเตือน) สั่งด้วยมือได้; push เข้า _src/news/template/**, build-news.js, test-news.js, site-config.js — build เฉพาะหน้า
     └── build-publications.yml # trigger: push เข้า _src/publications/**, publications/covers/**, css/publications.css, js/publication-widgets.js, build-publications.js, test-publications.js, test-widgets.js, site-config.js หลัง build คำศัพท์ หรือสั่งด้วยมือ
 ```
 
@@ -564,11 +564,17 @@ service worker ของผู้ให้บริการคือ `OneSignal
 - ส่งไม่สำเร็จ: สรุปและหน้ายังอยู่ (ไม่ย้อนกลับ) workflow เป็นสีแดง สาเหตุอยู่ใน log
 
 **Workflow — `.github/workflows/news.yml`**
-- ตารางเวลา: ru — 16:00 UTC (19:00 ตามเวลามอสโก), thai — 12:00 UTC (19:00 ตามเวลากรุงเทพฯ) GitHub อาจเริ่มช้า
-  บางครั้งเกินหนึ่งชั่วโมง หากเลื่อนไปถึงวันถัดไป ของใหม่ไม่หาย — จะอยู่ในสรุปถัดไป
+- ตารางเวลา: ru — 19:00 ตามเวลามอสโก, thai — 19:00 ตามเวลากรุงเทพฯ การเริ่มหลักคือตัวตั้งเวลาภายนอก cron-job.org:
+  เวลา 19:00 จะสั่ง workflow ผ่าน GitHub API (สั่งด้วยมือพร้อม `lang`, `send: all`, `slot: true`; โทเค็น GitHub แบบ fine-grained
+  เฉพาะ repository นี้ สิทธิ์ Actions: Read and write อายุไม่เกินหนึ่งปี ต้องต่ออายุ) สำรองคือตารางเวลาของ GitHub
+  (ru 16:00 UTC, thai 12:00 UTC) ซึ่งอาจช้าหลายชั่วโมง (03.11.2026 — 5.5 และ 7 ชั่วโมง) ไม่มีการส่งซ้ำ:
+  สรุปของแต่ละวันสร้างครั้งเดียว และสรุปที่ส่งแล้วมีเครื่องหมาย `sent`
+- การเริ่มตามตารางเวลา (GitHub หรือตัวตั้งเวลา): วันที่ของสรุปคือวันที่กำหนดเริ่ม (`slotDate`: ตามเวลาของภาษานั้น
+  ตั้งแต่ 18:00 — วันนี้ ก่อนหน้านั้น — เมื่อวาน) แม้เริ่มช้าข้ามเที่ยงคืน หากตามเวลาของภาษานั้นเป็น 22:00–07:00
+  สรุปจะถูกสร้าง แต่ไม่ส่งแจ้งเตือน (มีคำเตือนสีเหลืองใน log พร้อมค่าสำหรับส่งด้วยมือในตอนเช้า)
 - ลำดับ: ทดสอบ → สรุปและหน้า → commit ของบอต → รอจนหน้าสรุปเปิดได้บนเว็บไซต์ (ไม่เกิน 10 นาที) → ส่ง → commit เครื่องหมาย «ส่งแล้ว»
 - สั่งด้วยมือ (Actions → News → Run workflow): `lang` (`pages` / `ru` / `thai`), `date`, `send`
-  (`none` / `test` / `all`), `resend` («ส่งซ้ำ»)
+  (`none` / `test` / `all`), `resend` («ส่งซ้ำ»), `slot` («ตามตารางเวลา» — ตัวตั้งเวลาเป็นผู้ตั้ง)
 - Push เข้า `_src/news/template/**`, `build-news.js`, `test-news.js` หรือ `site-config.js` — build เฉพาะหน้า
 
 **ผู้ทดสอบ** เปิดหน้าใดก็ได้ของเว็บไซต์พร้อม `?push-tester=1` ก่อนสมัคร (เบราว์เซอร์จะจำไว้) แล้วจึงสมัคร

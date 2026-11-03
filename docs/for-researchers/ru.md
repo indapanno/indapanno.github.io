@@ -133,7 +133,7 @@ indapanno.github.io/                  # корень репозитория = к
 └── workflows/
     ├── build-terms.yml        # триггер: push в json/**, _src/templates/**, render-term.js, thai-numerals.js, build-terms.js, site-config.js или ручной запуск (Actions → Build terms → Run workflow)
     ├── build-bundles.yml      # триггер: push в _src/bundle/**, build-bundles.js, site-config.js; после сборки терминов
-    ├── news.yml               # расписание ru 16:00 UTC и thai 12:00 UTC (сводка + пуши), ручной запуск; push в _src/news/template/**, build-news.js, test-news.js, site-config.js — только страницы
+    ├── news.yml               # 19:00 по Москве (ru) и Бангкоку (thai): таймер cron-job.org + запасное расписание GitHub (сводка + пуши), ручной запуск; push в _src/news/template/**, build-news.js, test-news.js, site-config.js — только страницы
     └── build-publications.yml # триггер: push в _src/publications/**, publications/covers/**, css/publications.css, js/publication-widgets.js, build-publications.js, test-publications.js, test-widgets.js, site-config.js; после сборки терминов или вручную
 ```
 
@@ -605,13 +605,20 @@ draft-07 (без сторонних библиотек, доступна и в �
 - Ошибка рассылки: сводка и страницы остаются (не откатываются), workflow красный, причина в логе.
 
 **Workflow — `.github/workflows/news.yml`.**
-- Расписание: ru — 16:00 UTC (19:00 по Москве), thai — 12:00 UTC (19:00 по Бангкоку). GitHub
-  может запускать расписание с опозданием, иногда больше часа; если запуск сдвинулся на следующий
-  день, новое не теряется — оно попадёт в ближайшую сводку.
+- Расписание: ru — 19:00 по Москве, thai — 19:00 по Бангкоку. Основной запуск — внешний таймер
+  cron-job.org: в 19:00 он запускает workflow через GitHub API (ручной запуск с `lang`, `send: all`,
+  `slot: true`; токен GitHub fine-grained, только этот репозиторий, Actions: Read and write, срок —
+  до года, продлевать). Запасной — расписание GitHub (ru 16:00 UTC, thai 12:00 UTC): оно бывает с
+  опозданием на несколько часов (03.11.2026 — 5,5 и 7 часов). Двойной рассылки нет: сводка за день
+  создаётся один раз, отправленная помечена `sent`.
+- Запуск по расписанию (GitHub или таймер): дата сводки — день назначенного запуска
+  (`slotDate`: на часах языка 18:00 и позже — сегодня, раньше — вчера), даже если старт опоздал за
+  полночь. Если на часах языка 22:00–07:00, сводка собирается, а пуши не отправляются (жёлтое
+  предупреждение в логе с готовыми параметрами, как дослать утром ручным запуском).
 - Порядок: тесты → сводка и страницы → коммит бота → ожидание, пока страница сводки откроется
   на сайте (до 10 минут) → рассылка → коммит отметки «отправлено».
 - Ручной запуск (Actions → News → Run workflow): `lang` (`pages` / `ru` / `thai`), `date`, `send`
-  (`none` / `test` / `all`), `resend` («повторить»).
+  (`none` / `test` / `all`), `resend` («повторить»), `slot` («по расписанию» — ставит таймер).
 - Push в `_src/news/template/**`, `build-news.js`, `test-news.js` или `site-config.js` — только
   пересборка страниц.
 
