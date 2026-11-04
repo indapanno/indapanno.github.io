@@ -6,7 +6,14 @@
     <xhtml:link rel="alternate" hreflang="th" href="https://indapanno.github.io/nav/nav_thai.html"/>
   </url>
   <url>
+    <loc>https://indapanno.github.io/about/phra_ru.html</loc>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://indapanno.github.io/about/phra_ru.html"/>
+    <xhtml:link rel="alternate" hreflang="th" href="https://indapanno.github.io/about/phra_thai.html"/>
+  </url>
+  <url>
     <loc>https://indapanno.github.io/about/phra_thai.html</loc>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://indapanno.github.io/about/phra_ru.html"/>
+    <xhtml:link rel="alternate" hreflang="th" href="https://indapanno.github.io/about/phra_thai.html"/>
   </url>
   <url>
     <loc>https://indapanno.github.io/nav/nav_ru_2.html</loc>
