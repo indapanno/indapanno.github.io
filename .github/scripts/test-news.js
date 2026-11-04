@@ -228,7 +228,7 @@ const FULL_RU = {
   bundles: [{ n: 2, name: 'Пять преград', description: 'Описание связки', count: 5, url: '/bundle/bundle_2_ru.html' }],
   terms: [{ id: 't2', name: 'Самудая', iast: 'samudaya', snippet: 'Возникновение страдания.', url: '/terms/t2_ru.html' }]
 };
-const MENU_RU = ['/', '/bundle/', '/my/progress_ru.html', '/publications/', '/new/', '/how/how-to-add-term_ru.html'];
+const MENU_RU = ['/', '/bundle/', '/my/progress_ru.html', '/publications/', '/new/', '/how/how-to-add-term_ru.html', '/about/phra_ru.html'];
 const MENU_TH = ['/nav/nav_thai.html', '/bundle/bundles_thai.html', '/my/progress_thai.html', '/publications/publications_thai.html', '/new/news_thai.html', '/how/how-to-add-term_thai.html', '/about/phra_thai.html'];
 const menuOf = h => { const m = h.match(/<ul id="nav-menu-list" class="nav-menu-list">([\s\S]*?)<\/ul>/); return m ? [...m[1].matchAll(/<a href="([^"]*)">/g)].map(x => x[1]) : []; };
 const switchOf = h => { const o = {}; [...h.matchAll(/<a data-lang-value="(ru|thai)" lang="(?:ru|th)"(?: href="([^"]*)")?>/g)].forEach(m => { o[m[1]] = m[2] || null; }); return o; };
@@ -247,7 +247,7 @@ const switchOf = h => { const o = {}; [...h.matchAll(/<a data-lang-value="(ru|th
   check('сводка: плитка публикации (обложка, заголовок, лид)', h.includes('src="/publications/covers/c2.png"') && h.includes('Четыре благородные истины') && h.includes('Лид статьи'));
   check('сводка: связка (название, описание, «5 терминов»)', h.includes('Пять преград') && h.includes('Описание связки') && h.includes('5 терминов'));
   check('сводка: термин (название, IAST, сниппет)', h.includes('Самудая') && h.includes('samudaya') && h.includes('Возникновение страдания.'));
-  check('сводка: меню из 6 пунктов, «Что нового» после «Публикаций»', menuOf(h).join() === MENU_RU.join(), menuOf(h).join());
+  check('сводка: меню из 7 пунктов, «Что нового» после «Публикаций»', menuOf(h).join() === MENU_RU.join(), menuOf(h).join());
   check('сводка: переключатель языка → список другого языка', switchOf(h).thai === '/new/news_thai.html' && switchOf(h).ru === '/new/2026-10-30_ru.html', JSON.stringify(switchOf(h)));
   check('сводка: крошки ведут в /new/', h.includes('<a href="/new/">Что нового</a>'));
   check('сводка: общие файлы по абсолютным путям', h.includes('href="/css/style.css"') && !h.includes('../'));
@@ -291,7 +291,7 @@ const digestOn = (date, n) => ({
   check('список: плитка — до 3 названий', p2.includes('Статья А') && p2.includes('Связка Б') && p2.includes('Термин 0') && !p2.includes('Термин 1<'));
   check('список: индексируется (без noindex), canonical', !p1.includes('noindex') && p1.includes('<link rel="canonical" href="' + SITE + '/new/">') && p2.includes('<link rel="canonical" href="' + SITE + '/new/news_ru_2.html">'));
   check('список: пагинация ссылкой', p1.includes('href="/new/news_ru_2.html"'));
-  check('список: меню из 6 пунктов, переключатель → тайский список', menuOf(p1).join() === MENU_RU.join() && switchOf(p1).thai === '/new/news_thai.html' && switchOf(p2).thai === '/new/news_thai.html');
+  check('список: меню из 7 пунктов, переключатель → тайский список', menuOf(p1).join() === MENU_RU.join() && switchOf(p1).thai === '/new/news_thai.html' && switchOf(p2).thai === '/new/news_thai.html');
   check('список: h1 «Что нового»', /<h1[^>]*>Что нового<\/h1>/.test(p1));
   check('список: без ссылок на index.html', !/href="[^"]*index\.html"/.test(p1));
   const sm = r.read('sitemap_news.xml');

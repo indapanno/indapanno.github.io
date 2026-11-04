@@ -71,7 +71,7 @@ check('smoke: карточки thai для переведённых', TH.every(i
   check('smoke: карточка — canonical, hreflang ru/th/x-default, description, Open Graph',
     card.includes('<link rel="canonical" href="' + SITE + '/terms/dukkha_ru.html">') && card.includes('hreflang="th"') && card.includes('hreflang="x-default"')
     && /<meta name="description" content="[^"]+">/.test(card) && card.includes('<meta property="og:type" content="article">'));
-  check('smoke: карточка — меню 6 пунктов и переключатель языка с адресами', (card.match(/<ul id="nav-menu-list"[^>]*>([\s\S]*?)<\/ul>/) || ['', ''])[1].split('<li>').length - 1 === 6
+  check('smoke: карточка — меню 7 пунктов («О монахе» последним) и переключатель языка с адресами', (card.match(/<ul id="nav-menu-list"[^>]*>([\s\S]*?)<\/ul>/) || ['', ''])[1].split('<li>').length - 1 === 7
     && card.includes('<a data-lang-value="thai" lang="th" href="/terms/dukkha_thai.html">'));
 }
 {

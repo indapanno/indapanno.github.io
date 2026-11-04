@@ -160,7 +160,7 @@ function sitemapLocs(file) {
 
 // A10: меню — готовые ссылки в HTML на всех страницах с меню (поисковики без JavaScript их видят)
 const MENU = {
-  ru: ['/', '/bundle/', '/my/progress_ru.html', '/publications/', '/new/', '/how/how-to-add-term_ru.html'],
+  ru: ['/', '/bundle/', '/my/progress_ru.html', '/publications/', '/new/', '/how/how-to-add-term_ru.html', '/about/phra_ru.html'],
   thai: ['/nav/nav_thai.html', '/bundle/bundles_thai.html', '/my/progress_thai.html', '/publications/publications_thai.html', '/new/news_thai.html', '/how/how-to-add-term_thai.html', '/about/phra_thai.html']
 };
 const pageLang = h => (/<html lang="th"/.test(h) ? 'thai' : 'ru');
@@ -173,7 +173,7 @@ const pageLang = h => (/<html lang="th"/.test(h) ? 'thai' : 'ru');
     return hrefs.join() !== MENU[pageLang(h)].join();
   });
   check('A10: найдены страницы с меню', withMenu.length > 100, String(withMenu.length));
-  check('A10: меню — готовые ссылки своего языка: ru 6, thai 7 («Что нового» после «Публикаций», «О монахе» последним в thai)', bad.length === 0, bad.length + ': ' + bad.slice(0, 6).join(' | '));
+  check('A10: меню — готовые ссылки своего языка: ru 7, thai 7 («Что нового» после «Публикаций», «О монахе» последним в thai)', bad.length === 0, bad.length + ': ' + bad.slice(0, 6).join(' | '));
 }
 
 // A11: переключатель языка — готовые адреса в HTML (те же, что ставит js/lang.js)

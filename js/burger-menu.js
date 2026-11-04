@@ -1,6 +1,6 @@
 // Бургер-меню: кнопка + выезжающая панель с пунктами (пункты — готовые ссылки в HTML)
-// ("Навигатор", "Связанные термины", "Мой прогресс", "Публикации", "Что нового", "Добавить термин";
-// на тайском ещё «О монахе» — пока страница есть только на тайском). Определяет язык
+// ("Навигатор", "Связанные термины", "Мой прогресс", "Публикации", "Что нового", "Добавить термин",
+// "О монахе"). Определяет язык
 // по имени файла текущей страницы, строит ссылки на соответствующие
 // языковые версии страниц.
 
@@ -12,7 +12,8 @@ var BURGER_UI_STRINGS = {
     progress: 'Мой прогресс',
     publications: 'Публикации',
     news: 'Что нового',
-    addTerm: 'Добавить термин'
+    addTerm: 'Добавить термин',
+    about: 'О монахе'
   },
   thai: {
     menuTitle: 'เมนู',
@@ -49,7 +50,7 @@ document.addEventListener('DOMContentLoaded', function () {
     { href: window.TermsLang.url(lang === 'ru' ? 'new/' : 'new/news_thai.html'), text: strings.news },
     { href: window.TermsLang.url('how/how-to-add-term_' + lang + '.html'), text: strings.addTerm }
   ];
-  if (lang === 'thai') items.push({ href: window.TermsLang.url('about/phra_thai.html'), text: strings.about });
+  items.push({ href: window.TermsLang.url('about/phra_' + lang + '.html'), text: strings.about });
 
   // Сборщики вписывают пункты меню прямо в HTML (их видят поисковики без JavaScript).
   // Список строится здесь только на старых страницах, где он пустой.
