@@ -678,44 +678,89 @@ main a { overflow-wrap: anywhere; }
   color: var(--accent);
 }
 
-/* --- Пагинация навигационной страницы --- */
+/* --- Пагинация (все списки сайта; разметку строит js/pagination.js) ---
+   Всегда одна строка: «Назад», номера с «…» на месте пропусков, «Далее».
+   В разметке два набора номеров: page-wide (7 мест) и page-narrow (5 мест, экраны до 479 px).
+   До 639 px у «Назад» / «Далее» видны только стрелки. */
 .pagination {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0.35rem;
   margin-top: 1.2rem;
 }
 
-.page-link {
+.page-link,
+.page-current,
+.page-gap {
+  flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 2.1rem;
-  height: 2.1rem;
+  min-width: 2.5rem;
+  height: 2.5rem;
   padding: 0 0.6rem;
   border-radius: 8px;
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.page-link {
   border: 1px solid var(--border);
   background: var(--bg-elevated);
   color: var(--text);
   text-decoration: none;
-  font-size: 0.85rem;
+  transition: border-color 0.15s ease;
 }
 
 .page-link:hover { border-color: var(--accent); }
 
+.page-link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 .page-current {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 2.1rem;
-  height: 2.1rem;
-  padding: 0 0.6rem;
-  border-radius: 8px;
   border: 1px solid var(--accent);
   background: var(--accent);
   color: var(--bg-elevated);
-  font-size: 0.85rem;
   font-weight: 700;
+}
+
+.page-gap {
+  min-width: 1.4rem;
+  padding: 0;
+  color: var(--text-secondary);
+  user-select: none;
+}
+
+.page-step { gap: 0.4rem; padding: 0 0.85rem; }
+.page-step.is-disabled { opacity: 0.35; pointer-events: none; }
+.page-prev { margin-right: 0.15rem; }
+.page-next { margin-left: 0.15rem; }
+
+.page-narrow { display: none; }
+
+@media (max-width: 639px) {
+  .page-step { padding: 0; }
+  .page-step-text { display: none; }
+}
+
+@media (max-width: 479px) {
+  .page-wide { display: none; }
+  .page-link.page-narrow,
+  .page-current.page-narrow,
+  .page-gap.page-narrow { display: inline-flex; }
+}
+
+@media (max-width: 359px) {
+  .pagination { gap: 0.25rem; }
+  .page-link,
+  .page-current { min-width: 2.25rem; height: 2.25rem; padding: 0 0.45rem; }
+  .page-gap { min-width: 1.1rem; height: 2.25rem; }
+  .page-prev,
+  .page-next { margin: 0; }
 }
 
 /* --- Сниппет термина в списке навигации (толкование+причина, обрезанные) --- */
@@ -824,3 +869,7 @@ html[lang="th"] {
 .term-card li a {
   color: var(--link-color);
 }
+
+/* Тайские цифры в пагинации мельче латинских — чуть крупнее кегль */
+html[lang="th"] .page-link:not(.page-step),
+html[lang="th"] .page-current { font-size: 1.05rem; }

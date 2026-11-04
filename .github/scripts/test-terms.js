@@ -23,7 +23,7 @@ const copy = (rel, root) => { const to = path.join(root, rel); fs.mkdirSync(path
 // terms = { ru: [id…], thai: [id…] } — берутся настоящие json/<id>_<lang>.json
 function makeSite(terms, extra) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'terms-'));
-  ['.github/scripts/build-terms.js', '.github/scripts/site-config.js', 'js/render-term.js', 'js/thai-numerals.js']
+  ['.github/scripts/build-terms.js', '.github/scripts/site-config.js', 'js/render-term.js', 'js/thai-numerals.js', 'js/pagination.js']
     .forEach(f => copy(f, root));
   if (fs.existsSync(path.join(REPO, '.github/scripts/check-sources.js'))) copy('.github/scripts/check-sources.js', root);
   fs.readdirSync(path.join(REPO, '_src/templates')).forEach(f => copy('_src/templates/' + f, root));
@@ -173,6 +173,28 @@ if (cs && cs.checkTerms) {
 {
   const wf = fs.readFileSync(path.join(REPO, '.github/workflows/build-terms.yml'), 'utf8');
   check('build-terms.yml: тесты и проверка ссылок на источники перед сборкой', /node \.github\/scripts\/test-terms\.js/.test(wf) && /node \.github\/scripts\/check-sources\.js/.test(wf));
+}
+
+// Пагинация (js/pagination.js): одна строка, окно 7 / 5 мест, «…» скрывает не меньше двух страниц
+{
+  const P = require(path.join(REPO, 'js/pagination.js'));
+  let bad = '';
+  for (let t = 1; t <= 40 && !bad; t++) for (let c = 1; c <= t && !bad; c++) {
+    for (const slots of [7, 5]) {
+      const w = P.windowPages(c, t, slots);
+      if (w.length !== Math.min(slots, t) || !w.includes(c) || w[0] !== 1 || w[w.length - 1] !== t) bad = [c, t, slots, w].join(' ');
+      for (let i = 1; i < w.length - 1 && !bad; i++) if (w[i] === 'gap' && w[i + 1] - w[i - 1] < 3) bad = 'gap ' + [c, t, slots].join(' ');
+    }
+    const it = P.items(c, t);
+    const seq = f => it.filter(f).map(x => (x.gap ? 'gap' : x.p)).join();
+    if (seq(x => x.wide) !== P.windowPages(c, t, 7).join() || seq(x => x.narrow) !== P.windowPages(c, t, 5).join()) bad = 'merge ' + c + '/' + t;
+  }
+  check('пагинация: окна 7 и 5 мест верны для 1–40 страниц', bad === '', bad);
+  const h1 = P.render({ page: 1, total: 9, href: p => '/p' + p, labels: P.LABELS.ru });
+  const h9 = P.render({ page: 9, total: 9, href: p => '/p' + p, labels: P.LABELS.ru });
+  check('пагинация: стрелки на краях неактивны, текущая — aria-current, одна страница — без пагинации',
+    /page-prev is-disabled/.test(h1) && /href="\/p2"[^>]*aria-label="Далее"/.test(h1) && /page-next is-disabled/.test(h9)
+    && /<span class="page-current" aria-current="page">1<\/span>/.test(h1) && P.render({ page: 1, total: 1, href: String, labels: P.LABELS.ru }) === '');
 }
 
 console.log(failed ? 'ПРОВАЛЕНО: ' + failed + ', пройдено: ' + passed : 'ВСЕ ТЕСТЫ ПРОЙДЕНЫ: ' + passed);

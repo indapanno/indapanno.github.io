@@ -10,6 +10,7 @@ on:
       - 'publications/covers/**'
       - 'css/publications.css'
       - 'js/publication-widgets.js'
+      - 'js/pagination.js'
       - '.github/scripts/build-publications.js'
       - '.github/scripts/test-publications.js'
       - '.github/scripts/test-widgets.js'

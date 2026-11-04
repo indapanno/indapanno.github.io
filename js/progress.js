@@ -26,8 +26,6 @@
       rowBtnTodo: 'Не изучен',
       rowTitleTodo: 'Отметить «Изучен»',
       marked: function (name) { return 'Отмечено «Изучен»: «' + name + '».'; },
-      prev: '← Назад',
-      next: 'Далее →',
       removed: function (name) { return 'Отметка снята с «' + name + '».'; },
       undo: 'Вернуть',
       noStorage: 'Не удалось запустить страницу. Обновите её или откройте в другом браузере.'
@@ -47,8 +45,6 @@
       rowBtnTodo: 'ยังไม่ได้เรียน',
       rowTitleTodo: 'ทำเครื่องหมายว่าเรียนแล้ว',
       marked: function (name) { return 'ทำเครื่องหมาย “เรียนแล้ว” ให้ “' + name + '” แล้ว'; },
-      prev: '← ก่อนหน้า',
-      next: 'ถัดไป →',
       removed: function (name) { return 'ยกเลิกเครื่องหมายของ “' + name + '” แล้ว'; },
       undo: 'ย้อนกลับ',
       noStorage: 'เริ่มหน้านี้ไม่ได้ ลองรีเฟรชหรือเปิดในเบราว์เซอร์อื่น'
@@ -217,15 +213,11 @@
             cfg.pagEl.hidden = true;
             cfg.pagEl.innerHTML = '';
           } else {
-            var parts = [];
-            if (L.page > 1) parts.push('<a href="#" class="page-link" data-page="' + (L.page - 1) + '">' + s.prev + '</a>');
-            for (var p = 1; p <= pages; p++) {
-              parts.push(p === L.page
-                ? '<span class="page-current">' + num(p) + '</span>'
-                : '<a href="#" class="page-link" data-page="' + p + '">' + num(p) + '</a>');
-            }
-            if (L.page < pages) parts.push('<a href="#" class="page-link" data-page="' + (L.page + 1) + '">' + s.next + '</a>');
-            cfg.pagEl.innerHTML = parts.join('');
+            // Общая пагинация сайта (js/pagination.js): одна строка, «…» на месте пропусков
+            cfg.pagEl.innerHTML = window.TermsPagination.render({
+              page: L.page, total: pages, labels: window.TermsPagination.LABELS[lang],
+              href: function () { return '#'; }, digits: num, dataPage: true, inner: true
+            });
             cfg.pagEl.hidden = false;
           }
         }

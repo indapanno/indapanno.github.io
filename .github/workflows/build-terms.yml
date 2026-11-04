@@ -7,6 +7,7 @@ on:
       - 'json/**'
       - '_src/templates/**'
       - 'js/render-term.js'
+      - 'js/pagination.js'
       - 'js/thai-numerals.js'
       - '.github/scripts/build-terms.js'
       - '.github/scripts/test-terms.js'

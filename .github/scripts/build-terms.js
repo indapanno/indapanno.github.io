@@ -16,6 +16,7 @@ const {
   renderTimeline, renderMissingTranslation, boldTerm, escapeHtml, capitalize, TERM_UI_STRINGS
 } = require(path.join(JS_DIR, 'render-term.js'));
 const { toThaiNumerals } = require(path.join(JS_DIR, 'thai-numerals.js'));
+const Pagination = require(path.join(JS_DIR, 'pagination.js'));
 
 function readTemplate(name) {
   return fs.readFileSync(path.join(TEMPLATE_DIR, name), 'utf8');
@@ -239,20 +240,11 @@ console.log('Карточек собрано: ru=' + cardCounts.ru + ', thai=' +
 // Имена и адреса страниц списка — в site-config.js (cfg.nav): ru стр. 1 = index.html («/»).
 
 function buildPaginationHtml(lang, page, totalPages) {
-  if (totalPages <= 1) return '';
-  const backText = lang === 'thai' ? '← ย้อนกลับ' : '← Назад';
-  const nextText = lang === 'thai' ? 'ถัดไป →' : 'Далее →';
-  const pagesLabel = lang === 'thai' ? 'หน้า' : 'Страницы';
-  const digits = n => (lang === 'thai' ? toThaiNumerals(n) : String(n));
-  const parts = [];
-  if (page > 1) parts.push('<a href="' + cfg.nav.path(lang, page - 1) + '" class="page-link">' + backText + '</a>');
-  for (let p = 1; p <= totalPages; p++) {
-    parts.push(p === page
-      ? '<span class="page-current">' + digits(p) + '</span>'
-      : '<a href="' + cfg.nav.path(lang, p) + '" class="page-link">' + digits(p) + '</a>');
-  }
-  if (page < totalPages) parts.push('<a href="' + cfg.nav.path(lang, page + 1) + '" class="page-link">' + nextText + '</a>');
-  return '<nav class="pagination" aria-label="' + pagesLabel + '">' + parts.join('') + '</nav>';
+  return Pagination.render({
+    page, total: totalPages, labels: Pagination.LABELS[lang],
+    href: p => cfg.nav.path(lang, p),
+    digits: n => (lang === 'thai' ? toThaiNumerals(n) : String(n))
+  });
 }
 
 const totalPagesByLang = {};

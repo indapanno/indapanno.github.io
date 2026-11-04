@@ -17,6 +17,7 @@ on:
     branches: [main]
     paths:
       - '_src/news/template/**'
+      - 'js/pagination.js'
       - '.github/scripts/build-news.js'
       - '.github/scripts/test-news.js'
       - '.github/scripts/site-config.js'

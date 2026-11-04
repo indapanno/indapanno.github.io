@@ -11,6 +11,7 @@ const REPO_ROOT = path.resolve(__dirname, '../..');
 const cfg = require('./site-config.js');
 const { escapeHtml, capitalize } = require(path.join(REPO_ROOT, 'js/render-term.js'));
 const { toThaiNumerals } = require(path.join(REPO_ROOT, 'js/thai-numerals.js'));
+const Pagination = require(path.join(REPO_ROOT, 'js/pagination.js'));
 
 const LANGS = ['ru', 'thai'];
 const PAGE_SIZE = 10; // как PAGE_SIZE в build-terms.js (размер страницы навигатора)
@@ -37,7 +38,7 @@ const S = {
     intro: 'Связанные термины — это темы, в которых несколько терминов лучше изучать вместе. Выберите тему, чтобы пройти термины по порядку.',
     empty: 'Связанные термины пока не добавлены.',
     nav: 'Навигатор по терминам', stubTitle: 'Перевод отсутствует',
-    back1: '← Назад', next1: 'Далее →', pages: 'Страницы', pageWord: 'страница',
+    pages: 'Страницы', pageWord: 'страница',
     notLearned: 'Не изучен',
     count: n => n + ' ' + ruPlural(n, ['термин', 'термина', 'терминов']),
     more: n => 'и ещё ' + n + ' ' + ruPlural(n, ['термин', 'термина', 'терминов'])
@@ -47,7 +48,7 @@ const S = {
     intro: 'ชุดศัพท์ที่เกี่ยวข้องคือหัวข้อที่รวมคำศัพท์หลายคำซึ่งควรเรียนไปพร้อมกัน เลือกหัวข้อเพื่อเรียนคำศัพท์ตามลำดับ',
     empty: 'ยังไม่มีชุดศัพท์ที่เกี่ยวข้อง',
     nav: 'นำทางคำศัพท์', stubTitle: 'ยังไม่มีคำแปล',
-    back1: '← ย้อนกลับ', next1: 'ถัดไป →', pages: 'หน้า', pageWord: 'หน้า',
+    pages: 'หน้า', pageWord: 'หน้า',
     notLearned: 'ยังไม่ได้เรียน',
     count: n => 'จำนวน ' + toThaiNumerals(n) + ' คำ',
     more: n => 'และอีก ' + toThaiNumerals(n) + ' คำ'
@@ -152,17 +153,10 @@ function crumbs(lang, items) {
 
 // pathOf(p) — путь от корня сайта для страницы номер p
 function pagination(lang, pathOf, page, total) {
-  if (total <= 1) return '';
-  const st = S[lang];
-  const digits = n => (lang === 'thai' ? toThaiNumerals(n) : String(n));
-  const parts = [];
-  if (page > 1) parts.push('<a href="' + pathOf(page - 1) + '" class="page-link">' + st.back1 + '</a>');
-  for (let p = 1; p <= total; p++) {
-    parts.push(p === page ? '<span class="page-current">' + digits(p) + '</span>'
-      : '<a href="' + pathOf(p) + '" class="page-link">' + digits(p) + '</a>');
-  }
-  if (page < total) parts.push('<a href="' + pathOf(page + 1) + '" class="page-link">' + st.next1 + '</a>');
-  return '<nav class="pagination" aria-label="' + st.pages + '">' + parts.join('') + '</nav>';
+  return Pagination.render({
+    page, total, labels: Pagination.LABELS[lang], href: pathOf,
+    digits: n => (lang === 'thai' ? toThaiNumerals(n) : String(n))
+  });
 }
 
 // Обрезка до N символов по границе слова, в конце «…» (принцип buildSnippet в build-terms.js)

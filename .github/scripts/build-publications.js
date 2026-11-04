@@ -12,6 +12,7 @@ const REPO_ROOT = path.resolve(__dirname, '../..');
 const cfg = require('./site-config.js');
 const { escapeHtml } = require(path.join(REPO_ROOT, 'js/render-term.js'));
 const { toThaiNumerals } = require(path.join(REPO_ROOT, 'js/thai-numerals.js'));
+const Pagination = require(path.join(REPO_ROOT, 'js/pagination.js'));
 
 const LANGS = ['ru', 'thai'];
 const PAGE_SIZE = 10; // как в навигаторе и у связок
@@ -29,7 +30,7 @@ const S = {
     title: 'Публикации', nav: 'Навигатор по терминам',
     empty: 'Публикации пока не добавлены.',
     desc: 'Публикации о буддизме: статьи, которые помогают разобраться в ключевых понятиях учения и в том, как применять их на практике.',
-    back1: '← Назад', next1: 'Далее →', pages: 'Страницы', pageWord: 'страница',
+    pages: 'Страницы', pageWord: 'страница',
     toc: 'Содержание',
     more: 'Читать далее',
     cta: { q: 'Хотите узнавать о новых публикациях?', note: 'Не чаще раза в день.', btn: 'Подписаться' },
@@ -39,7 +40,7 @@ const S = {
     title: 'บทความ', nav: 'นำทางคำศัพท์',
     empty: 'ยังไม่มีบทความ',
     desc: 'บทความเกี่ยวกับพระพุทธศาสนา ช่วยให้เข้าใจแนวคิดสำคัญของคำสอนและการนำไปใช้ในชีวิตจริง',
-    back1: '← ย้อนกลับ', next1: 'ถัดไป →', pages: 'หน้า', pageWord: 'หน้า',
+    pages: 'หน้า', pageWord: 'หน้า',
     toc: 'สารบัญ',
     more: 'อ่านต่อ',
     cta: { q: 'อยากรู้เมื่อมีบทความใหม่ไหม?', note: 'แจ้งเตือนไม่เกินวันละครั้ง', btn: 'ติดตาม' },
@@ -506,16 +507,10 @@ function crumbs(lang, items) {
 const digits = (lang, n) => (lang === 'thai' ? toThaiNumerals(n) : String(n));
 
 function pagination(lang, page, total) {
-  if (total <= 1) return '';
-  const st = S[lang];
-  const parts = [];
-  if (page > 1) parts.push('<a href="' + cfg.publications.path(lang, page - 1) + '" class="page-link">' + st.back1 + '</a>');
-  for (let p = 1; p <= total; p++) {
-    parts.push(p === page ? '<span class="page-current">' + digits(lang, p) + '</span>'
-      : '<a href="' + cfg.publications.path(lang, p) + '" class="page-link">' + digits(lang, p) + '</a>');
-  }
-  if (page < total) parts.push('<a href="' + cfg.publications.path(lang, page + 1) + '" class="page-link">' + st.next1 + '</a>');
-  return '<nav class="pagination" aria-label="' + st.pages + '">' + parts.join('') + '</nav>';
+  return Pagination.render({
+    page, total, labels: Pagination.LABELS[lang],
+    href: p => cfg.publications.path(lang, p), digits: n => digits(lang, n)
+  });
 }
 
 function clipMeta(text, max, lang) {

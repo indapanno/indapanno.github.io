@@ -7,6 +7,7 @@ on:
     branches: [main]
     paths:
       - '_src/bundle/**'
+      - 'js/pagination.js'
       - '.github/scripts/build-bundles.js'
       - '.github/scripts/site-config.js'
   # После каждой сборки терминов: перепроверка связок (термин удалён или потерял перевод)

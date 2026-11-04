@@ -14,6 +14,7 @@ const REPO_ROOT = path.resolve(__dirname, '../..');
 const cfg = require('./site-config.js');
 const { escapeHtml, capitalize } = require(path.join(REPO_ROOT, 'js/render-term.js'));
 const { toThaiNumerals } = require(path.join(REPO_ROOT, 'js/thai-numerals.js'));
+const Pagination = require(path.join(REPO_ROOT, 'js/pagination.js'));
 
 const LANGS = ['ru', 'thai'];
 const PAGE_SIZE = 10; // как в навигаторе, у связок и публикаций
@@ -37,7 +38,7 @@ const S = {
     desc: 'Что нового в «Навигаторе по палийским терминам»: новые публикации, связанные термины и термины по дням.',
     digestDesc: (date, sum) => 'Что нового ' + date + ': ' + sum + '.',
     blocks: { publications: 'Публикации', bundles: 'Связанные термины', terms: 'Термины' },
-    more: 'Читать далее', back1: '← Назад', next1: 'Далее →', pages: 'Страницы', pageWord: 'страница', pageCap: 'Страница'
+    more: 'Читать далее', pages: 'Страницы', pageWord: 'страница', pageCap: 'Страница'
   },
   thai: {
     title: 'มีอะไรใหม่', nav: 'นำทางคำศัพท์',
@@ -45,7 +46,7 @@ const S = {
     desc: 'มีอะไรใหม่ในนำทางคำศัพท์บาลี: บทความ ชุดศัพท์ที่เกี่ยวข้อง และคำศัพท์ใหม่ในแต่ละวัน',
     digestDesc: (date, sum) => 'มีอะไรใหม่ ' + date + ': ' + sum,
     blocks: { publications: 'บทความ', bundles: 'ชุดศัพท์ที่เกี่ยวข้อง', terms: 'คำศัพท์' },
-    more: 'อ่านต่อ', back1: '← ย้อนกลับ', next1: 'ถัดไป →', pages: 'หน้า', pageWord: 'หน้า', pageCap: 'หน้า'
+    more: 'อ่านต่อ', pages: 'หน้า', pageWord: 'หน้า', pageCap: 'หน้า'
   }
 };
 
@@ -204,16 +205,10 @@ function metaTags(lang, o) {
 }
 
 function pagination(lang, page, total) {
-  if (total <= 1) return '';
-  const st = S[lang];
-  const parts = [];
-  if (page > 1) parts.push('<a href="' + cfg.news.path(lang, page - 1) + '" class="page-link">' + st.back1 + '</a>');
-  for (let p = 1; p <= total; p++) {
-    parts.push(p === page ? '<span class="page-current">' + digits(lang, p) + '</span>'
-      : '<a href="' + cfg.news.path(lang, p) + '" class="page-link">' + digits(lang, p) + '</a>');
-  }
-  if (page < total) parts.push('<a href="' + cfg.news.path(lang, page + 1) + '" class="page-link">' + st.next1 + '</a>');
-  return '<nav class="pagination" aria-label="' + st.pages + '">' + parts.join('') + '</nav>';
+  return Pagination.render({
+    page, total, labels: Pagination.LABELS[lang],
+    href: p => cfg.news.path(lang, p), digits: n => digits(lang, n)
+  });
 }
 
 function digestTitles(d) {
