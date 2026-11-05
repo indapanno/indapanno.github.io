@@ -20,7 +20,8 @@
       noteNav: 'Кнопка рядом с термином — ваша личная отметка. «Изучен» делает термин блёклым в списке и поиске. Хранится только в этом браузере.',
       linkCard: 'Мой прогресс →',
       bundleDone: 'изучено',
-      bundleTodo: 'не изучено'
+      bundleTodo: 'не изучено',
+      bundleAll: 'все изучены'
     },
     thai: {
       todo: 'ยังไม่ได้เรียน',
@@ -31,7 +32,8 @@
       noteNav: 'ปุ่มข้างคำศัพท์คือเครื่องหมายส่วนตัวของคุณ “เรียนแล้ว” จะทำให้คำนั้นจางลงในรายการและการค้นหา บันทึกไว้ในเบราว์เซอร์นี้เท่านั้น',
       linkCard: 'ความคืบหน้าของฉัน →',
       bundleDone: 'เรียนแล้ว',
-      bundleTodo: 'ยังไม่ได้เรียน'
+      bundleTodo: 'ยังไม่ได้เรียน',
+      bundleAll: 'เรียนครบแล้ว'
     }
   };
 
@@ -125,9 +127,12 @@
       return '<span class="bundle-progress ' + cls + (zero ? ' is-zero' : '') + '">' + text + '</span>';
     };
     var sep = '<span class="bundle-progress-sep" aria-hidden="true"> · </span>';
-    el.innerHTML = '<span class="bundle-progress-total">' + el.getAttribute('data-count-text').replace(/[<>&]/g, '') + '</span>'
-      + sep + part('bundle-progress-done', done === 0, s.bundleDone + ' ' + num(done))
-      + sep + part('bundle-progress-todo', todo === 0, s.bundleTodo + ' ' + num(todo));
+    var html = '<span class="bundle-progress-total">' + el.getAttribute('data-count-text').replace(/[<>&]/g, '') + '</span>' + sep;
+    // Сначала то, что осталось; когда изучено всё — одно «все изучены»
+    html += todo === 0
+      ? part('bundle-progress-done', false, s.bundleAll)
+      : part('bundle-progress-todo', false, s.bundleTodo + ' ' + num(todo)) + sep + part('bundle-progress-done', done === 0, s.bundleDone + ' ' + num(done));
+    el.innerHTML = html;
   }
 
   function refresh(root) {
