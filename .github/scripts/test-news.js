@@ -61,7 +61,7 @@ function makeSite(spec) {
   });
   (spec.bundles || []).forEach(b => {
     wr('_src/bundle/json/bundle_' + b.n + '_' + b.lang + '.json',
-      { name: (b.lang === 'thai' ? 'ชุดที่ ' : 'Связка ') + b.n, description: b.lang === 'thai' ? 'คำอธิบายชุดศัพท์' : 'Описание связки ' + b.n, terms: b.terms || ['t1', 't2', 't3'] });
+      { name: (b.lang === 'thai' ? 'ชุดที่ ' : 'Связка ') + b.n, description: b.lang === 'thai' ? 'คำอธิบายชุดเนื้อหา' : 'Описание связки ' + b.n, terms: b.terms || ['t1', 't2', 't3'] });
     if (b.page === 'ok') wr('bundle/bundle_' + b.n + '_' + b.lang + '.html', '<html><head></head></html>');
     if (b.page === 'stub') wr('bundle/bundle_' + b.n + '_' + b.lang + '.html', '<html><head><meta name="robots" content="noindex"></head></html>');
   });
@@ -241,7 +241,7 @@ const switchOf = h => { const o = {}; [...h.matchAll(/<a data-lang-value="(ru|th
   check('сводка: noindex, follow', h.includes('<meta name="robots" content="noindex, follow">'));
   check('сводка: canonical, description, Open Graph', h.includes('<link rel="canonical" href="' + SITE + '/new/2026-10-30_ru.html">')
     && /<meta name="description" content="[^"]+">/.test(h) && h.includes('<meta property="og:url" content="' + SITE + '/new/2026-10-30_ru.html">') && /<meta property="og:title" content="[^"]+">/.test(h));
-  const iP = h.indexOf('<h2>Публикации</h2>'), iB = h.indexOf('<h2>Связанные термины</h2>'), iT = h.indexOf('<h2>Термины</h2>');
+  const iP = h.indexOf('<h2>Публикации</h2>'), iB = h.indexOf('<h2>Связанные материалы</h2>'), iT = h.indexOf('<h2>Термины</h2>');
   check('сводка: блоки по порядку — публикации, связки, термины', iP > 0 && iB > iP && iT > iB, [iP, iB, iT].join());
   check('сводка: ссылки на статью, связку, термин — обычные <a href>', h.includes('href="/publications/a-2.html"') && h.includes('href="/bundle/bundle_2_ru.html"') && h.includes('href="/terms/t2_ru.html"'));
   check('сводка: плитка публикации (обложка, заголовок, лид)', h.includes('src="/publications/covers/c2.png"') && h.includes('Четыре благородные истины') && h.includes('Лид статьи'));
@@ -256,7 +256,7 @@ const switchOf = h => { const o = {}; [...h.matchAll(/<a data-lang-value="(ru|th
   const only = Object.assign({}, FULL_RU, { publications: [], bundles: [] });
   const r = site({ terms: { ru: ['t1'], thai: [] }, state: { ru: snap(['t1']) }, digests: { '2026-10-30_ru': only } });
   const h = r.read('new/2026-10-30_ru.html');
-  check('сводка: пустые блоки не выводятся', h.includes('<h2>Термины</h2>') && !h.includes('<h2>Публикации</h2>') && !h.includes('<h2>Связанные термины</h2>'));
+  check('сводка: пустые блоки не выводятся', h.includes('<h2>Термины</h2>') && !h.includes('<h2>Публикации</h2>') && !h.includes('<h2>Связанные материалы</h2>'));
 }
 
 // 9. Страница сводки (thai)
@@ -321,7 +321,7 @@ check('plural: 11, 12, 14 → «терминов»; 21 → «термин»; 22 
   tryv(() => [11, 12, 14, 21, 22, 111].map(n => plural(n, ['термин', 'термина', 'терминов'])).join()) === 'терминов,терминов,терминов,термин,термина,терминов');
 check('summaryLine ru: порядок и склонения', tryv(() => summaryLine({ publications: [1, 2], bundles: [1, 2, 3, 4, 5], terms: [1] }, 'ru')) === '2 публикации, 5 связок, 1 термин');
 check('summaryLine ru: пустые части пропускаются', tryv(() => summaryLine({ publications: [], bundles: [], terms: [1, 2, 3] }, 'ru')) === '3 термина');
-check('summaryLine thai: тайские цифры', tryv(() => summaryLine({ publications: [1], bundles: [1, 2], terms: Array(12).fill(1) }, 'thai')) === 'บทความ ๑ เรื่อง, ชุดศัพท์ ๒ ชุด, คำศัพท์ ๑๒ คำ');
+check('summaryLine thai: тайские цифры', tryv(() => summaryLine({ publications: [1], bundles: [1, 2], terms: Array(12).fill(1) }, 'thai')) === 'บทความ ๑ เรื่อง, ชุดเนื้อหา ๒ ชุด, คำศัพท์ ๑๒ คำ');
 check('formatDate ru', tryv(() => formatDate('2026-03-01', 'ru')) === '1 марта 2026');
 check('formatDate thai: тайские цифры, буддийская эра', tryv(() => formatDate('2026-10-30', 'thai')) === '๓๐ ตุลาคม ๒๕๖๙');
 

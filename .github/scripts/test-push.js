@@ -51,7 +51,7 @@ const DIGEST_URL = SITE + '/new/2026-10-30_ru.html';
   m = message(digest({ publications: [pub(1, 'Название 1'), pub(2, 'Название 2')] }), 'ru', ALL);
   check('2 публикации', m && m.title === '2 новые публикации' && m.body === '«Название 1», «Название 2»' && m.url === DIGEST_URL, show(m));
   m = message(digest({ bundles: [bun(2, 'Пять преград')], terms: terms(3) }), 'ru', ALL);
-  check('1 связка + 3 термина', m && m.title === 'Новые связанные термины: «Пять преград»' && m.body === 'И ещё 3 термина', show(m));
+  check('1 связка + 3 термина', m && m.title === 'Новые связанные материалы: «Пять преград»' && m.body === 'И ещё 3 термина', show(m));
   m = message(digest({ terms: terms(12) }), 'ru', ALL);
   check('12 терминов', m && m.title === '12 новых терминов' && m.body === 'Дуккха, самудая, ниродха и ещё 9', show(m));
   m = message(digest({ terms: terms(1) }), 'ru', ALL);
@@ -102,7 +102,7 @@ const DIGEST_URL = SITE + '/new/2026-10-30_ru.html';
   m = message(digest({ publications: [pub(1, 'ก'), pub(2, 'ข')] }, 'thai'), 'thai', ALL);
   check('thai: 2 публикации', m && m.title === 'บทความใหม่ ๒ เรื่อง' && m.body === '“ก”, “ข”', show(m));
   m = message(digest({ bundles: [bun(1, 'อริยสัจ ๔')] }, 'thai'), 'thai', ALL);
-  check('thai: 1 связка', m && m.title === 'ชุดศัพท์ใหม่: “อริยสัจ ๔”', show(m));
+  check('thai: 1 связка', m && m.title === 'ชุดเนื้อหาใหม่: “อริยสัจ ๔”', show(m));
 }
 
 // 5. План рассылки: 7 групп по точному совпадению тегов

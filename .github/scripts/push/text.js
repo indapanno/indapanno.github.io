@@ -52,9 +52,9 @@ const KIND = {
     name: x => x.headline, text: x => x.lead
   },
   bundles: {
-    one: { ru: 'Новые связанные термины: ', thai: 'ชุดศัพท์ใหม่: ' },
-    many: { ru: n => n + ' ' + plural(n, ['новая связка', 'новые связки', 'новых связок']), thai: n => 'ชุดศัพท์ใหม่ ' + toThaiNumerals(n) + ' ชุด' },
-    count: { ru: n => n + ' ' + plural(n, ['связка', 'связки', 'связок']), thai: n => 'ชุดศัพท์ ' + toThaiNumerals(n) + ' ชุด' },
+    one: { ru: 'Новые связанные материалы: ', thai: 'ชุดเนื้อหาใหม่: ' },
+    many: { ru: n => n + ' ' + plural(n, ['новая связка', 'новые связки', 'новых связок']), thai: n => 'ชุดเนื้อหาใหม่ ' + toThaiNumerals(n) + ' ชุด' },
+    count: { ru: n => n + ' ' + plural(n, ['связка', 'связки', 'связок']), thai: n => 'ชุดเนื้อหา ' + toThaiNumerals(n) + ' ชุด' },
     name: x => x.name, text: x => x.description
   },
   terms: {

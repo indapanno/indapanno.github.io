@@ -61,7 +61,7 @@ jobs:
           if git diff --staged --quiet; then
             echo "Нет изменений для коммита"
           else
-            git commit -m "Автосборка связанных терминов [skip ci]"
+            git commit -m "Автосборка связанных материалов [skip ci]"
             ok=0
             for i in 1 2 3 4 5 6; do
               if git pull --rebase origin ${{ github.event.workflow_run.head_branch || github.ref_name }} && git push origin HEAD; then ok=1; break; fi
