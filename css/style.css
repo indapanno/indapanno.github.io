@@ -85,6 +85,22 @@ h2 {
   gap: 0.15rem;
 }
 
+/* Подписи «Язык» / «Тема» не показываем: кнопки понятны сами. Для экранного диктора они остаются
+   (по ним названы группы кнопок через aria-labelledby), поэтому скрыты только визуально. */
+#lang-label,
+#theme-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* --- Сегментированные переключатели (язык — ссылки, тема — кнопки) --- */
 .segmented {
   display: inline-flex;
