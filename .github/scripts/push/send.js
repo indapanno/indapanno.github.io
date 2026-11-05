@@ -32,6 +32,13 @@ function uuidFrom(s) {
   return h.slice(0, 8) + '-' + h.slice(8, 12) + '-5' + h.slice(13, 16) + '-' + v + h.slice(17, 20) + '-' + h.slice(20, 32);
 }
 
+// Топик уведомления (web_push_topic): у каждой сводки свой — новая сводка показывается баннером,
+// а не тихо заменяет вчерашнее уведомление; повторная досылка той же сводки заменяет, а не дублирует.
+// У теста — ещё и случайная часть, чтобы каждый тест был виден. Не длиннее 32 символов.
+function topicOf(date, lang, nonce) {
+  return ('news-' + lang + '-' + date + (nonce ? '-t' + nonce.replace(/[^a-z0-9]/gi, '').slice(0, 8) : '')).slice(0, 32);
+}
+
 function planSends(digest, lang, opts) {
   const test = !!(opts && opts.test);
   const nonce = test ? String((opts && opts.nonce) || crypto.randomUUID()) : '';
@@ -46,7 +53,7 @@ function planSends(digest, lang, opts) {
     if (test) filters.push({ field: 'tag', key: 'tester', relation: '=', value: '1' });
     const combo = CATS.map(k => (categories[k] ? 1 : 0)).join('');
     plan.push({
-      lang, categories, title: m.title, body: m.body, url: m.url, tag: 'news-' + lang, test, filters,
+      lang, categories, title: m.title, body: m.body, url: m.url, tag: topicOf(digest.date, lang, nonce), test, filters,
       idempotencyKey: uuidFrom(['news', digest.date, lang, combo, test ? 'test:' + nonce : 'all'].join('|'))
     });
   }
