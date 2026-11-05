@@ -256,7 +256,9 @@ const PUBS = { 'publication_1_ru.json': P(1), 'publication_2_ru.json': P(2), 'pu
   const p = r.read('bundle_2_ru.html');
   check('страница: три блока по порядку с заголовками', p.indexOf('<h2>Термины</h2>') > 0 && p.indexOf('<h2>Термины</h2>') < p.indexOf('<h2>Публикации</h2>') && p.indexOf('<h2>Публикации</h2>') < p.indexOf('<h2>Другие связки</h2>'));
   check('страница: публикации в порядке JSON, ссылка в том же окне', p.indexOf('/publications/statya-2.html') < p.indexOf('/publications/statya-1.html') && p.includes('<span class="bundle-name">Статья 2</span><span class="bundle-desc">Лид статьи 2</span>') && !/statya-[12]\.html"[^>]*target=/.test(p));
-  check('страница: другая связка — название и информер', p.includes('<li><a href="/bundle/bundle_1_ru.html"><span class="bundle-name">Тема</span><span class="bundle-meta" data-terms="t1 t2 t3">3 термина</span></a></li>'));
+  const tile1 = '<li><a href="/bundle/bundle_1_ru.html"><span class="bundle-name">Тема</span><span class="bundle-desc">Описание темы</span><span class="bundle-meta" data-terms="t1 t2 t3">3 термина</span><span class="bundle-terms">Термин 1, Термин 2, Термин 3</span></a></li>';
+  check('страница: другая связка — та же плитка, что в списке', p.includes(tile1) && l.includes(tile1));
+  check('страница: плитка другой связки с хвостом, как в списке', r.read('bundle_1_ru.html') && makeEnv({ 'bundle_1_ru.json': ru(null, { publications: [1] }), 'bundle_2_ru.json': ru(null, { name: 'Вторая', bundles: [1] }) }, null, PUBS).read('bundle_2_ru.html').includes('Термин 1, Термин 2, Термин 3 + 1 публикация</span>'));
   check('страница: кнопки «Изучен» только у своих терминов', count(p, 'data-learned-id=') === 2);
   const t = r.read('bundle_2_thai.html');
   check('страница thai: заголовки блоков и своя публикация', t.includes('<h2>คำศัพท์</h2>') && t.includes('<h2>บทความ</h2>') && t.includes('<h2>ชุดเนื้อหาอื่น</h2>') && t.includes('/publications/bot-7.html') && !t.includes('statya'));

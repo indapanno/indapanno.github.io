@@ -223,6 +223,20 @@ function pageSuffix(lang, page) {
   return page > 1 ? ' — ' + S[lang].pageWord + ' ' + (lang === 'thai' ? toThaiNumerals(page) : page) : '';
 }
 
+// Плитка связки — одна для списка связок и для блока «Другие связки»:
+// название, описание, информер, перечень терминов (до 5) и хвост «+ 2 публикации, 1 связка»
+function bundleTile(lang, b, terms) {
+  const st = S[lang];
+  const names = b.data.terms.map(id => escapeHtml(termName(terms, lang, id)));
+  const extra = st.extra((b.publications || []).length, (b.bundles || []).length);
+  const shown = names.slice(0, 5).join(', ') + (names.length > 5 ? ' ' + st.more(names.length - 5) : '') + (extra ? ' + ' + extra : '');
+  return '<li><a href="' + cfg.bundlePath(b.n, lang, 1) + '"><span class="bundle-name">' + escapeHtml(b.data.name) + '</span>'
+    + '<span class="bundle-desc">' + escapeHtml(clip(b.data.description, DESC_CLIP)) + '</span>'
+    // data-terms — id терминов связки: по ним js/learned.js показывает «изучено / не изучено» (только чтение отметок)
+    + '<span class="bundle-meta" data-terms="' + escapeHtml(b.data.terms.join(' ')) + '">' + st.count(names.length) + '</span>'
+    + '<span class="bundle-terms">' + shown + '</span></a></li>';
+}
+
 // listLangs — языки, на которых список связок не пуст (для hreflang)
 function listPages(lang, items, terms, layout, listLangs) {
   const st = S[lang];
@@ -233,16 +247,7 @@ function listPages(lang, items, terms, layout, listLangs) {
     let main;
     if (!items.length) main = '<p class="bundle-empty">' + st.empty + '</p>';
     else {
-      const li = slice.map(b => {
-        const names = b.data.terms.map(id => escapeHtml(termName(terms, lang, id)));
-        const extra = st.extra((b.publications || []).length, (b.bundles || []).length);
-        const shown = names.slice(0, 5).join(', ') + (names.length > 5 ? ' ' + st.more(names.length - 5) : '') + (extra ? ' + ' + extra : '');
-        return '<li><a href="' + cfg.bundlePath(b.n, lang, 1) + '"><span class="bundle-name">' + escapeHtml(b.data.name) + '</span>'
-          + '<span class="bundle-desc">' + escapeHtml(clip(b.data.description, DESC_CLIP)) + '</span>'
-          // data-terms — id терминов связки: по ним js/learned.js показывает «изучено / не изучено» (только чтение отметок)
-          + '<span class="bundle-meta" data-terms="' + escapeHtml(b.data.terms.join(' ')) + '">' + st.count(names.length) + '</span>'
-          + '<span class="bundle-terms">' + shown + '</span></a></li>';
-      }).join('');
+      const li = slice.map(b => bundleTile(lang, b, terms)).join('');
       main = '<ul class="term-list bundle-list">' + li + '</ul>' + pagination(lang, p => cfg.bundles.path(lang, p), page, total);
     }
     main = crumbs(lang, [{ text: st.title }]) + main;
@@ -261,12 +266,6 @@ function listPages(lang, items, terms, layout, listLangs) {
 }
 
 // langs — языки, на которых опубликована эта связка (для hreflang)
-// Плитка другой связки: название и информер «изучено / не изучено» (data-terms читает js/learned.js)
-function bundleTile(lang, o, terms) {
-  return '<li><a href="' + cfg.bundlePath(o.n, lang, 1) + '"><span class="bundle-name">' + escapeHtml(o.data.name) + '</span>'
-    + '<span class="bundle-meta" data-terms="' + escapeHtml(o.data.terms.join(' ')) + '">' + S[lang].count(o.data.terms.length) + '</span></a></li>';
-}
-
 // Плитка публикации: заголовок и лид, ссылка в том же окне
 function publicationTile(p) {
   return '<li><a href="' + cfg.articlePath(p.html) + '"><span class="bundle-name">' + escapeHtml(p.headline) + '</span>'
