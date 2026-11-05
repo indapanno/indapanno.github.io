@@ -1,7 +1,7 @@
 name: Build bundles
 
-# Сборка страниц «Связанные термины». Независима от сборки обычных терминов:
-# только читает термины и пишет в bundle/ и sitemap_bundles.xml.
+# Сборка страниц «Связанные материалы» (адреса /bundle/). Независима от сборок терминов и публикаций:
+# только читает термины и плитки публикаций, пишет в bundle/ и sitemap_bundles.xml.
 on:
   push:
     branches: [main]
@@ -10,9 +10,10 @@ on:
       - 'js/pagination.js'
       - '.github/scripts/build-bundles.js'
       - '.github/scripts/site-config.js'
-  # После каждой сборки терминов: перепроверка связок (термин удалён или потерял перевод)
+  # После каждой сборки терминов и публикаций: перепроверка связок
+  # (термин удалён или потерял перевод; публикация удалена или её страница собрана впервые)
   workflow_run:
-    workflows: ['Build terms']
+    workflows: ['Build terms', 'Build publications']
     types: [completed]
     branches: [main]
   workflow_dispatch:

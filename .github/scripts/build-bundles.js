@@ -1,6 +1,7 @@
 'use strict';
-// Сборка страниц «Связанные термины» (ТЗ: bundles_TZ.md).
-// Независим от build-terms.js: только ЧИТАЕТ термины из json/,
+// Сборка страниц «Связанные материалы» (ТЗ: bundles_TZ.md; адреса /bundle/ прежние).
+// Независим от build-terms.js и build-publications.js: только ЧИТАЕТ термины из json/
+// и плитки публикаций из _src/publications/json,
 // пишет только в bundle/ и sitemap_bundles.xml (корень сайта). Исходники связок: _src/bundle/json, шаблоны: _src/bundle/template.
 // Ошибочная связка не публикуется;
 // остальные собираются, в конце процесс завершается с кодом 1.
@@ -18,7 +19,8 @@ const PAGE_SIZE = 10; // как PAGE_SIZE в build-terms.js (размер стр
 const GH_JSON = 'https://github.com/indapanno/indapanno.github.io/%s/main/_src/bundle/json/';
 const NAME_KEY = { ru: 'term_ru', thai: 'term_thai' };
 const ALPHABET = { ru: /[А-Яа-яЁё]/, thai: /[\u0E00-\u0E7F]/ };
-const BUNDLE_KEYS = ['name', 'description', 'terms'];
+const BUNDLE_KEYS = ['name', 'description', 'terms'];       // обязательные
+const OPTIONAL_KEYS = ['publications', 'bundles'];           // необязательные: номера публикаций и связок
 // SEO: как у навигатора и публикаций
 const SITE_NAME = { ru: 'Навигатор по палийским терминам', thai: 'นำทางคำศัพท์บาลี' };
 const OG_LOCALE = { ru: 'ru_RU', thai: 'th_TH' };
@@ -34,9 +36,12 @@ function ruPlural(n, f) {
 
 const S = {
   ru: {
-    title: 'Связанные термины',
-    intro: 'Связанные термины — это темы, в которых несколько терминов лучше изучать вместе. Выберите тему, чтобы пройти термины по порядку.',
-    empty: 'Связанные термины пока не добавлены.',
+    title: 'Связанные материалы',
+    intro: 'Связанные материалы — это темы, в которых термины, публикации и другие связки лучше изучать вместе. Выберите тему, чтобы пройти материалы по порядку.',
+    empty: 'Связанные материалы пока не добавлены.',
+    blocks: { terms: 'Термины', publications: 'Публикации', bundles: 'Другие связки' },
+    extra: (p, b) => [p && p + ' ' + ruPlural(p, ['публикация', 'публикации', 'публикаций']),
+      b && b + ' ' + ruPlural(b, ['связка', 'связки', 'связок'])].filter(Boolean).join(', '),
     nav: 'Навигатор по терминам', stubTitle: 'Перевод отсутствует',
     pages: 'Страницы', pageWord: 'страница',
     notLearned: 'Не изучен',
@@ -44,9 +49,11 @@ const S = {
     more: n => 'и ещё ' + n + ' ' + ruPlural(n, ['термин', 'термина', 'терминов'])
   },
   thai: {
-    title: 'ชุดศัพท์ที่เกี่ยวข้อง',
-    intro: 'ชุดศัพท์ที่เกี่ยวข้องคือหัวข้อที่รวมคำศัพท์หลายคำซึ่งควรเรียนไปพร้อมกัน เลือกหัวข้อเพื่อเรียนคำศัพท์ตามลำดับ',
-    empty: 'ยังไม่มีชุดศัพท์ที่เกี่ยวข้อง',
+    title: 'ชุดเนื้อหาที่เกี่ยวข้อง',
+    intro: 'ชุดเนื้อหาที่เกี่ยวข้องคือหัวข้อที่รวมคำศัพท์ บทความ และชุดเนื้อหาอื่นซึ่งควรเรียนไปพร้อมกัน เลือกหัวข้อเพื่อเรียนตามลำดับ',
+    empty: 'ยังไม่มีชุดเนื้อหาที่เกี่ยวข้อง',
+    blocks: { terms: 'คำศัพท์', publications: 'บทความ', bundles: 'ชุดเนื้อหาอื่น' },
+    extra: (p, b) => [p && 'บทความ ' + toThaiNumerals(p) + ' เรื่อง', b && 'ชุดเนื้อหา ' + toThaiNumerals(b) + ' ชุด'].filter(Boolean).join(', '),
     nav: 'นำทางคำศัพท์', stubTitle: 'ยังไม่มีคำแปล',
     pages: 'หน้า', pageWord: 'หน้า',
     notLearned: 'ยังไม่ได้เรียน',
@@ -68,15 +75,33 @@ function loadTerms(termsDir) {
   return out;
 }
 
+// --- Плитки публикаций (только чтение): номер → { headline, lead, html } по языкам.
+// Битый файл публикации просто не попадает в карту: такие ошибки показывает сборка публикаций.
+function loadPublications(pubDir) {
+  const out = { ru: new Map(), thai: new Map() };
+  if (!fs.existsSync(pubDir)) return out;
+  fs.readdirSync(pubDir).forEach(f => {
+    const m = f.match(/^publication_([1-9]\d*)_(ru|thai)\.json$/);
+    if (!m) return;
+    try {
+      const d = JSON.parse(fs.readFileSync(path.join(pubDir, f), 'utf8').replace(/^\uFEFF/, ''));
+      if (d && typeof d.headline === 'string' && typeof d.lead === 'string' && typeof d.html === 'string') out[m[2]].set(Number(m[1]), d);
+    } catch (e) { /* не наша ошибка */ }
+  });
+  return out;
+}
+
+const isNumList = v => Array.isArray(v) && v.every(x => Number.isInteger(x) && x > 0);
+
 // --- Проверка одного файла связки (ошибки №2–10, 12) ---
-function validateFile(file, lang, text, terms, allIds) {
+function validateFile(file, lang, text, terms, allIds, ctx) {
   const errors = [];
   const err = (code, msg) => errors.push({ code, file, msg });
   let data;
   try { data = JSON.parse(text.replace(/^\uFEFF/, '')); } catch (e) { err(2, 'невалидный JSON: ' + e.message); return { errors, data: null }; }
   if (!data || typeof data !== 'object' || Array.isArray(data)) { err(2, 'корень JSON должен быть объектом'); return { errors, data: null }; }
   BUNDLE_KEYS.forEach(k => { if (!(k in data)) err(3, 'отсутствует ключ «' + k + '»'); });
-  Object.keys(data).forEach(k => { if (!BUNDLE_KEYS.includes(k)) err(4, 'лишний ключ «' + k + '»'); });
+  Object.keys(data).forEach(k => { if (!BUNDLE_KEYS.includes(k) && !OPTIONAL_KEYS.includes(k)) err(4, 'лишний ключ «' + k + '»'); });
   ['name', 'description'].forEach(k => {
     if (!(k in data)) return;
     if (typeof data[k] !== 'string' || !data[k].trim()) err(5, '«' + k + '» должно быть непустой строкой');
@@ -86,7 +111,10 @@ function validateFile(file, lang, text, terms, allIds) {
     const t = data.terms;
     if (!Array.isArray(t) || t.some(x => typeof x !== 'string' || !x.trim())) err(6, '«terms» должно быть массивом непустых строк');
     else {
-      if (t.length < 2) err(7, 'в «terms» меньше 2 терминов (найдено: ' + t.length + ')');
+      // Правило: минимум 2 материала (термины + публикации + связки), из них хотя бы 1 термин
+      const extra = (isNumList(data.publications) ? data.publications.length : 0) + (isNumList(data.bundles) ? data.bundles.length : 0);
+      if (!t.length) err(7, 'в «terms» нет ни одного термина');
+      else if (t.length + extra < 2) err(7, 'меньше 2 материалов (термины, публикации, связки вместе: ' + (t.length + extra) + ')');
       const seen = new Set();
       t.forEach(id => {
         if (seen.has(id)) err(8, 'повтор ID «' + id + '»');
@@ -96,6 +124,21 @@ function validateFile(file, lang, text, terms, allIds) {
       });
     }
   }
+  // Необязательные списки: номера (целые > 0) без повторов
+  OPTIONAL_KEYS.forEach(k => {
+    if (!(k in data)) return;
+    const v = data[k];
+    if (!isNumList(v)) { err(16, '«' + k + '» должно быть массивом номеров (целых чисел больше 0)'); return; }
+    const seen = new Set();
+    v.forEach(x => { if (seen.has(x)) err(16, 'повтор номера ' + x + ' в «' + k + '»'); seen.add(x); });
+  });
+  if (isNumList(data.publications)) data.publications.forEach(x => {
+    if (!ctx.publications[lang].has(x)) err(13, 'публикации ' + x + ' нет на языке связки (нужен publication_' + x + '_' + lang + '.json)');
+  });
+  if (isNumList(data.bundles)) data.bundles.forEach(x => {
+    if (x === ctx.n) err(15, 'связка ссылается на саму себя (' + x + ')');
+    else if (!ctx.bundleNums.has(x)) err(15, 'связки ' + x + ' не существует');
+  });
   return { errors, data: errors.length ? null : data };
 }
 
@@ -192,7 +235,8 @@ function listPages(lang, items, terms, layout, listLangs) {
     else {
       const li = slice.map(b => {
         const names = b.data.terms.map(id => escapeHtml(termName(terms, lang, id)));
-        const shown = names.slice(0, 5).join(', ') + (names.length > 5 ? ' ' + st.more(names.length - 5) : '');
+        const extra = st.extra((b.publications || []).length, (b.bundles || []).length);
+        const shown = names.slice(0, 5).join(', ') + (names.length > 5 ? ' ' + st.more(names.length - 5) : '') + (extra ? ' + ' + extra : '');
         return '<li><a href="' + cfg.bundlePath(b.n, lang, 1) + '"><span class="bundle-name">' + escapeHtml(b.data.name) + '</span>'
           + '<span class="bundle-desc">' + escapeHtml(clip(b.data.description, DESC_CLIP)) + '</span>'
           // data-terms — id терминов связки: по ним js/learned.js показывает «изучено / не изучено» (только чтение отметок)
@@ -217,11 +261,31 @@ function listPages(lang, items, terms, layout, listLangs) {
 }
 
 // langs — языки, на которых опубликована эта связка (для hreflang)
+// Плитка другой связки: название и информер «изучено / не изучено» (data-terms читает js/learned.js)
+function bundleTile(lang, o, terms) {
+  return '<li><a href="' + cfg.bundlePath(o.n, lang, 1) + '"><span class="bundle-name">' + escapeHtml(o.data.name) + '</span>'
+    + '<span class="bundle-meta" data-terms="' + escapeHtml(o.data.terms.join(' ')) + '">' + S[lang].count(o.data.terms.length) + '</span></a></li>';
+}
+
+// Плитка публикации: заголовок и лид, ссылка в том же окне
+function publicationTile(p) {
+  return '<li><a href="' + cfg.articlePath(p.html) + '"><span class="bundle-name">' + escapeHtml(p.headline) + '</span>'
+    + '<span class="bundle-desc">' + escapeHtml(clip(p.lead, DESC_CLIP)) + '</span></a></li>';
+}
+
+// Блок страницы связки; заголовок h2 — только если на странице больше одного блока
+function block(kind, title, inner) {
+  const tag = title ? 'section' : 'div'; // без заголовка — простой контейнер
+  return '<' + tag + ' class="bundle-block bundle-block--' + kind + '">' + (title ? '<h2>' + escapeHtml(title) + '</h2>' : '') + inner + '</' + tag + '>';
+}
+
+// b.publications / b.bundles — уже отобранные плитки (только реально опубликованные материалы)
 function bundlePages(lang, b, terms, layout, langs) {
   const st = S[lang];
   const ids = b.data.terms;
   const total = Math.max(1, Math.ceil(ids.length / PAGE_SIZE));
-    const pages = [];
+  const pubs = b.publications || [], others = b.bundles || [];
+  const pages = [];
   for (let page = 1; page <= total; page++) {
     const li = ids.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE).map(id => {
       const d = terms[lang].get(id);
@@ -232,9 +296,14 @@ function bundlePages(lang, b, terms, layout, langs) {
         + (sn ? '<div class="nav-snippet">' + escapeHtml(sn) + '</div>' : '') + '</a>'
         + '<button type="button" class="learned-btn" data-learned-id="' + escapeHtml(id) + '">' + st.notLearned + '</button></li>';
     }).join('');
-    const main = crumbs(lang, [{ text: st.title, href: cfg.bundles.path(lang, 1) }, { text: b.data.name }])
-      + '<p class="nav-intro" id="learned-nav-note"></p>\n  '
-      + '<ul id="term-list" class="term-list">' + li + '</ul>' + pagination(lang, p => cfg.bundlePath(b.n, lang, p), page, total);
+    // Публикации и другие связки — только на 1-й странице (на стр. 2+ — одни термины, без повторов для поисковиков)
+    const extra = page === 1 ? { publications: pubs, bundles: others } : { publications: [], bundles: [] };
+    const many = extra.publications.length + extra.bundles.length > 0;
+    let main = crumbs(lang, [{ text: st.title, href: cfg.bundles.path(lang, 1) }, { text: b.data.name }])
+      + block('terms', many ? st.blocks.terms : '', '<p class="nav-intro" id="learned-nav-note"></p>\n  '
+        + '<ul id="term-list" class="term-list">' + li + '</ul>' + pagination(lang, p => cfg.bundlePath(b.n, lang, p), page, total));
+    if (extra.publications.length) main += block('publications', st.blocks.publications, '<ul class="term-list bundle-list">' + extra.publications.map(publicationTile).join('') + '</ul>');
+    if (extra.bundles.length) main += block('bundles', st.blocks.bundles, '<ul class="term-list bundle-list">' + extra.bundles.map(o => bundleTile(lang, o, terms)).join('') + '</ul>');
     const title = b.data.name + pageSuffix(lang, page);
     const url = cfg.bundleUrl(b.n, lang, page);
     const alts = page === 1 && langs.length > 1 ? langs.map(l => ({ lang: l, url: cfg.bundleUrl(b.n, l, 1) })) : [];
@@ -257,23 +326,25 @@ function stubPage(target, n, layout) {
   const dirUrl = '<a href="' + dirHref + '">' + dirHref + '</a>';
   let lead, steps;
   if (target === 'ru') {
-    const cmd = 'Переведи на русский язык значения ключей name и description этого JSON-файла. Значения массива terms не переводи и не меняй. '
-      + 'Результат отдай в блоке для кода. Нужен такой же JSON-файл, только на русском языке. Ничего не добавляй и не убирай.';
-    lead = 'В настоящий момент отсутствует перевод страницы связанных терминов на русский язык. Вы можете перевести её без специальных знаний за 5 минут с помощью бесплатного ИИ. Следуйте инструкции ниже.';
+    const cmd = 'Переведи на русский язык значения ключей name и description этого JSON-файла. Значения массивов terms и bundles не переводи и не меняй. '
+      + 'Ключ publications, если он есть, удали вместе со значением. '
+      + 'Результат отдай в блоке для кода. Нужен такой же JSON-файл, только на русском языке. Больше ничего не добавляй и не убирай.';
+    lead = 'В настоящий момент отсутствует перевод страницы связанных материалов на русский язык. Вы можете перевести её без специальных знаний за 5 минут с помощью бесплатного ИИ. Следуйте инструкции ниже.';
     steps = ['Откройте JSON-файл этой страницы: ' + fileUrl + '.',
       'Отправьте его в любой бесплатный ИИ с текстом:<span class="bundle-code">' + escapeHtml(cmd) + '</span>',
       'Скопируйте результат.', 'Откройте папку ' + dirUrl + '.', 'Нажмите «Add file» → «Create new file».', 'Вставьте перевод.',
       'Назовите файл <code>' + dstFile + '</code>.', 'Отправьте Pull request.',
-      'Дождитесь проверки администратором. После одобрения связанные термины появятся на сайте.'];
+      'Дождитесь проверки администратором. После одобрения связанные материалы появятся на сайте.'];
   } else {
-    const cmd = 'แปลค่าของคีย์ name และ description ในไฟล์ JSON นี้เป็นภาษาไทย ห้ามแปลหรือเปลี่ยนค่าในอาร์เรย์ terms '
-      + 'ส่งผลลัพธ์เป็นบล็อกโค้ด ต้องการไฟล์ JSON เหมือนเดิมแต่เป็นภาษาไทย ห้ามเพิ่มหรือลบสิ่งใด';
-    lead = 'ขณะนี้ยังไม่มีหน้าชุดศัพท์ที่เกี่ยวข้องฉบับภาษาไทย คุณสามารถแปลเองได้ภายใน 5 นาทีด้วย AI ฟรี โดยไม่ต้องมีความรู้พิเศษ ทำตามขั้นตอนด้านล่าง';
+    const cmd = 'แปลค่าของคีย์ name และ description ในไฟล์ JSON นี้เป็นภาษาไทย ห้ามแปลหรือเปลี่ยนค่าในอาร์เรย์ terms และ bundles '
+      + 'หากมีคีย์ publications ให้ลบออกพร้อมค่า '
+      + 'ส่งผลลัพธ์เป็นบล็อกโค้ด ต้องการไฟล์ JSON เหมือนเดิมแต่เป็นภาษาไทย ห้ามเพิ่มหรือลบสิ่งอื่นใด';
+    lead = 'ขณะนี้ยังไม่มีหน้าชุดเนื้อหาที่เกี่ยวข้องฉบับภาษาไทย คุณสามารถแปลเองได้ภายใน 5 นาทีด้วย AI ฟรี โดยไม่ต้องมีความรู้พิเศษ ทำตามขั้นตอนด้านล่าง';
     steps = ['เปิดไฟล์ JSON ของหน้านี้: ' + fileUrl,
       'ส่งไปยัง AI ฟรีตัวใดก็ได้ พร้อมข้อความ:<span class="bundle-code">' + escapeHtml(cmd) + '</span>',
       'คัดลอกผลลัพธ์', 'เปิดโฟลเดอร์ ' + dirUrl, 'กดปุ่ม “Add file” → “Create new file”', 'วางคำแปล',
       'ตั้งชื่อไฟล์ว่า <code>' + dstFile + '</code>', 'ส่ง Pull request',
-      'รอผู้ดูแลตรวจสอบ เมื่อได้รับอนุมัติ ชุดศัพท์ที่เกี่ยวข้องจะปรากฏบนเว็บไซต์'];
+      'รอผู้ดูแลตรวจสอบ เมื่อได้รับอนุมัติ ชุดเนื้อหาที่เกี่ยวข้องจะปรากฏบนเว็บไซต์'];
   }
   // Вёрстка как на how-to-add-term: карточка term-card с h2, абзацем и нумерованным списком
   const st = S[target];
@@ -287,22 +358,26 @@ function stubPage(target, n, layout) {
 // --- Основная сборка ---
 function build(opts) {
   // termsDir — корень сайта (в нём json/ с терминами); bundleDir — куда писать страницы (bundle/);
-  // srcDir — исходники связок (_src/bundle: json/ и template/).
+  // srcDir — исходники связок (_src/bundle: json/ и template/); pubDir — JSON плиток публикаций.
   const termsDir = opts.termsDir, bundleDir = opts.bundleDir;
   const srcDir = opts.srcDir || path.join(termsDir, '_src/bundle');
   const jsonDir = path.join(srcDir, 'json'), htmlDir = bundleDir, tplDir = path.join(srcDir, 'template');
   const errors = [];
   const terms = loadTerms(termsDir);
   const allIds = new Set([...terms.ru.keys(), ...terms.thai.keys()]);
+  const publications = loadPublications(opts.pubDir || path.join(termsDir, '_src/publications/json'));
+  const warnings = [];
   const layouts = {};
   LANGS.forEach(l => { layouts[l] = fs.readFileSync(path.join(tplDir, '_layout_' + l + '.html'), 'utf8'); });
 
   const bundles = {};
   if (fs.existsSync(jsonDir)) {
-    fs.readdirSync(jsonDir).filter(f => !f.startsWith('.')).sort().forEach(f => {
+    const files = fs.readdirSync(jsonDir).filter(f => !f.startsWith('.')).sort();
+    const bundleNums = new Set(files.map(f => f.match(/^bundle_([1-9]\d*)_(ru|thai)\.json$/)).filter(Boolean).map(m => Number(m[1])));
+    files.forEach(f => {
       const m = f.match(/^bundle_([1-9]\d*)_(ru|thai)\.json$/);
       if (!m) { errors.push({ code: 1, file: f, msg: 'имя файла не соответствует bundle_<число>_<ru|thai>.json' }); return; }
-      const res = validateFile(f, m[2], fs.readFileSync(path.join(jsonDir, f), 'utf8'), terms, allIds);
+      const res = validateFile(f, m[2], fs.readFileSync(path.join(jsonDir, f), 'utf8'), terms, allIds, { publications, bundleNums, n: Number(m[1]) });
       errors.push(...res.errors);
       (bundles[m[1]] = bundles[m[1]] || {})[m[2]] = res;
     });
@@ -316,6 +391,10 @@ function build(opts) {
       if (ru.data && th.data) {
         if (JSON.stringify(ru.data.terms) !== JSON.stringify(th.data.terms)) {
           errors.push({ code: 11, file: 'bundle_' + n + '_ru.json / bundle_' + n + '_thai.json', msg: 'состав или порядок «terms» различаются' });
+          return;
+        }
+        if (JSON.stringify(ru.data.bundles || []) !== JSON.stringify(th.data.bundles || [])) {
+          errors.push({ code: 14, file: 'bundle_' + n + '_ru.json / bundle_' + n + '_thai.json', msg: 'состав или порядок «bundles» различаются' });
           return;
         }
         pub('ru', ru); pub('thai', th);
@@ -332,8 +411,26 @@ function build(opts) {
   const pages = [];
   const listLangs = LANGS.filter(l => published[l].length > 0);
   const langsOf = n => LANGS.filter(l => published[l].some(b => b.n === n));
+  // Связанные материалы: в плитки попадает только то, что реально есть на сайте на этом языке.
+  // Связка с собственной ошибкой или статья, страница которой ещё не собрана, пропускаются с предупреждением.
+  LANGS.forEach(lang => {
+    const byN = new Map(published[lang].map(b => [b.n, b]));
+    published[lang].forEach(b => {
+      const where = 'bundle_' + b.n + '_' + lang + '.json';
+      b.bundles = (b.data.bundles || []).map(x => {
+        if (!byN.has(x)) { warnings.push(where + ': связка ' + x + ' не опубликована на этом языке — ссылка пропущена'); return null; }
+        return byN.get(x);
+      }).filter(Boolean);
+      b.publications = (b.data.publications || []).map(x => {
+        const p = publications[lang].get(x);
+        if (!fs.existsSync(path.join(termsDir, cfg.articlePath(p.html).slice(1)))) { warnings.push(where + ': страница публикации ' + x + ' (' + p.html + ') ещё не собрана — ссылка пропущена'); return null; }
+        return p;
+      }).filter(Boolean);
+    });
+  });
   LANGS.forEach(lang => {
     pages.push(...listPages(lang, published[lang].slice().sort((x, y) => y.n - x.n), terms, layouts[lang], listLangs)); // список: новые (больший номер) сверху
+    // хвост плитки «+ 2 публикации, 1 связка» считается по отобранным материалам (см. выше)
     published[lang].forEach(b => pages.push(...bundlePages(lang, b, terms, layouts[lang], langsOf(b.n))));
   });
   stubs.forEach(s => pages.push(stubPage(s.target, s.n, layouts[s.target])));
@@ -359,7 +456,7 @@ function build(opts) {
   xml.push('</urlset>', '');
   fs.writeFileSync(opts.sitemapPath || path.join(termsDir, 'sitemap_bundles.xml'), xml.join('\n'), 'utf8');
 
-  return { errors, published, stubs, pages: pages.map(p => p.file), redirects: redirects.map(p => p.file) };
+  return { errors, warnings, published, stubs, pages: pages.map(p => p.file), redirects: redirects.map(p => p.file) };
 }
 
 module.exports = { build };
@@ -369,6 +466,10 @@ if (require.main === module) {
   const bundleDir = process.env.BUNDLE_DIR || path.join(termsDir, 'bundle');
   const r = build({ termsDir, bundleDir, srcDir: process.env.BUNDLE_SRC_DIR });
   console.log('Связок опубликовано: ru=' + r.published.ru.length + ', thai=' + r.published.thai.length + '; заглушек: ' + r.stubs.length + '; страниц: ' + r.pages.length);
+  r.warnings.forEach(w => {
+    console.warn('ПРЕДУПРЕЖДЕНИЕ: ' + w);
+    if (process.env.GITHUB_ACTIONS) console.log('::warning::' + w);
+  });
   r.errors.forEach(e => {
     console.error('ОШИБКА [' + e.code + '] ' + e.file + ': ' + e.msg);
     if (process.env.GITHUB_ACTIONS) console.log('::error file=_src/bundle/json/' + e.file.split(' ')[0] + '::[' + e.code + '] ' + e.msg);

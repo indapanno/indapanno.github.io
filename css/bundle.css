@@ -1,4 +1,4 @@
-/* Связанные термины: стили, дополняющие style.css и learned.css.
+/* Связанные материалы: стили, дополняющие style.css и learned.css.
    Список связок использует классы .term-list / .pagination из style.css;
    здесь — только то, чего там нет. Цвета и шрифты — переменные темы. */
 
@@ -49,6 +49,17 @@
   color: var(--text);
   line-height: 1.45;
   margin-top: 0.15rem;
+}
+
+/* Страница связки: блоки «Термины», «Публикации», «Другие связки» (заголовок — как в «Что нового») */
+.bundle-block + .bundle-block { margin-top: 1.8rem; }
+
+.bundle-block h2 {
+  margin: 0 0 0.7rem;
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--text);
 }
 
 /* Пустой список связок */

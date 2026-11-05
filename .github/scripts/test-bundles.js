@@ -16,7 +16,8 @@ function check(name, cond, extra) {
 }
 
 // Термины: t1..t30 на обоих языках, onlyru — только русский, onlythai — только тайский
-function makeEnv(files, htmlFiles) {
+// pubs: { 'publication_1_ru.json': {...} } — плитки публикаций; страница статьи создаётся, если built !== false
+function makeEnv(files, htmlFiles, pubs) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'bundles-'));
   const termsDir = path.join(root, 'site'), bundleDir = path.join(termsDir, 'bundle');
   const srcDir = path.join(termsDir, '_src/bundle');
@@ -28,6 +29,13 @@ function makeEnv(files, htmlFiles) {
   ['ru', 'thai'].forEach(l => fs.copyFileSync(path.join(REAL_TPL, '_layout_' + l + '.html'), path.join(srcDir, 'template', '_layout_' + l + '.html')));
   Object.keys(files).forEach(f => fs.writeFileSync(path.join(srcDir, 'json', f), typeof files[f] === 'string' ? files[f] : JSON.stringify(files[f])));
   Object.keys(htmlFiles || {}).forEach(f => fs.writeFileSync(path.join(bundleDir, f), htmlFiles[f]));
+  fs.mkdirSync(path.join(termsDir, '_src/publications/json'), { recursive: true });
+  fs.mkdirSync(path.join(termsDir, 'publications'), { recursive: true });
+  Object.keys(pubs || {}).forEach(f => {
+    const d = pubs[f];
+    fs.writeFileSync(path.join(termsDir, '_src/publications/json', f), typeof d === 'string' ? d : JSON.stringify({ cover: 'c.png', headline: d.headline, lead: d.lead, html: d.html }));
+    if (typeof d !== 'string' && d.built !== false) fs.writeFileSync(path.join(termsDir, 'publications', d.html), 'статья');
+  });
   const res = build({ termsDir, bundleDir });
   res.has = f => fs.existsSync(path.join(bundleDir, f));
   res.read = f => fs.readFileSync(path.join(bundleDir, f), 'utf8');
@@ -53,9 +61,9 @@ const count = (s, sub) => s.split(sub).length - 1;
   const p = r.read('bundle_1_ru.html');
   check('страница связки: пути к общим файлам', p.includes('href="/css/style.css"') && p.includes('src="/js/lang.js"') && p.includes('href="/terms/t1_ru.html"') && !p.includes('../'));
   check('страница связки: порядок терминов', p.indexOf('t1_ru') < p.indexOf('t2_ru') && p.indexOf('t2_ru') < p.indexOf('t3_ru'));
-  check('крошки на странице связки (ru)', p.includes('<a href="/">Навигатор по терминам</a><span class="sep">/</span><a href="/bundle/">Связанные термины</a><span class="sep">/</span><span class="current">Тема</span>') && !p.includes('bundle-back'));
-  check('крошки на странице связки (thai)', r.read('bundle_1_thai.html').includes('<a href="/nav/nav_thai.html">นำทางคำศัพท์</a><span class="sep">/</span><a href="/bundle/bundles_thai.html">ชุดศัพท์ที่เกี่ยวข้อง</a><span class="sep">/</span><span class="current">หัวข้อ</span>'));
-  check('крошки на списке: последний элемент без ссылки', r.read('index.html').includes('<a href="/">Навигатор по терминам</a><span class="sep">/</span><span class="current">Связанные термины</span>') && r.read('bundles_thai.html').includes('<span class="current">ชุดศัพท์ที่เกี่ยวข้อง</span>'));
+  check('крошки на странице связки (ru)', p.includes('<a href="/">Навигатор по терминам</a><span class="sep">/</span><a href="/bundle/">Связанные материалы</a><span class="sep">/</span><span class="current">Тема</span>') && !p.includes('bundle-back'));
+  check('крошки на странице связки (thai)', r.read('bundle_1_thai.html').includes('<a href="/nav/nav_thai.html">นำทางคำศัพท์</a><span class="sep">/</span><a href="/bundle/bundles_thai.html">ชุดเนื้อหาที่เกี่ยวข้อง</a><span class="sep">/</span><span class="current">หัวข้อ</span>'));
+  check('крошки на списке: последний элемент без ссылки', r.read('index.html').includes('<a href="/">Навигатор по терминам</a><span class="sep">/</span><span class="current">Связанные материалы</span>') && r.read('bundles_thai.html').includes('<span class="current">ชุดเนื้อหาที่เกี่ยวข้อง</span>'));
   check('страница связки: кнопки «Изучен»', count(p, 'data-learned-id="t') === 3 && p.includes('id="learned-nav-note"'));
   check('опубликованные страницы и списки: без noindex', r.pages.every(f => !r.read(f).includes('noindex')));
   check('нет незаполненных меток', r.pages.every(f => !/\{\{[A-Z]+\}\}/.test(r.read(f))));
@@ -154,12 +162,12 @@ check('.gitkeep игнорируется', makeEnv({ '.gitkeep': '' }).errors.le
 // 5. Пустое состояние и уборка
 {
   const r = makeEnv({}, { 'bundle_9_ru.html': 'old', 'bundles_ru_7.html': 'old', 'keep.txt': 'x' });
-  check('пустой список: текст и без ошибок', r.errors.length === 0 && r.read('index.html').includes('Связанные термины пока не добавлены.') && r.read('bundles_thai.html').includes('ยังไม่มีชุดศัพท์ที่เกี่ยวข้อง'));
+  check('пустой список: текст и без ошибок', r.errors.length === 0 && r.read('index.html').includes('Связанные материалы пока не добавлены.') && r.read('bundles_thai.html').includes('ยังไม่มีชุดเนื้อหาที่เกี่ยวข้อง'));
   check('уборка: старые страницы связок удалены, чужие файлы целы', !r.has('bundle_9_ru.html') && !r.has('bundles_ru_7.html') && r.has('keep.txt'));
 }
 {
   const r = makeEnv({ 'bundle_1_ru.json': ru() });
-  const snap = d => fs.readdirSync(d, { withFileTypes: true }).filter(e => e.name !== 'bundle' && e.name !== '_src').map(e => e.name).sort().join();
+  const snap = d => fs.readdirSync(d, { withFileTypes: true }).filter(e => !['bundle', '_src', 'publications'].includes(e.name)).map(e => e.name).sort().join();
   check('родительские файлы не тронуты (рядом появляется только sitemap_bundles.xml)', snap(r.termsDir) === 'json,sitemap_bundles.xml', snap(r.termsDir));
 }
 
@@ -184,7 +192,7 @@ const metaOf = (h, attr, name) => { const m = head(h).match(new RegExp('<meta ' 
   const lpair = 'ru=' + SITE + '/bundle/|th=' + SITE + '/bundle/bundles_thai.html|x-default=' + SITE + '/bundle/';
   check('SEO: hreflang у списков ru/th/x-default', altsOf(r.read('index.html')) === lpair && altsOf(r.read('bundles_thai.html')) === lpair);
   check('SEO: description у связки = описание', metaOf(p1, 'name', 'description') === 'Описание темы' && metaOf(t1, 'name', 'description') === 'คำอธิบาย');
-  check('SEO: description у списка = вводный текст', (metaOf(r.read('index.html'), 'name', 'description') || '').startsWith('Связанные термины — это темы'));
+  check('SEO: description у списка = вводный текст', (metaOf(r.read('index.html'), 'name', 'description') || '').startsWith('Связанные материалы — это темы'));
   check('SEO: Open Graph у связки', metaOf(p1, 'property', 'og:url') === SITE + '/bundle/bundle_1_ru.html' && metaOf(p1, 'property', 'og:title') === 'Тема'
     && metaOf(p1, 'property', 'og:type') === 'website' && metaOf(p1, 'property', 'og:locale') === 'ru_RU' && metaOf(t1, 'property', 'og:locale') === 'th_TH'
     && metaOf(p1, 'property', 'og:site_name') === 'Навигатор по палийским терминам' && metaOf(p1, 'property', 'og:description') === 'Описание темы');
@@ -226,6 +234,80 @@ const switchOf = h => { const o = {}; [...h.matchAll(/<a data-lang-value="(ru|th
   check('язык: стр. 2 связки → стр. 1 связки другого языка, себя — свой адрес', sw('bundle_1_ru_2.html').thai === '/bundle/bundle_1_thai.html' && sw('bundle_1_ru_2.html').ru === '/bundle/bundle_1_ru_2.html');
   check('язык: списки', sw('index.html').thai === '/bundle/bundles_thai.html' && sw('index.html').ru === '/bundle/' && sw('bundles_thai.html').ru === '/bundle/' && sw('bundles_thai.html').thai === '/bundle/bundles_thai.html');
   check('язык: связка только ru → заглушка thai', sw('bundle_2_ru.html').thai === '/bundle/bundle_2_thai.html' && sw('bundle_2_thai.html').ru === '/bundle/bundle_2_ru.html');
+}
+
+
+// 8. Связанные материалы: публикации и другие связки
+const P = n => ({ headline: 'Статья ' + n, lead: 'Лид статьи ' + n, html: 'statya-' + n + '.html' });
+const PT = n => ({ headline: 'บทความ ' + n, lead: 'บทนำ ' + n, html: 'bot-' + n + '.html' });
+const PUBS = { 'publication_1_ru.json': P(1), 'publication_2_ru.json': P(2), 'publication_7_thai.json': PT(7) };
+{
+  const r = makeEnv({
+    'bundle_1_ru.json': ru(), 'bundle_1_thai.json': th(),
+    'bundle_2_ru.json': ru(['t4', 't5'], { name: 'Вторая', publications: [2, 1], bundles: [1] }),
+    'bundle_2_thai.json': th(['t4', 't5'], { name: 'ที่สอง', publications: [7], bundles: [1] })
+  }, null, PUBS);
+  check('материалы: без ошибок и предупреждений', r.errors.length === 0 && r.warnings.length === 0, JSON.stringify(r.errors.concat(r.warnings)));
+  const l = r.read('index.html'), lt = r.read('bundles_thai.html');
+  check('плитка: хвост «+ 2 публикации, 1 связка»', l.includes('Термин 4, Термин 5 + 2 публикации, 1 связка</span>'), l.match(/bundle-terms">[^<]*/g));
+  check('плитка thai: хвост', lt.includes('คำ 4, คำ 5 + บทความ ๑ เรื่อง, ชุดเนื้อหา ๑ ชุด</span>'));
+  check('плитка: информер считает только термины', l.includes('<span class="bundle-meta" data-terms="t4 t5">2 термина</span>'));
+  check('плитка без материалов: без хвоста', l.includes('Термин 1, Термин 2, Термин 3</span>'));
+  const p = r.read('bundle_2_ru.html');
+  check('страница: три блока по порядку с заголовками', p.indexOf('<h2>Термины</h2>') > 0 && p.indexOf('<h2>Термины</h2>') < p.indexOf('<h2>Публикации</h2>') && p.indexOf('<h2>Публикации</h2>') < p.indexOf('<h2>Другие связки</h2>'));
+  check('страница: публикации в порядке JSON, ссылка в том же окне', p.indexOf('/publications/statya-2.html') < p.indexOf('/publications/statya-1.html') && p.includes('<span class="bundle-name">Статья 2</span><span class="bundle-desc">Лид статьи 2</span>') && !/statya-[12]\.html"[^>]*target=/.test(p));
+  check('страница: другая связка — название и информер', p.includes('<li><a href="/bundle/bundle_1_ru.html"><span class="bundle-name">Тема</span><span class="bundle-meta" data-terms="t1 t2 t3">3 термина</span></a></li>'));
+  check('страница: кнопки «Изучен» только у своих терминов', count(p, 'data-learned-id=') === 2);
+  const t = r.read('bundle_2_thai.html');
+  check('страница thai: заголовки блоков и своя публикация', t.includes('<h2>คำศัพท์</h2>') && t.includes('<h2>บทความ</h2>') && t.includes('<h2>ชุดเนื้อหาอื่น</h2>') && t.includes('/publications/bot-7.html') && !t.includes('statya'));
+  const p1 = r.read('bundle_1_ru.html');
+  check('связка без материалов: без заголовков и секций, как раньше', !p1.includes('<h2>') && !p1.includes('<section'));
+}
+{
+  // только публикации; пагинация: блоки только на стр. 1
+  const r = makeEnv({ 'bundle_1_ru.json': ru(ids(12), { publications: [1] }) }, null, PUBS);
+  check('пагинация: публикации только на стр. 1', r.read('bundle_1_ru.html').includes('<h2>Публикации</h2>') && !r.read('bundle_1_ru_2.html').includes('<h2>') && !r.read('bundle_1_ru_2.html').includes('statya'));
+  check('пустой блок «Другие связки» не выводится', !r.read('bundle_1_ru.html').includes('Другие связки'));
+}
+{
+  // 1 термин + 1 публикация = 2 материала — допустимо
+  const r = makeEnv({ 'bundle_1_ru.json': ru(['t1'], { publications: [1] }) }, null, PUBS);
+  check('1 термин + 1 публикация: связка опубликована', r.errors.length === 0 && r.has('bundle_1_ru.html'));
+  const r2 = makeEnv({ 'bundle_1_ru.json': ru([], { publications: [1, 2] }) }, null, PUBS);
+  check('без терминов: ошибка 7', r2.codes.includes(7) && !r2.has('bundle_1_ru.html'));
+}
+const mat = [
+  [13, { 'bundle_1_ru.json': ru(null, { publications: [7] }) }],          // 7 есть только на тайском
+  [13, { 'bundle_1_ru.json': ru(null, { publications: [99] }) }],
+  [15, { 'bundle_1_ru.json': ru(null, { bundles: [1] }) }],
+  [15, { 'bundle_1_ru.json': ru(null, { bundles: [5] }) }],
+  [16, { 'bundle_1_ru.json': ru(null, { publications: '1' }) }], [16, { 'bundle_1_ru.json': ru(null, { bundles: [0] }) }],
+  [16, { 'bundle_1_ru.json': ru(null, { publications: [1, 1] }) }], [16, { 'bundle_1_ru.json': ru(null, { bundles: ['2'] }) }]
+];
+mat.forEach(([code, files]) => {
+  const r = makeEnv(files, null, PUBS);
+  check('ошибка №' + code + ' (' + JSON.stringify(Object.values(files)[0]).slice(-40) + ')', r.codes.includes(code) && !r.has('bundle_1_ru.html'), 'получено: ' + r.codes);
+});
+{
+  const r = makeEnv({ 'bundle_1_ru.json': ru(), 'bundle_1_thai.json': th(), 'bundle_2_ru.json': ru(null, { bundles: [1] }), 'bundle_2_thai.json': th(null, { bundles: [] }) }, null, PUBS);
+  check('ошибка 14: списки «bundles» в ru и thai различаются — обе версии не опубликованы', r.codes.join() === '14' && !r.has('bundle_2_ru.html') && !r.has('bundle_2_thai.html'));
+  const r2 = makeEnv({ 'bundle_1_ru.json': ru(), 'bundle_1_thai.json': th(), 'bundle_2_ru.json': ru(null, { publications: [1] }), 'bundle_2_thai.json': th(null, { publications: [7] }) }, null, PUBS);
+  check('списки «publications» в ru и thai могут различаться', r2.errors.length === 0 && r2.has('bundle_2_ru.html') && r2.has('bundle_2_thai.html'));
+}
+{
+  // связанная связка с собственной ошибкой — ссылка пропускается с предупреждением, связка публикуется
+  const r = makeEnv({ 'bundle_1_ru.json': ru(['t1']), 'bundle_2_ru.json': ru(null, { bundles: [1] }) }, null, PUBS);
+  check('битая связанная связка: ссылка пропущена, предупреждение', r.codes.join() === '7' && r.has('bundle_2_ru.html') && !r.read('bundle_2_ru.html').includes('Другие связки') && r.warnings.length === 1);
+  check('битая связанная связка: хвоста в плитке нет', !r.read('index.html').includes('связка<'));
+  // статья ещё не собрана
+  const r2 = makeEnv({ 'bundle_1_ru.json': ru(null, { publications: [1] }) }, null, { 'publication_1_ru.json': Object.assign(P(1), { built: false }) });
+  check('несобранная статья: ссылка пропущена, предупреждение, без ошибки', r2.errors.length === 0 && r2.warnings.length === 1 && !r2.read('bundle_1_ru.html').includes('<h2>Публикации</h2>') && !r2.read('bundle_1_ru.html').includes('statya-1'));
+}
+{
+  const r = makeEnv({ 'bundle_1_ru.json': ru(null, { publications: [1], bundles: [] }) }, null, PUBS);
+  const s = r.read('bundle_1_thai.html');
+  check('заглушка: команда перевода — publications удалить, bundles не трогать', s.includes('หากมีคีย์ publications ให้ลบออกพร้อมค่า') && s.includes('terms และ bundles'));
+  check('заглушка ru: текст про publications', makeEnv({ 'bundle_1_thai.json': th() }).read('bundle_1_ru.html').includes('Ключ publications, если он есть, удали'));
 }
 
 console.log(failed ? 'ПРОВАЛЕНО: ' + failed + ', пройдено: ' + passed : 'ВСЕ ТЕСТЫ ПРОЙДЕНЫ: ' + passed);
