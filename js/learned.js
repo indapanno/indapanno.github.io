@@ -133,6 +133,8 @@
       ? part('bundle-progress-done', false, s.bundleAll)
       : part('bundle-progress-todo', false, s.bundleTodo + ' ' + num(todo)) + sep + part('bundle-progress-done', done === 0, s.bundleDone + ' ' + num(done));
     el.innerHTML = html;
+    var tile = el.closest('li');
+    if (tile) tile.classList.toggle('is-complete', todo === 0); // всё изучено — плитка блёклая, как изученный термин в навигаторе
   }
 
   function refresh(root) {

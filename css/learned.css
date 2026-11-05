@@ -92,6 +92,10 @@ html[data-theme="light"] {
 
 /* --- Подсказки поиска --- */
 .search-suggestions a.is-learned { opacity: 0.5; }
+
+/* Плитка связки, где изучены все термины (класс ставит learned.js) */
+.bundle-list > li.is-complete > a { opacity: 0.5; }
+.bundle-list > li.is-complete > a:hover { opacity: 0.85; }
 .search-suggestions a.is-learned:hover { opacity: 0.85; }
 
 @media (max-width: 400px) {
