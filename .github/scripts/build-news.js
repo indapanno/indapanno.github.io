@@ -248,7 +248,15 @@ function listPages(lang, digests, layout) {
   return pages;
 }
 
-function digestPage(lang, d, layout) {
+// Число поздних упоминаний термина — как значок «+N» на главной; берётся из json/ при сборке (меняется со временем)
+function laterCount(root, id, lang) {
+  const d = tryJson(path.join(root, 'json', id + '_' + lang + '.json'));
+  return d && Array.isArray(d.later_mentions) ? d.later_mentions.length : 0;
+}
+
+const LEARNED_LABEL = { ru: 'Не изучен', thai: 'ยังไม่ได้เรียน' };
+
+function digestPage(lang, d, layout, root) {
   const st = S[lang];
   const date = formatDate(d.date, lang);
   const h1 = st.title + ' — ' + date;
@@ -269,10 +277,16 @@ function digestPage(lang, d, layout) {
       + '</ul></section>');
   }
   if (d.terms.length) {
-    blocks.push('<section class="news-block"><h2>' + st.blocks.terms + '</h2><ul class="term-list">'
-      + d.terms.map(t => '<li class="term-item"><a href="' + escapeHtml(t.url) + '">' + escapeHtml(t.name)
-        + (t.iast ? ' <span class="news-iast">' + escapeHtml(t.iast) + '</span>' : '')
-        + (t.snippet ? '<div class="nav-snippet">' + escapeHtml(t.snippet) + '</div>' : '') + '</a></li>').join('') + '</ul></section>');
+    // Плитка термина — как на главной (build-terms.js): название, «+N», описание, кнопка «Изучен» (js/learned.js),
+    // над списком — пояснение к кнопке (#learned-nav-note заполняет js/learned.js)
+    blocks.push('<section class="news-block"><h2>' + st.blocks.terms + '</h2><p class="nav-intro" id="learned-nav-note"></p><ul class="term-list">'
+      + d.terms.map(t => {
+        const later = root ? laterCount(root, t.id, lang) : 0;
+        const badge = later > 0 ? ' <span class="count-badge">+' + digits(lang, later) + '</span>' : '';
+        return '<li class="term-item"><a href="' + escapeHtml(t.url) + '">' + escapeHtml(t.name) + badge
+          + (t.snippet ? '<div class="nav-snippet">' + escapeHtml(t.snippet) + '</div>' : '') + '</a>'
+          + '<button type="button" class="learned-btn" data-learned-id="' + escapeHtml(t.id) + '">' + LEARNED_LABEL[lang] + '</button></li>';
+      }).join('') + '</ul></section>');
   }
   const main = crumbs(lang, [{ text: st.title, href: cfg.news.path(lang, 1) }, { text: date }]) + blocks.join('\n  ');
   const url = cfg.newsDigestUrl(d.date, lang);
@@ -307,7 +321,7 @@ function buildPages(root, errors) {
   LANGS.forEach(lang => {
     const layout = fs.readFileSync(path.join(tplDir, '_layout_' + lang + '.html'), 'utf8');
     listPages(lang, byLang[lang], layout).forEach(p => { pages.push(p); if (p.indexable) sitemapUrls.push(p.url); });
-    byLang[lang].forEach(d => pages.push(digestPage(lang, d, layout)));
+    byLang[lang].forEach(d => pages.push(digestPage(lang, d, layout, root)));
   });
   pages.forEach(p => fs.writeFileSync(path.join(outDir, p.file), p.html, 'utf8'));
   const xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'

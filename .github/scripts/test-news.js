@@ -55,7 +55,7 @@ function makeSite(spec) {
     const ids = terms[l] || [];
     wr('json/index_' + l + '.json', { terms: ids.map(id => ({ id, ['term_' + l]: TERM[id][l], later_count: 0 })) });
     ids.forEach(id => {
-      wr('json/' + id + '_' + l + '.json', { id, ['term_' + l]: TERM[id][l], term_iast: TERM[id].iast, interpretation: INTERP[l], reason_introduced: '' });
+      wr('json/' + id + '_' + l + '.json', { id, ['term_' + l]: TERM[id][l], term_iast: TERM[id].iast, interpretation: INTERP[l], reason_introduced: '', later_mentions: id === 't1' ? [{}, {}] : [] });
       wr('terms/' + id + '_' + l + '.html', '<html lang="' + (l === 'thai' ? 'th' : 'ru') + '"></html>');
     });
   });
@@ -246,7 +246,14 @@ const switchOf = h => { const o = {}; [...h.matchAll(/<a data-lang-value="(ru|th
   check('сводка: ссылки на статью, связку, термин — обычные <a href>', h.includes('href="/publications/a-2.html"') && h.includes('href="/bundle/bundle_2_ru.html"') && h.includes('href="/terms/t2_ru.html"'));
   check('сводка: плитка публикации (обложка, заголовок, лид)', h.includes('src="/publications/covers/c2.png"') && h.includes('Четыре благородные истины') && h.includes('Лид статьи'));
   check('сводка: связка (название, описание, «5 терминов»)', h.includes('Пять преград') && h.includes('Описание связки') && h.includes('5 терминов'));
-  check('сводка: термин (название, IAST, сниппет)', h.includes('Самудая') && h.includes('samudaya') && h.includes('Возникновение страдания.'));
+  check('сводка: термин как на главной (название, сниппет, кнопка «Изучен», пояснение, без IAST)', h.includes('<li class="term-item"><a href="/terms/t2_ru.html">Самудая<div class="nav-snippet">Возникновение страдания.</div></a><button type="button" class="learned-btn" data-learned-id="t2">Не изучен</button></li>')
+    && h.includes('<p class="nav-intro" id="learned-nav-note"></p>') && !h.includes('samudaya'));
+  {
+    const r2 = site({ terms: { ru: ['t1'], thai: ['t1'] }, state: { ru: snap(['t1']), thai: snap(['t1']) }, digests: {
+      '2026-10-30_ru': Object.assign({}, FULL_RU, { terms: [{ id: 't1', name: 'Дуккха', iast: 'dukkha', snippet: 'С.', url: '/terms/t1_ru.html' }] }),
+      '2026-10-30_thai': { date: '2026-10-30', lang: 'thai', sent: false, publications: [], bundles: [], terms: [{ id: 't1', name: 'ทุกข์', iast: 'dukkha', snippet: 'ส.', url: '/terms/t1_thai.html' }] } } });
+    check('сводка: значок «+N» как на главной (тайские цифры)', r2.read('new/2026-10-30_ru.html').includes('Дуккха <span class="count-badge">+2</span>') && r2.read('new/2026-10-30_thai.html').includes('ทุกข์ <span class="count-badge">+๒</span>') && r2.read('new/2026-10-30_thai.html').includes('>ยังไม่ได้เรียน</button>'));
+  }
   check('сводка: меню из 7 пунктов, «Что нового» после «Публикаций»', menuOf(h).join() === MENU_RU.join(), menuOf(h).join());
   check('сводка: переключатель языка → список другого языка', switchOf(h).thai === '/new/news_thai.html' && switchOf(h).ru === '/new/2026-10-30_ru.html', JSON.stringify(switchOf(h)));
   check('сводка: крошки ведут в /new/', h.includes('<a href="/new/">Что нового</a>'));
