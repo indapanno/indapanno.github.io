@@ -58,7 +58,7 @@
       "discrepancies": "Сутта определяет saṅkhāra через формирующую деятельность: saṅkhatam abhisaṅkharonti. В разных рукописных традициях встречаются небольшие варианты чтения."
     },
     {
-      "status": "основной",
+      "status": "свидетель 1",
       "title": "Готама-сутта",
       "location": "Saṃyutta Nikāya 12.10",
       "transmission_tradition": "Тхеравада",
@@ -67,8 +67,8 @@
       "discrepancies": "Представляет saṅkhāra как второе звено зависимого возникновения: avijjāpaccayā saṅkhārā, «с неведением как условием — санкхары»."
     },
     {
-      "status": "основной",
-      "title": "Упадана-ккхандха и определение совокупности санкхар",
+      "status": "свидетель 2",
+      "title": "Упаданапарипаватта-сутта",
       "location": "Saṃyutta Nikāya 22.56",
       "transmission_tradition": "Тхеравада",
       "language": "пали",
@@ -76,7 +76,7 @@
       "discrepancies": "В качестве saṅkhārakkhandha выделяются шесть классов волевых актов, связанных с шестью видами объектов чувств."
     },
     {
-      "status": "свидетель 1",
+      "status": "свидетель 3",
       "title": "Махапариниббана-сутта",
       "location": "Dīgha Nikāya 16",
       "transmission_tradition": "Тхеравада",
@@ -85,7 +85,7 @@
       "discrepancies": "Формула vayadhammā saṅkhārā использует термин в широком смысле обусловленных вещей: «санкхары подвержены распаду»."
     },
     {
-      "status": "свидетель 2",
+      "status": "свидетель 4",
       "title": "Pali-English Dictionary",
       "location": "статья «Saṅkhāra», pp. 664–665",
       "transmission_tradition": "академическая палийская филология",

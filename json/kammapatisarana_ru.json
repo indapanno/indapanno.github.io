@@ -22,7 +22,7 @@
     "attestation_before_term": "",
     "etymology_versions": [
       {
-        "version": "От санскритского karma-pratisaraṇa; сложное слово из kamma (действие) и paṭisaraṇa (прибежище, опора, от глагола paṭisarati — 'обращаться к чему-либо, возвращаться').",
+        "version": "Ср. санскритское karma-pratisaraṇa; сложное слово из kamma (действие) и paṭisaraṇa (прибежище, опора, от глагола paṭisarati — 'обращаться к чему-либо, возвращаться').",
         "type": "академическая (филологическая)",
         "version_source": "Pali Text Society Pali-English Dictionary",
         "status": "доминирующая"
@@ -54,7 +54,7 @@
   "sources": [
     {
       "status": "основной",
-      "title": "Ангуттара-никая (Абхибхатана-сутта)",
+      "title": "Ангуттара-никая (Абхинхапаччавеккхитаббатхана-сутта)",
       "location": "Aṅguttara Nikāya 5.57",
       "transmission_tradition": "Тхеравада",
       "language": "пали",
@@ -63,7 +63,7 @@
     },
     {
       "status": "свидетель 1",
-      "title": "Маджхима-никая (Махакаммавибханга-сутта, Чулакаммавибханга-сутта)",
+      "title": "Маджхима-никая (Чулакаммавибханга-сутта, Махакаммавибханга-сутта)",
       "location": "Majjhima Nikāya 135, 136",
       "transmission_tradition": "Тхеравада",
       "language": "пали",

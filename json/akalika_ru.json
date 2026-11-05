@@ -21,7 +21,7 @@
       {
         "version": "«не имеющий времени для отдачи плода»: путь даёт плод сразу после своего возникновения, а не спустя несколько дней или будущую жизнь",
         "type": "традиционная / народная",
-        "version_source": "Буддхагхоса, Висуддхимагга 178,23–28",
+        "version_source": "Буддхагхоса, Висуддхимагга VII.80",
         "status": "традиционное буддийское толкование"
       }
     ]
@@ -65,8 +65,8 @@
     },
     {
       "status": "свидетель 1",
-      "title": "Китагири-сутта",
-      "location": "Majjhima Nikāya 70",
+      "title": "Ваттхупама-сутта",
+      "location": "Majjhima Nikāya 7",
       "transmission_tradition": "Тхеравада",
       "language": "пали",
       "source_type": "канонический (Сутта-питака)",
@@ -74,8 +74,8 @@
     },
     {
       "status": "свидетель 2",
-      "title": "Махасиханада-сутта",
-      "location": "Majjhima Nikāya 12",
+      "title": "Махатаньхасанкхая-сутта",
+      "location": "Majjhima Nikāya 38",
       "transmission_tradition": "Тхеравада",
       "language": "пали",
       "source_type": "канонический (Сутта-питака)",
@@ -83,8 +83,8 @@
     },
     {
       "status": "свидетель 3",
-      "title": "Чулахаттхипадопама-сутта",
-      "location": "Majjhima Nikāya 27",
+      "title": "Махананама-сутта",
+      "location": "Aṅguttara Nikāya 11.12",
       "transmission_tradition": "Тхеравада",
       "language": "пали",
       "source_type": "канонический (Сутта-питака)",
@@ -92,7 +92,7 @@
     },
     {
       "status": "свидетель 4",
-      "title": "Чуладессака-сутта",
+      "title": "Чуланиддеса",
       "location": "Khuddaka Nikāya, Cūḷaniddesa 108",
       "transmission_tradition": "Тхеравада",
       "language": "пали",
