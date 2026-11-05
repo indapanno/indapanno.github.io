@@ -35,6 +35,12 @@
   margin-top: 0.5rem;
 }
 
+/* Информер «изучено / не изучено» в строке .bundle-meta (заполняет js/learned.js) */
+.bundle-progress-sep { color: var(--text-secondary); font-weight: 400; }
+.bundle-progress-done { color: var(--learned); }
+.bundle-progress-todo { color: var(--unlearned); }
+.bundle-progress.is-zero { opacity: 0.55; font-weight: 400; }
+
 .bundle-terms {
   display: block;
   font-family: var(--font-body);

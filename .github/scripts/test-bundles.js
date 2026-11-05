@@ -49,6 +49,7 @@ const count = (s, sub) => s.split(sub).length - 1;
   check('заглушка bundles_ru.html ведёт на /bundle/', r.has('bundles_ru.html') && r.read('bundles_ru.html').includes('<link rel="canonical" href="https://indapanno.github.io/bundle/">') && r.read('bundles_ru.html').includes('http-equiv="refresh"') && !r.read('bundles_ru.html').includes('noindex') && !r.pages.includes('bundles_ru.html'));
   check('валидная пара: плитка в списке ru', r.read('index.html').includes('href="/bundle/bundle_1_ru.html"') && r.read('index.html').includes('3 термина'));
   check('валидная пара: тайские цифры', r.read('bundles_thai.html').includes('จำนวน ๓ คำ'));
+  check('плитка: id терминов для информера «изучено / не изучено» (data-terms, в порядке связки)', r.read('index.html').includes('<span class="bundle-meta" data-terms="t1 t2 t3">3 термина</span>') && r.read('bundles_thai.html').includes('data-terms="t1 t2 t3"'));
   const p = r.read('bundle_1_ru.html');
   check('страница связки: пути к общим файлам', p.includes('href="/css/style.css"') && p.includes('src="/js/lang.js"') && p.includes('href="/terms/t1_ru.html"') && !p.includes('../'));
   check('страница связки: порядок терминов', p.indexOf('t1_ru') < p.indexOf('t2_ru') && p.indexOf('t2_ru') < p.indexOf('t3_ru'));

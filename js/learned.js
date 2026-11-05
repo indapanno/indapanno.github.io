@@ -18,7 +18,9 @@
       titleDone: 'Снять отметку «Изучен»',
       noteCard: 'Личная отметка для себя. Нажмите, когда разберётесь в термине: в навигаторе он станет блёклым. Хранится только в этом браузере.',
       noteNav: 'Кнопка рядом с термином — ваша личная отметка. «Изучен» делает термин блёклым в списке и поиске. Хранится только в этом браузере.',
-      linkCard: 'Мой прогресс →'
+      linkCard: 'Мой прогресс →',
+      bundleDone: 'изучено',
+      bundleTodo: 'не изучено'
     },
     thai: {
       todo: 'ยังไม่ได้เรียน',
@@ -27,7 +29,9 @@
       titleDone: 'ยกเลิกเครื่องหมาย “เรียนแล้ว”',
       noteCard: 'เครื่องหมายส่วนตัวของคุณ กดเมื่อเข้าใจคำศัพท์นี้แล้ว — ในหน้าหลักคำนี้จะจางลง บันทึกไว้ในเบราว์เซอร์นี้เท่านั้น',
       noteNav: 'ปุ่มข้างคำศัพท์คือเครื่องหมายส่วนตัวของคุณ “เรียนแล้ว” จะทำให้คำนั้นจางลงในรายการและการค้นหา บันทึกไว้ในเบราว์เซอร์นี้เท่านั้น',
-      linkCard: 'ความคืบหน้าของฉัน →'
+      linkCard: 'ความคืบหน้าของฉัน →',
+      bundleDone: 'เรียนแล้ว',
+      bundleTodo: 'ยังไม่ได้เรียน'
     }
   };
 
@@ -104,9 +108,33 @@
     if (item) item.classList.toggle('is-learned', on);
   }
 
+  // Информер на плитках списка связок: «N терминов · изучено X · не изучено Y».
+  // Только читает отметки и ничего в них не меняет. Без JavaScript остаётся «N терминов».
+  function num(n) {
+    return pageInfo().lang === 'thai' && typeof window.toThaiNumerals === 'function' ? window.toThaiNumerals(n) : String(n);
+  }
+
+  function updateBundleMeta(el) {
+    var s = strings();
+    var ids = (el.getAttribute('data-terms') || '').split(/\s+/).filter(Boolean);
+    if (!ids.length) return;
+    if (!el.hasAttribute('data-count-text')) el.setAttribute('data-count-text', el.textContent);
+    var done = ids.filter(isLearned).length;
+    var todo = ids.length - done;
+    var part = function (cls, zero, text) {
+      return '<span class="bundle-progress ' + cls + (zero ? ' is-zero' : '') + '">' + text + '</span>';
+    };
+    var sep = '<span class="bundle-progress-sep" aria-hidden="true"> · </span>';
+    el.innerHTML = '<span class="bundle-progress-total">' + el.getAttribute('data-count-text').replace(/[<>&]/g, '') + '</span>'
+      + sep + part('bundle-progress-done', done === 0, s.bundleDone + ' ' + num(done))
+      + sep + part('bundle-progress-todo', todo === 0, s.bundleTodo + ' ' + num(todo));
+  }
+
   function refresh(root) {
     var buttons = (root || document).querySelectorAll('.learned-btn[data-learned-id]');
     Array.prototype.forEach.call(buttons, updateButton);
+    var metas = (root || document).querySelectorAll('.bundle-meta[data-terms]');
+    Array.prototype.forEach.call(metas, updateBundleMeta);
   }
 
   document.addEventListener('click', function (e) {
@@ -120,6 +148,11 @@
   // Синхронизация между вкладками
   window.addEventListener('storage', function (e) {
     if (e.key === KEY) refresh(document);
+  });
+
+  // Возврат кнопкой «Назад» (страница из кеша браузера): отметки могли измениться на другой странице
+  window.addEventListener('pageshow', function (e) {
+    if (e.persisted) refresh(document);
   });
 
   document.addEventListener('DOMContentLoaded', function () {

@@ -6,12 +6,14 @@
   --learned: #86B892;
   --learned-bg: #1E2B22;
   --learned-border: #3D5E47;
+  --unlearned: #D9826F;
 }
 
 html[data-theme="light"] {
   --learned: #2F6B3E;
   --learned-bg: #E4F0E6;
   --learned-border: #A6C9AD;
+  --unlearned: #A63D2F;
 }
 
 /* --- Кнопка --- */

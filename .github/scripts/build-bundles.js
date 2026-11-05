@@ -195,7 +195,8 @@ function listPages(lang, items, terms, layout, listLangs) {
         const shown = names.slice(0, 5).join(', ') + (names.length > 5 ? ' ' + st.more(names.length - 5) : '');
         return '<li><a href="' + cfg.bundlePath(b.n, lang, 1) + '"><span class="bundle-name">' + escapeHtml(b.data.name) + '</span>'
           + '<span class="bundle-desc">' + escapeHtml(clip(b.data.description, DESC_CLIP)) + '</span>'
-          + '<span class="bundle-meta">' + st.count(names.length) + '</span>'
+          // data-terms — id терминов связки: по ним js/learned.js показывает «изучено / не изучено» (только чтение отметок)
+          + '<span class="bundle-meta" data-terms="' + escapeHtml(b.data.terms.join(' ')) + '">' + st.count(names.length) + '</span>'
           + '<span class="bundle-terms">' + shown + '</span></a></li>';
       }).join('');
       main = '<ul class="term-list bundle-list">' + li + '</ul>' + pagination(lang, p => cfg.bundles.path(lang, p), page, total);
