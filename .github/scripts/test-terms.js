@@ -78,6 +78,14 @@ check('smoke: карточки thai для переведённых', TH.every(i
   const ir = JSON.parse(rd(root, 'json/index_ru.json') || '{"terms":[]}'), it = JSON.parse(rd(root, 'json/index_thai.json') || '{"terms":[]}');
   check('smoke: index_ru.json — все русские термины', ir.terms.length === RU.length && ir.terms.every(t => t.term_ru && typeof t.later_count === 'number'));
   check('smoke: index_thai.json — только переведённые (без заглушек)', it.terms.length === TH.length && !it.terms.some(t => t.id === ONLY_RU));
+  // описание плитки в манифесте = описание плитки навигатора (фильтр «Не изученные / Изученные» строит те же плитки)
+  const navHtml = rd(root, 'index.html');
+  check('smoke: index_<язык>.json — описание плитки для фильтра навигатора (как в навигаторе)', ir.terms.every(t => typeof t.snippet === 'string')
+    && ir.terms.filter(t => t.snippet).every(t => navHtml.indexOf(t.snippet.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')) !== -1 || !navHtml.includes('/terms/' + t.id + '_ru.html')));
+  check('smoke: навигатор — место фильтра и скрипты (pagination.js, nav-filter.js после learned.js)', ['index.html', 'nav/nav_thai.html'].every(f => {
+    const h = rd(root, f);
+    return h.includes('<div id="nav-filter" class="nav-filter" hidden></div>') && h.indexOf('/js/learned.js') < h.indexOf('/js/nav-filter.js') && h.includes('/js/pagination.js');
+  }));
 }
 check('smoke: навигатор — «/» и nav/nav_ru_2.html (12 терминов → 2 страницы), nav/nav_thai.html', ex(root, 'index.html') && ex(root, 'nav/nav_ru_2.html') && !ex(root, 'nav/nav_ru_3.html') && ex(root, 'nav/nav_thai.html'));
 check('smoke: навигатор — 10 плиток на первой странице, 2 на второй', (rd(root, 'index.html').match(/class="term-item"/g) || []).length === 10 && (rd(root, 'nav/nav_ru_2.html').match(/class="term-item"/g) || []).length === 2);

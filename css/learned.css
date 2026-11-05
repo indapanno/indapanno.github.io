@@ -285,3 +285,38 @@ html[data-theme="light"] { --learned-error: #A33A2A; }
   color: var(--link-color);
   text-decoration: underline;
 }
+
+/* Фильтр навигатора «Все · Не изученные · Изученные» (js/nav-filter.js) */
+.nav-filter { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; margin: 0 0 0.8rem; }
+.nav-filter[hidden] { display: none; }
+.nav-filter-label { font-size: 0.8rem; color: var(--text-secondary); }
+.nav-filter .segmented button { padding: 0.45rem 0.75rem; font-size: 0.85rem; }
+.nav-filter-count { opacity: 0.7; font-variant-numeric: tabular-nums; margin-left: 0.15rem; }
+.nav-filter .segmented button[aria-pressed="true"] .nav-filter-count { opacity: 0.85; }
+.nav-filter-empty {
+  list-style: none;
+  background: var(--bg-elevated);
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  padding: 1.1rem;
+  font-size: 0.92rem;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+/* Сообщение на месте нажатой плитки («Отмечено… Вернуть»), как на «Моём прогрессе» */
+.nav-filter-notice {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem 1rem;
+  border: 1px dashed var(--learned);
+  border-radius: 12px;
+  background: var(--bg-elevated);
+}
+.nav-filter-notice-text { flex: 1 1 auto; min-width: 0; font-size: 0.88rem; line-height: 1.4; color: var(--learned); overflow-wrap: anywhere; }
+.term-list .nav-filter-notice a {
+  flex: 0 0 auto; display: inline; width: auto; padding: 0.5rem 0.3rem; margin: 0;
+  border: 0; border-radius: 0; background: none; box-shadow: none;
+  font-family: var(--font-body); font-size: 0.88rem; font-weight: 400; color: var(--link-color); text-decoration: underline;
+}

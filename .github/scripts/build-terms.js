@@ -74,7 +74,9 @@ LANGS.forEach(lang => {
   const indexTerms = ids.map(id => ({
     id: id,
     [nameKey]: capitalize(dataByLang[lang][id][nameKey]),
-    later_count: (dataByLang[lang][id].later_mentions || []).length
+    later_count: (dataByLang[lang][id].later_mentions || []).length,
+    // описание плитки — для фильтра навигатора (js/nav-filter.js строит те же плитки, что и сборка)
+    snippet: buildSnippet(dataByLang[lang][id]) || ''
   }));
   fs.writeFileSync(path.join(JSON_DIR, 'index_' + lang + '.json'), JSON.stringify({ terms: indexTerms }, null, 2) + '\n', 'utf8');
   console.log('index_' + lang + '.json обновлён:', indexTerms.length, 'терминов');
