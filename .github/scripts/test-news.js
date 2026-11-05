@@ -253,6 +253,15 @@ const switchOf = h => { const o = {}; [...h.matchAll(/<a data-lang-value="(ru|th
       '2026-10-30_ru': Object.assign({}, FULL_RU, { terms: [{ id: 't1', name: 'Дуккха', iast: 'dukkha', snippet: 'С.', url: '/terms/t1_ru.html' }] }),
       '2026-10-30_thai': { date: '2026-10-30', lang: 'thai', sent: false, publications: [], bundles: [], terms: [{ id: 't1', name: 'ทุกข์', iast: 'dukkha', snippet: 'ส.', url: '/terms/t1_thai.html' }] } } });
     check('сводка: значок «+N» как на главной (тайские цифры)', r2.read('new/2026-10-30_ru.html').includes('Дуккха <span class="count-badge">+2</span>') && r2.read('new/2026-10-30_thai.html').includes('ทุกข์ <span class="count-badge">+๒</span>') && r2.read('new/2026-10-30_thai.html').includes('>ยังไม่ได้เรียน</button>'));
+    check('сводка: связки нет на диске — запасная короткая плитка', r2.read('new/2026-10-30_ru.html').includes('<span class="bundle-meta">5 терминов</span>'));
+  }
+  {
+    // связка есть: та же плитка, что в списке /bundle/ (описание, информер data-terms, перечень терминов, хвост)
+    const r3 = site({ terms: { ru: ['t1', 't2', 't3'], thai: [] }, state: { ru: snap(['t1']) },
+      bundles: [{ n: 2, lang: 'ru', page: 'ok', terms: ['t1', 't2', 't3'] }],
+      digests: { '2026-10-30_ru': FULL_RU } });
+    const h3 = r3.read('new/2026-10-30_ru.html');
+    check('сводка: плитка связки как в списке /bundle/', h3.includes('<li><a href="/bundle/bundle_2_ru.html"><span class="bundle-name">Связка 2</span><span class="bundle-desc">Описание связки 2</span><span class="bundle-meta" data-terms="t1 t2 t3">3 термина</span><span class="bundle-terms">Дуккха, Самудая, Ниродха</span></a></li>'), h3.match(/<ul class="term-list bundle-list">[\s\S]*?<\/ul>/));
   }
   check('сводка: меню из 7 пунктов, «Что нового» после «Публикаций»', menuOf(h).join() === MENU_RU.join(), menuOf(h).join());
   check('сводка: переключатель языка → список другого языка', switchOf(h).thai === '/new/news_thai.html' && switchOf(h).ru === '/new/2026-10-30_ru.html', JSON.stringify(switchOf(h)));

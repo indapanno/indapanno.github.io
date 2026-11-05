@@ -458,7 +458,27 @@ function build(opts) {
   return { errors, warnings, published, stubs, pages: pages.map(p => p.file), redirects: redirects.map(p => p.file) };
 }
 
-module.exports = { build };
+// Плитка связки для других сборок («Что нового»): та же bundleTile, что в списке связок,
+// по текущим файлам на диске. Публикация считается, если её страница собрана; другая связка — если собрана её страница.
+// Связки нет, она с ошибкой или термин не переведён — null (вызывающий показывает свою запасную плитку).
+const tileCache = new Map();
+function tileFromDisk(root, n, lang) {
+  if (!tileCache.has(root)) tileCache.set(root, { terms: loadTerms(root), pubs: loadPublications(path.join(root, '_src/publications/json')) });
+  const c = tileCache.get(root);
+  const allIds = new Set([...c.terms.ru.keys(), ...c.terms.thai.keys()]);
+  const file = 'bundle_' + n + '_' + lang + '.json';
+  const fp = path.join(root, '_src/bundle/json', file);
+  if (!fs.existsSync(fp)) return null;
+  const bundleNums = new Set(fs.readdirSync(path.join(root, '_src/bundle/json')).map(f => f.match(/^bundle_([1-9]\d*)_(ru|thai)\.json$/)).filter(Boolean).map(m => Number(m[1])));
+  const res = validateFile(file, lang, fs.readFileSync(fp, 'utf8'), c.terms, allIds, { publications: c.pubs, bundleNums, n: Number(n) });
+  if (!res.data) return null;
+  const publications = (res.data.publications || []).map(x => c.pubs[lang].get(x))
+    .filter(p => fs.existsSync(path.join(root, cfg.articlePath(p.html).slice(1))));
+  const bundles = (res.data.bundles || []).filter(x => fs.existsSync(path.join(root, cfg.bundlePath(x, lang, 1).slice(1))));
+  return bundleTile(lang, { n: Number(n), data: res.data, publications, bundles }, c.terms);
+}
+
+module.exports = { build, tileFromDisk };
 
 if (require.main === module) {
   const termsDir = process.env.BUNDLE_TERMS_DIR || REPO_ROOT;

@@ -15,6 +15,7 @@ const cfg = require('./site-config.js');
 const { escapeHtml, capitalize } = require(path.join(REPO_ROOT, 'js/render-term.js'));
 const { toThaiNumerals } = require(path.join(REPO_ROOT, 'js/thai-numerals.js'));
 const Pagination = require(path.join(REPO_ROOT, 'js/pagination.js'));
+const { tileFromDisk } = require('./build-bundles.js'); // общая плитка связки (как в списке /bundle/)
 
 const LANGS = ['ru', 'thai'];
 const PAGE_SIZE = 10; // как в навигаторе, у связок и публикаций
@@ -271,9 +272,11 @@ function digestPage(lang, d, layout, root) {
   }
   if (d.bundles.length) {
     blocks.push('<section class="news-block"><h2>' + st.blocks.bundles + '</h2><ul class="term-list bundle-list">'
-      + d.bundles.map(b => '<li><a href="' + escapeHtml(b.url) + '"><span class="bundle-name">' + escapeHtml(b.name) + '</span>'
+      // Плитка связки — та же, что в списке /bundle/ (build-bundles.js), по текущим данным связки;
+      // если связки больше нет или в ней ошибка — запасная короткая плитка из сохранённой сводки
+      + d.bundles.map(b => (root && tileFromDisk(root, b.n, lang)) || ('<li><a href="' + escapeHtml(b.url) + '"><span class="bundle-name">' + escapeHtml(b.name) + '</span>'
         + (b.description ? '<span class="bundle-desc">' + escapeHtml(clip(b.description, DESC_CLIP, lang)) + '</span>' : '')
-        + '<span class="bundle-meta">' + (lang === 'thai' ? 'จำนวน ' + toThaiNumerals(b.count) + ' คำ' : b.count + ' ' + plural(b.count, ['термин', 'термина', 'терминов'])) + '</span></a></li>').join('')
+        + '<span class="bundle-meta">' + (lang === 'thai' ? 'จำนวน ' + toThaiNumerals(b.count) + ' คำ' : b.count + ' ' + plural(b.count, ['термин', 'термина', 'терминов'])) + '</span></a></li>')).join('')
       + '</ul></section>');
   }
   if (d.terms.length) {
