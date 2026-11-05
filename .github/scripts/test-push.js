@@ -117,13 +117,14 @@ const tagOf = (filters, key) => { const f = (filters || []).find(x => x.field ==
     check('план: фильтр по языку и точным тегам c_* у каждой группы', plan.every(p => tagOf(p.filters, 'lang') === '=ru'
       && ['terms', 'bundles', 'publications'].every(k => tagOf(p.filters, 'c_' + k) === '=' + (p.categories[k] ? '1' : '0'))), show(plan.map(p => p.filters)));
     check('план: без фильтра tester в обычном режиме', plan.every(p => tagOf(p.filters, 'tester') === null && p.test === false));
-    check('план: метка news-ru', plan.every(p => p.tag === 'news-ru'));
+    check('план: топик своей сводки news-ru-<дата>', plan.every(p => p.tag === 'news-ru-' + plan[0].tag.slice(8)) && /^news-ru-\d{4}-\d{2}-\d{2}$/.test(plan[0].tag), plan[0].tag);
     check('план: тексты групп из message()', plan.every(p => { const m = textMod.message(d, 'ru', p.categories); return m && m.title === p.title && m.body === p.body && m.url === p.url; }));
     const keys = plan.map(p => p.idempotencyKey);
     check('план: ключи идемпотентности — UUID, разные у групп', keys.every(k => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(k)) && new Set(keys).size === keys.length, keys.join(','));
     const again = sendMod.planSends(d, 'ru', { test: false }).map(p => p.idempotencyKey);
     check('план: ключи одинаковы при повторе (OneSignal не отправит дважды)', again.join() === keys.join());
     const testPlan = sendMod.planSends(d, 'ru', { test: true });
+    check('тестовый режим: свой топик для каждого теста (не длиннее 32)', testPlan.every(p => p.tag.length <= 32 && p.tag !== plan[0].tag && /-t[a-z0-9]+$/i.test(p.tag)), testPlan[0].tag);
     check('тестовый режим: фильтр tester=1, свои ключи', testPlan.every(p => tagOf(p.filters, 'tester') === '=1' && p.test === true) && testPlan.every(p => keys.indexOf(p.idempotencyKey) < 0));
     const t2 = sendMod.planSends(d, 'ru', { test: true }).map(p => p.idempotencyKey);
     check('тестовый режим: каждый запуск — новые ключи (иначе OneSignal молча отбросит повторный тест)', t2.every(k => testPlan.map(p => p.idempotencyKey).indexOf(k) < 0));
@@ -131,7 +132,7 @@ const tagOf = (filters, key) => { const f = (filters || []).find(x => x.field ==
     check('тестовый режим: один и тот же запуск (nonce) — одни и те же ключи', fixed('run-1') === fixed('run-1') && fixed('run-1') !== fixed('run-2'));
   }
   const thaiPlan = tryv(() => sendMod.planSends(digest({ terms: terms(2, 'thai') }, 'thai'), 'thai', { test: false }));
-  check('план thai: 4 группы с терминами, метка news-thai, lang=thai', Array.isArray(thaiPlan) && thaiPlan.length === 4 && thaiPlan.every(p => p.tag === 'news-thai' && tagOf(p.filters, 'lang') === '=thai'), show(thaiPlan && thaiPlan.length));
+  check('план thai: 4 группы с терминами, метка news-thai, lang=thai', Array.isArray(thaiPlan) && thaiPlan.length === 4 && thaiPlan.every(p => /^news-thai-\d{4}-\d{2}-\d{2}$/.test(p.tag) && tagOf(p.filters, 'lang') === '=thai'), show(thaiPlan && thaiPlan.length));
 }
 
 // 6. Запрос к OneSignal
