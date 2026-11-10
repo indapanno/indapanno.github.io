@@ -67,6 +67,7 @@ const articlePath = name => '/publications/' + name;
 const articleUrl = name => absUrl(articlePath(name));
 const coverPath = file => '/publications/covers/' + file;
 const coverUrl = file => absUrl(coverPath(file));
+const galleryPath = file => '/publications/gallery/' + file; // фото галерей публикаций и превью (thumbs/)
 
 // Инструкции (ручные страницы) лежат в how/: /how/how-to-add-term_ru.html.
 const HOW_PAGES = ['how-to-add-term', 'how-to-check-json', 'how-to-translate-term'];
@@ -130,6 +131,6 @@ function withLangSwitch(html, pagePath, lang) {
 
 module.exports = {
   SITE_URL, RESERVED_ROOT, absUrl, nav, bundles, publications, news, newsDigestName, newsDigestPath, newsDigestUrl,
-  cardPath, cardUrl, bundlePath, bundleUrl, articlePath, articleUrl, coverPath, coverUrl,
+  cardPath, cardUrl, bundlePath, bundleUrl, articlePath, articleUrl, coverPath, coverUrl, galleryPath,
   navHomePath, stubHtml, escAttr, HOW_PAGES, howName, howPath, howUrl, langTargetPath, withLangSwitch
 };

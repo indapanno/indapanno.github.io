@@ -29,12 +29,18 @@ function jpg(w, h) {
   return b;
 }
 
-// files = { json: {имя: объект|строка}, html: {имя: строка}, covers: {имя: Buffer} }
+// Поддельное превью: пишет в dst метку «thumb:<имя исходника>:<ширина>», считает вызовы
+let thumbCalls = 0;
+const readSafe = f => fs.existsSync(f) ? fs.readFileSync(f, 'utf8') : '';
+const copySafe = (a, b) => { if (fs.existsSync(a)) fs.copyFileSync(a, b); };
+function fakeThumb(src, dst, w) { thumbCalls++; fs.writeFileSync(dst, 'thumb:' + path.basename(src) + ':' + w); return true; }
+
+// files = { json: {имя: объект|строка}, html: {имя: строка}, covers: {имя: Buffer}, gallery: {имя: Buffer}, thumbnailer }
 function makeEnv(files) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'pubs-'));
   const termsDir = path.join(root, 'site'), pubDir = path.join(termsDir, 'publications');
   const srcDir = path.join(termsDir, '_src/publications');
-  ['json', '_src/publications/json', '_src/publications/html', 'publications/covers', '_src/publications/template']
+  ['json', '_src/publications/json', '_src/publications/html', 'publications/covers', 'publications/gallery', '_src/publications/template']
     .forEach(d => fs.mkdirSync(path.join(termsDir, d), { recursive: true }));
   for (let i = 1; i <= 3; i++) ['ru', 'thai'].forEach(l => fs.writeFileSync(path.join(termsDir, 'json', 't' + i + '_' + l + '.json'), '{}'));
   fs.writeFileSync(path.join(termsDir, 'json', 'onlyru_ru.json'), '{}');
@@ -43,8 +49,12 @@ function makeEnv(files) {
   const wr = (dir, set) => Object.keys(set || {}).forEach(f => fs.writeFileSync(path.join(dir === 'covers' ? pubDir : srcDir, dir, f),
     typeof set[f] === 'string' || Buffer.isBuffer(set[f]) ? set[f] : JSON.stringify(set[f])));
   wr('json', files.json); wr('html', files.html); wr('covers', files.covers);
+  Object.keys(files.gallery || {}).forEach(f => fs.writeFileSync(path.join(pubDir, 'gallery', f), files.gallery[f]));
   if (files.stalePage) fs.writeFileSync(path.join(pubDir, 'stale.html'), 'old');
-  const res = build({ termsDir, pubDir });
+  if (files.before) files.before(pubDir);
+  // thumbnailer: функция (src, dst, w) => делает превью; false — инструмента нет; по умолчанию — поддельный, пишет метку
+  const thumbnailer = files.thumbnailer === undefined ? fakeThumb : files.thumbnailer;
+  const res = build({ termsDir, pubDir, thumbnailer });
   res.pubDir = pubDir;
   res.has = f => fs.existsSync(path.join(pubDir, f));
   res.read = f => fs.existsSync(path.join(pubDir, f)) ? fs.readFileSync(path.join(pubDir, f), 'utf8') : ''; // нет файла → пустая строка: тест краснеет, а не падает
@@ -435,6 +445,119 @@ const noWidgetLeft = a => !a.includes('data-widget');
     html: { 'b-one.html': BODY_TH + '<p><a data-term="t2">คำ</a></p>' } });
   const b = th.read('b-one.html');
   check('название thai: из term_thai, без смены регистра', th.errors.length === 0 && b.includes('class="pub-term" data-title="ตัณหา" data-interp="คำอธิบาย"') && !b.includes('Русское'), JSON.stringify(th.errors));
+}
+
+
+// ===== Новые обогатители: доп. инфо (21), галерея (22, мягкая 23), разделитель =====
+
+// 14. Доп. инфо
+{
+  const r = one(BODY + '<p>Слово <span data-info="Устойчивая форма организации общества.">институция</span> и <span data-info="Толк &quot;2&quot;." data-title="Институция">институции</span>.</p>');
+  const a = r.read('a-one.html');
+  check('инфо: без ошибок', r.errors.length === 0, JSON.stringify(r.errors));
+  check('инфо: разметка с заглавным словом из текста', a.includes('<span class="pub-info" data-title="Институция" data-interp="Устойчивая форма организации общества." title="Устойчивая форма организации общества.">институция</span>'), (a.match(/<span class="pub-info"[^>]*>[^<]*<\/span>/g) || []).join(' | '));
+  check('инфо: начальная форма из data-title, экранирование', a.includes('<span class="pub-info" data-title="Институция" data-interp="Толк &quot;2&quot;." title="Толк &quot;2&quot;.">институции</span>'));
+  check('инфо: data-info не остаётся в странице', !a.includes('data-info='));
+  const th = makeEnv({ json: { 'publication_1_thai.json': tileTh() }, covers: cov(), html: { 'b-one.html': BODY_TH + '<p><span data-info="คำอธิบาย">สถาบัน</span></p>' } });
+  check('инфо thai: слово как есть', th.errors.length === 0 && th.read('b-one.html').includes('<span class="pub-info" data-title="สถาบัน" data-interp="คำอธิบาย" title="คำอธิบาย">สถาบัน</span>'), JSON.stringify(th.errors));
+  const w = one(BODY + '<div data-widget="checklist"><ul><li>Понять <span data-info="Толк.">институцию</span></li></ul></div><div data-widget="faq"><details><summary>В?</summary><p>Это <span data-info="Толк.">институция</span>.</p></details></div>');
+  check('инфо: допускается в чек-листе и ответе faq', w.errors.length === 0 && count(w.read('a-one.html'), 'class="pub-info"') === 2, JSON.stringify(w.errors));
+  const bad21 = (name, html) => {
+    const x = one(BODY + html);
+    check('21 ' + name, x.codes.includes(21) && !x.codes.includes(11) && !x.has('a-one.html'), JSON.stringify(x.codes));
+  };
+  bad21('пустое толкование', '<p><span data-info="  ">слово</span></p>');
+  bad21('нет data-info', '<p><span>слово</span></p>');
+  bad21('пустое слово', '<p><span data-info="Толк."> </span></p>');
+  bad21('пустой data-title', '<p><span data-info="Толк." data-title=" ">слово</span></p>');
+  bad21('лишний атрибут', '<p><span data-info="Толк." class="x">слово</span></p>');
+  bad21('тег внутри', '<p><span data-info="Толк."><strong>слово</strong></span></p>');
+  bad21('внутри ссылки на термин', '<p><a data-term="t1"><span data-info="Толк.">слово</span></a></p>');
+  bad21('внутри внешней ссылки', '<p><a href="https://example.com/"><span data-info="Толк.">слово</span></a></p>');
+}
+
+// 15. Галерея
+const GPH = () => ({ 'p1.jpg': jpg(1200, 800), 'p2.jpg': jpg(1600, 1200), 'small.png': png(400, 300) });
+const G2 = '<div data-widget="gallery">'
+  + '<figure><img src="p1.jpg" data-place="Таиланд, Пхукет" data-date="2023"><figcaption>Уборка пляжа.</figcaption></figure>'
+  + '<figure><img src="p2.jpg"></figure>'
+  + '</div>';
+const gal = (html, extra) => makeEnv(Object.assign({ json: { 'publication_1_ru.json': tile() }, html: { 'a-one.html': BODY + html }, covers: cov(), gallery: GPH() }, extra || {}));
+{
+  const r = gal(G2);
+  const a = r.read('a-one.html');
+  check('галерея: без ошибок', r.errors.length === 0, JSON.stringify(r.errors));
+  check('галерея: обёртка заменена разметкой как на «О монахе»', a.includes('<section class="gallery" aria-label="Фото"><ul class="gallery-grid">') && noWidgetLeft(a) && count(a, '<li><figure class="gallery-item">') === 2);
+  check('галерея: фото с описанием, местом и датой', a.includes('<li><figure class="gallery-item"><a class="gallery-link" href="/publications/gallery/p1.jpg" data-meta="Таиланд, Пхукет, 2023"><img src="/publications/gallery/thumbs/p1.jpg" alt="Уборка пляжа." width="600" height="400" loading="lazy" decoding="async"></a><figcaption>Уборка пляжа.</figcaption></figure></li>'), (a.match(/<li><figure class="gallery-item">[\s\S]*?<\/li>/) || [''])[0]);
+  check('галерея: фото без описания, места и даты', a.includes('<li><figure class="gallery-item"><a class="gallery-link" href="/publications/gallery/p2.jpg"><img src="/publications/gallery/thumbs/p2.jpg" alt="" width="600" height="450" loading="lazy" decoding="async"></a></figure></li>'));
+  check('галерея: превью созданы', readSafe(path.join(r.pubDir, 'gallery/thumbs/p1.jpg')) === 'thumb:p1.jpg:600' && fs.existsSync(path.join(r.pubDir, 'gallery/thumbs/p2.jpg')));
+  check('галерея: подключены скрипт и стили галереи', a.includes('src="/js/gallery.js"') && a.includes('<link rel="stylesheet" href="/css/gallery.css">'));
+  const th = makeEnv({ json: { 'publication_1_thai.json': tileTh() }, covers: cov(), gallery: GPH(), html: { 'b-one.html': BODY_TH + '<div data-widget="gallery"><figure><img src="p1.jpg" data-place="ภูเก็ต" data-date="๒๕๖๖"><figcaption>ภาพ</figcaption></figure></div>' } });
+  check('галерея thai: aria-label «ภาพ»', th.errors.length === 0 && th.read('b-one.html').includes('<section class="gallery" aria-label="ภาพ">') && th.read('b-one.html').includes('data-meta="ภูเก็ต, ๒๕๖๖"'), JSON.stringify(th.errors));
+  const one1 = gal('<div data-widget="gallery"><figure><img src="p1.jpg" data-date="июль 2025"></figure></div>');
+  check('галерея: одно фото, только дата', one1.errors.length === 0 && one1.read('a-one.html').includes('data-meta="июль 2025"'), JSON.stringify(one1.errors));
+  const sm = gal('<div data-widget="gallery"><figure><img src="small.png"></figure></div>');
+  check('галерея: узкое фото — превью в исходном размере', sm.errors.length === 0 && sm.read('a-one.html').includes('<img src="/publications/gallery/thumbs/small.png" alt="" width="400" height="300"'), JSON.stringify(sm.errors));
+  const ex = gal(BODY + '<p>Картинки: <img src="c1.png" alt="рисунок"></p>');
+  check('без галереи скрипт и стили галереи не подключаются', ex.errors.length === 0 && !ex.read('a-one.html').includes('/js/gallery.js') && !ex.read('a-one.html').includes('gallery.css'));
+  check('галерея не меняет sitemap', gal(G2).sitemap === gal('').sitemap);
+}
+{
+  // Превью: повторная сборка не пересоздаёт, изменённое фото — пересоздаёт, лишние превью удаляются
+  const root = gal(G2);
+  const before = thumbCalls;
+  const again = gal(G2, { before: pub => {
+    fs.mkdirSync(path.join(pub, 'gallery/thumbs'), { recursive: true });
+    ['p1.jpg', 'p2.jpg', 'old.jpg'].forEach(f => copySafe(path.join(root.pubDir, 'gallery/thumbs', f === 'old.jpg' ? 'p1.jpg' : f), path.join(pub, 'gallery/thumbs', f)));
+    copySafe(path.join(root.pubDir, 'gallery/thumbs/.sources.json'), path.join(pub, 'gallery/thumbs/.sources.json'));
+  } });
+  check('превью: при неизменных фото не пересоздаются', again.errors.length === 0 && thumbCalls === before, 'вызовов: ' + (thumbCalls - before));
+  check('превью: лишнее превью удалено', !fs.existsSync(path.join(again.pubDir, 'gallery/thumbs/old.jpg')));
+  const b2 = thumbCalls;
+  const changed = gal(G2, { gallery: Object.assign(GPH(), { 'p1.jpg': jpg(1000, 500) }), before: pub => {
+    fs.mkdirSync(path.join(pub, 'gallery/thumbs'), { recursive: true });
+    ['p1.jpg', 'p2.jpg', '.sources.json'].forEach(f => copySafe(path.join(root.pubDir, 'gallery/thumbs', f), path.join(pub, 'gallery/thumbs', f)));
+  } });
+  check('превью: изменённое фото пересоздаётся (только оно)', thumbCalls - b2 === 1 && changed.read('a-one.html').includes('<img src="/publications/gallery/thumbs/p1.jpg" alt="Уборка пляжа." width="600" height="300"'), 'вызовов: ' + (thumbCalls - b2));
+  const none = gal(G2, { thumbnailer: false });
+  check('нет инструмента превью: показывается большое фото, без ошибки', none.errors.length === 0 && none.read('a-one.html').includes('<img src="/publications/gallery/p1.jpg" alt="Уборка пляжа." width="1200" height="800"'), JSON.stringify(none.errors));
+}
+{
+  const bad22 = (name, html) => {
+    const x = gal(html);
+    check('22 ' + name, x.codes.includes(22) && !x.codes.includes(11) && !x.has('a-one.html'), JSON.stringify(x.codes));
+  };
+  bad22('пустая галерея', '<div data-widget="gallery"></div>');
+  bad22('текст в обёртке', '<div data-widget="gallery">текст<figure><img src="p1.jpg"></figure></div>');
+  bad22('абзац в обёртке', '<div data-widget="gallery"><p>а</p></div>');
+  bad22('figure без img', '<div data-widget="gallery"><figure><figcaption>а</figcaption></figure></div>');
+  bad22('два img в figure', '<div data-widget="gallery"><figure><img src="p1.jpg"><img src="p2.jpg"></figure></div>');
+  bad22('путь в src', '<div data-widget="gallery"><figure><img src="../covers/c1.png"></figure></div>');
+  bad22('ссылка в src', '<div data-widget="gallery"><figure><img src="https://example.com/a.jpg"></figure></div>');
+  bad22('лишний атрибут img', '<div data-widget="gallery"><figure><img src="p1.jpg" class="x"></figure></div>');
+  bad22('тег в figcaption', '<div data-widget="gallery"><figure><img src="p1.jpg"><figcaption><strong>а</strong></figcaption></figure></div>');
+  bad22('пустая figcaption', '<div data-widget="gallery"><figure><img src="p1.jpg"><figcaption> </figcaption></figure></div>');
+  const nested = gal('<div data-widget="faq"><details><summary>В?</summary>' + G2 + '</details></div>');
+  check('галерея внутри другой обёртки: 16', nested.codes.includes(16) && !nested.has('a-one.html'), JSON.stringify(nested.codes));
+  const fig = gal('<figure><img src="p1.jpg" alt="а" data-place="x"></figure>');
+  check('data-place вне галереи не разрешён (11)', fig.codes.includes(11), JSON.stringify(fig.codes));
+}
+{
+  const soft = gal('<div data-widget="gallery"><figure><img src="p1.jpg"></figure><figure><img src="nope.jpg"></figure></div>');
+  check('23 нет файла: фото пропущено, статья опубликована', soft.codes.join() === '23' && soft.errors[0].soft && soft.has('a-one.html') && count(soft.read('a-one.html'), 'class="gallery-item"') === 1, JSON.stringify(soft.errors));
+  const big = Buffer.concat([jpg(1200, 800), Buffer.alloc(1024 * 1024 + 10)]);
+  const b = gal('<div data-widget="gallery"><figure><img src="big.jpg"></figure></div>', { gallery: Object.assign(GPH(), { 'big.jpg': big }) });
+  check('23 больше 1 МБ: фото пропущено, пустая галерея не выводится', b.codes.join() === '23' && b.has('a-one.html') && !b.read('a-one.html').includes('class="gallery"'), JSON.stringify(b.codes));
+  const txt = gal('<div data-widget="gallery"><figure><img src="t.jpg"></figure></div>', { gallery: Object.assign(GPH(), { 't.jpg': 'не картинка' }) });
+  check('23 не картинка', txt.codes.join() === '23' && txt.has('a-one.html'), JSON.stringify(txt.codes));
+  const cv = gal('<div data-widget="gallery"><figure><img src="c1.png"></figure></div>');
+  check('23 фото из covers/ галерея не берёт', cv.codes.join() === '23', JSON.stringify(cv.codes));
+}
+
+// 16. Разделитель
+{
+  const r = one(BODY + '<hr>' + BODY);
+  check('разделитель <hr> проходит как есть', r.errors.length === 0 && r.read('a-one.html').includes(BODY + '<hr>' + BODY), JSON.stringify(r.errors));
 }
 
 console.log('Пройдено: ' + passed + ', провалено: ' + failed);

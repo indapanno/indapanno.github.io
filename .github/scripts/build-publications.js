@@ -6,6 +6,8 @@
 // Ошибочная публикация не создаётся; остальные собираются, в конце процесс завершается с кодом 1.
 // Без внешних зависимостей.
 const fs = require('fs');
+const crypto = require('crypto');
+const { execFileSync } = require('child_process');
 const path = require('path');
 
 const REPO_ROOT = path.resolve(__dirname, '../..');
@@ -21,6 +23,7 @@ const ALPHABET = { ru: /[А-Яа-яЁё]/, thai: /[\u0E00-\u0E7F]/ };
 const OG_LOCALE = { ru: 'ru_RU', thai: 'th_TH' };
 const NAV_TITLE_TEXT = { ru: 'Навигатор по палийским терминам', thai: 'นำทางคำศัพท์บาลี' };
 const IMG_MAX_BYTES = 1024 * 1024;
+const THUMB_W = 600; // ширина превью в галерее (как на странице «О монахе»)
 const COVER_MIN_WIDTH = 1200;
 const COVER_RATIO = 1200 / 630;
 const HEADLINE_WARN = 120, LEAD_WARN = 400, TEXT_WARN = 300, META_DESC_MAX = 300;
@@ -33,6 +36,7 @@ const S = {
     pages: 'Страницы', pageWord: 'страница',
     toc: 'Содержание',
     more: 'Читать далее',
+    gallery: 'Фото',
     cta: { q: 'Хотите узнавать о новых публикациях?', note: 'Не чаще раза в день.', btn: 'Подписаться' },
     callout: { key: 'Ключевая мысль', practice: 'Практика', important: 'Важно' }
   },
@@ -43,6 +47,7 @@ const S = {
     pages: 'หน้า', pageWord: 'หน้า',
     toc: 'สารบัญ',
     more: 'อ่านต่อ',
+    gallery: 'ภาพ',
     cta: { q: 'อยากรู้เมื่อมีบทความใหม่ไหม?', note: 'แจ้งเตือนไม่เกินวันละครั้ง', btn: 'ติดตาม' },
     callout: { key: 'ประเด็นสำคัญ', practice: 'ลงมือปฏิบัติ', important: 'โปรดทราบ' }
   }
@@ -96,9 +101,9 @@ function imageInfo(buf) {
 }
 
 // Проверка файла в covers/. Возвращает { error: {code,msg} | null, info }
-function checkImageFile(coversDir, name) {
+function checkImageFile(coversDir, name, where) {
   const file = path.join(coversDir, name);
-  if (!fs.existsSync(file) || !fs.statSync(file).isFile()) return { error: { kind: 'missing', msg: 'нет файла «' + name + '» в publications/covers' } };
+  if (!fs.existsSync(file) || !fs.statSync(file).isFile()) return { error: { kind: 'missing', msg: 'нет файла «' + name + '» в ' + (where || 'publications/covers') } };
   if (!/\.(jpe?g|png)$/i.test(name)) return { error: { kind: 'bad', msg: 'файл «' + name + '»: допустимы только jpg, jpeg, png' } };
   const buf = fs.readFileSync(file);
   if (buf.length > IMG_MAX_BYTES) return { error: { kind: 'bad', msg: 'файл «' + name + '» больше 1 МБ (' + Math.round(buf.length / 1024) + ' КБ)' } };
@@ -170,11 +175,11 @@ const plain = s => s.replace(/&[A-Za-z#0-9]+;/g, ' ').replace(/\s+/g, ' ').trim(
 // --- Обогатители публикаций: <div data-widget="…"> (widgets_TZ.md) ---
 // Обёртка только на верхнем уровне статьи; внутри — проверка структуры своими правилами, затем
 // тот же разбор процессором статьи (ссылки, термины, экранирование), чтобы правила были едиными.
-const WIDGET_KINDS = ['checklist', 'faq', 'publication'];
+const WIDGET_KINDS = ['checklist', 'faq', 'publication', 'gallery'];
 const PUB_NAME_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*\.html$/;
-const INLINE_TAGS = new Set(['strong', 'em', 'a', 'sup', 'sub', 'code', 'small', 'br']);
+const INLINE_TAGS = new Set(['strong', 'em', 'a', 'sup', 'sub', 'code', 'small', 'br', 'span']);
 const FAQ_SUMMARY_TAGS = new Set(['strong', 'em']);
-const FAQ_ANSWER_TAGS = new Set(['p', 'ul', 'ol', 'li', 'blockquote', 'cite', 'strong', 'em', 'a', 'sup', 'sub', 'code', 'small', 'br']);
+const FAQ_ANSWER_TAGS = new Set(['p', 'ul', 'ol', 'li', 'blockquote', 'cite', 'strong', 'em', 'a', 'sup', 'sub', 'code', 'small', 'br', 'span']);
 const escData = v => String(v).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 // Плитка публикации: одна функция для списка и для вставки в статью
@@ -281,6 +286,101 @@ function parseFaq(inner) {
 }
 
 // Возвращает { html, text, soft } или { error: {code, msg} }
+// --- Галерея: <div data-widget="gallery"> из <figure><img src data-place data-date><figcaption>…</figcaption></figure> ---
+const GALLERY_IMG_ATTRS = ['src', 'alt', 'data-place', 'data-date'];
+const FILE_NAME_RE = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
+function attrsOf(src) {
+  const o = {};
+  let m;
+  const re = new RegExp(ATTR_RE.source, 'g');
+  while ((m = re.exec(src || '')) !== null) o[m[1].toLowerCase()] = m[2] !== undefined ? m[2] : m[3] !== undefined ? m[3] : m[4] !== undefined ? m[4] : '';
+  return o;
+}
+const decodeEnt = v => String(v).replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+
+function parseGallery(inner) {
+  const bad = msg => ({ error: { code: 22, msg: 'галерея: ' + msg } });
+  const T = scanTokens(inner);
+  const items = [];
+  let i = 0;
+  while (i < T.length) {
+    if (isWs(T[i])) { i++; continue; }
+    if (!isTag(T[i], 'figure', false)) return bad('внутри обёртки разрешены только фото <figure> (найдено: ' + (T[i].text !== undefined ? 'текст' : '<' + (T[i].closing ? '/' : '') + T[i].tag + '>') + ')');
+    if (T[i].attrs) return bad('<figure> без атрибутов');
+    i++;
+    let img = null, caption = null, closed = false;
+    while (i < T.length) {
+      const u = T[i];
+      if (isWs(u)) { i++; continue; }
+      if (isTag(u, 'figure', true)) { closed = true; i++; break; }
+      if (isTag(u, 'img', false)) {
+        if (img || caption !== null) return bad('в одном <figure> должно быть одно <img>, затем необязательная <figcaption>');
+        const a = attrsOf(u.attrs);
+        const extra = Object.keys(a).filter(k => !GALLERY_IMG_ATTRS.includes(k));
+        if (extra.length) return bad('у <img> лишние атрибуты: ' + extra.join(', ') + ' (допустимы src, alt, data-place, data-date)');
+        const src = (a.src || '').trim();
+        if (!FILE_NAME_RE.test(src)) return bad('src «' + src.slice(0, 40) + '» должен быть именем файла из publications/gallery (без папок и ссылок)');
+        img = { src, alt: (a.alt || '').trim(), place: (a['data-place'] || '').trim(), date: (a['data-date'] || '').trim() };
+        i++; continue;
+      }
+      if (isTag(u, 'figcaption', false)) {
+        if (!img || caption !== null) return bad('<figcaption> идёт после <img>, одна на фото');
+        if (u.attrs) return bad('<figcaption> без атрибутов');
+        const nx = T[i + 1], cl = nx && nx.text !== undefined ? T[i + 2] : nx;
+        if (!isTag(cl, 'figcaption', true)) return bad('в подписи <figcaption> допустим только текст');
+        caption = nx && nx.text !== undefined ? nx.text.replace(/\s+/g, ' ').trim() : '';
+        if (!caption) return bad('пустая подпись <figcaption> (уберите её, если описания нет)');
+        i += nx && nx.text !== undefined ? 3 : 2; continue;
+      }
+      return bad('внутри <figure> разрешены только <img> и <figcaption>');
+    }
+    if (!closed) return bad('не закрыт <figure>');
+    if (!img) return bad('в <figure> нет <img>');
+    items.push(Object.assign(img, { caption: caption || '' }));
+  }
+  if (!items.length) return bad('нет ни одного фото');
+  return { items };
+}
+
+// Превью фото галереи: publications/gallery/thumbs/<имя>, создаётся один раз на содержимое фото
+// (учёт в thumbs/.sources.json: имя → sha1 исходника). Без инструмента — показывается само фото.
+function thumbFor(ctx, name, info) {
+  const g = ctx.gallery;
+  if (g.cache.has(name)) return g.cache.get(name);
+  g.used.add(name);
+  const src = path.join(g.dir, name), dst = path.join(g.thumbsDir, name);
+  const tw = info.w && info.w > THUMB_W ? THUMB_W : info.w;
+  const calc = { w: tw, h: info.w ? Math.round(info.h * tw / info.w) : info.h };
+  let res = { src: cfg.galleryPath(name), w: info.w, h: info.h };
+  const hash = crypto.createHash('sha1').update(fs.readFileSync(src)).digest('hex');
+  let ok = g.record[name] === hash && fs.existsSync(dst);
+  if (!ok && g.thumbnailer) {
+    fs.mkdirSync(g.thumbsDir, { recursive: true });
+    try { ok = g.thumbnailer(src, dst, THUMB_W) !== false && fs.existsSync(dst); } catch (e) { ok = false; }
+    if (ok) { g.record[name] = hash; g.changed = true; }
+    else g.warn.add('превью «' + name + '» не создано; в галерее показывается само фото');
+  }
+  if (ok) {
+    const ti = fs.existsSync(dst) ? imageInfo(fs.readFileSync(dst)) : null;
+    res = { src: cfg.galleryPath('thumbs/' + name), w: ti && ti.w ? ti.w : calc.w, h: ti && ti.h ? ti.h : calc.h };
+  } else if (!g.thumbnailer) g.noTool = true;
+  g.cache.set(name, res);
+  return res;
+}
+
+// Инструмент превью по умолчанию — ImageMagick (magick или convert); нет — false
+function defaultThumbnailer() {
+  for (const bin of ['magick', 'convert']) {
+    try { execFileSync(bin, ['-version'], { stdio: 'ignore' }); }
+    catch (e) { continue; }
+    return (src, dst, w) => {
+      execFileSync(bin, [src, '-auto-orient', '-resize', w + 'x>', '-strip', '-quality', '82', dst], { stdio: 'ignore' });
+      return true;
+    };
+  }
+  return false;
+}
+
 function renderWidget(kind, attrs, inner, lang, ctx, wstate) {
   const soft = [];
   let text = '';
@@ -320,6 +420,27 @@ function renderWidget(kind, attrs, inner, lang, ctx, wstate) {
     return { soft, text, html: '<div class="pub-faq">' + parts.join('') + '</div>' };
   }
 
+  if (kind === 'gallery') {
+    const p = parseGallery(inner);
+    if (p.error) return p;
+    const lis = [];
+    for (const it of p.items) {
+      const r = checkImageFile(ctx.gallery.dir, it.src, 'publications/gallery');
+      if (r.error) { soft.push({ code: 23, msg: 'галерея: ' + r.error.msg + '; фото пропущено' }); continue; }
+      const t = thumbFor(ctx, it.src, r.info);
+      const alt = it.caption || it.alt;
+      const meta = [it.place, it.date].filter(Boolean).map(decodeEnt).join(', ');
+      text += ' ' + plain(it.caption);
+      lis.push('<li><figure class="gallery-item"><a class="gallery-link" href="' + escAttr(cfg.galleryPath(it.src)) + '"'
+        + (meta ? ' data-meta="' + escData(meta) + '"' : '') + '>'
+        + '<img src="' + escAttr(t.src) + '" alt="' + escData(decodeEnt(alt)) + '"' + (t.w && t.h ? ' width="' + t.w + '" height="' + t.h + '"' : '') + ' loading="lazy" decoding="async"></a>'
+        + (it.caption ? '<figcaption>' + escapeHtml(decodeEnt(it.caption)) + '</figcaption>' : '') + '</figure></li>');
+    }
+    if (!lis.length) return { soft, text, html: '' };
+    wstate.gallery = true;
+    return { soft, text, html: '<section class="gallery" aria-label="' + S[lang].gallery + '"><ul class="gallery-grid">' + lis.join('') + '</ul></section>' };
+  }
+
   // publication
   const bad = msg => ({ error: { code: 19, msg: 'плитка: ' + msg } });
   if (!('data-publication' in attrs)) return bad('нет атрибута data-publication');
@@ -337,7 +458,7 @@ function renderWidget(kind, attrs, inner, lang, ctx, wstate) {
 
 function processArticle(src, lang, ctx, opts) {
   const errors = [], soft = [];
-  const wstate = { check: 0 };
+  const wstate = { check: 0, gallery: false };
   const fail = msg => errors.push({ code: 11, msg });
   const out = [];
   const stack = [];
@@ -369,7 +490,7 @@ function processArticle(src, lang, ctx, opts) {
       let wm;
       ATTR_RE.lastIndex = 0;
       while ((wm = ATTR_RE.exec(attrSrc)) !== null) wa[wm[1].toLowerCase()] = wm[2] !== undefined ? wm[2] : wm[3] !== undefined ? wm[3] : wm[4] !== undefined ? wm[4] : '';
-      if (!('data-widget' in wa)) { fail('тег <div> не разрешён (допустим только <div data-widget="checklist|faq|publication">)'); break; }
+      if (!('data-widget' in wa)) { fail('тег <div> не разрешён (допустим только <div data-widget="checklist|faq|publication|gallery">)'); break; }
       const w16 = msg => errors.push({ code: 16, msg });
       const kind = wa['data-widget'].trim();
       if (!WIDGET_KINDS.includes(kind)) { w16('неизвестное значение data-widget «' + kind + '» (допустимо: ' + WIDGET_KINDS.join(', ') + ')'); break; }
@@ -390,6 +511,36 @@ function processArticle(src, lang, ctx, opts) {
       w.soft.forEach(x => soft.push(x));
       last = cm.index + cm[0].length;
       TAG_RE.lastIndex = last; // рекурсивный разбор внутри обёртки сбрасывает общий счётчик
+      continue;
+    }
+    if (tag === 'span') {
+      // Доп. инфо: <span data-info="Толкование" [data-title="Начальная форма"]>слово</span> — только текст внутри
+      const e21 = msg => errors.push({ code: 21, msg: 'доп. инфо: ' + msg });
+      if (closing) { e21('закрывающий </span> без открывающего <span data-info="…">'); break; }
+      const sa = attrsOf(attrSrc);
+      if (!('data-info' in sa)) { e21('<span> допустим только с data-info="толкование"'); break; }
+      const extra = Object.keys(sa).filter(k => k !== 'data-info' && k !== 'data-title');
+      if (extra.length) { e21('лишние атрибуты: ' + extra.join(', ') + ' (допустимы data-info, data-title)'); break; }
+      if (stack.some(x => x.tag === 'a')) { e21('не может стоять внутри ссылки'); break; }
+      const interp = decodeEnt(sa['data-info']).replace(/\s+/g, ' ').trim();
+      if (!interp) { e21('пустое толкование data-info'); break; }
+      if ('data-title' in sa && !decodeEnt(sa['data-title']).trim()) { e21('пустой data-title (уберите атрибут, если начальная форма не нужна)'); break; }
+      const from = TAG_RE.lastIndex;
+      const close = /<\/span\s*>/gi;
+      close.lastIndex = from;
+      const cm = close.exec(rest);
+      if (!cm) { e21('не закрыт <span data-info>'); break; }
+      const word = rest.slice(from, cm.index);
+      if (word.includes('<')) { e21('внутри допустим только текст (без тегов)'); break; }
+      const w = decodeEnt(word).replace(/\s+/g, ' ').trim();
+      if (!w) { e21('пустое слово'); break; }
+      const title = 'data-title' in sa ? decodeEnt(sa['data-title']).replace(/\s+/g, ' ').trim()
+        : (lang === 'ru' ? w.charAt(0).toUpperCase() + w.slice(1) : w);
+      out.push('<span class="pub-info" data-title="' + escData(title) + '" data-interp="' + escData(interp) + '" title="' + escData(interp) + '">' + word + '</span>');
+      text += ' ' + plain(word);
+      if (h2Open) h2Open.raw += word;
+      last = cm.index + cm[0].length;
+      TAG_RE.lastIndex = last;
       continue;
     }
     if (!(tag in ALLOWED)) { fail('тег <' + tag + '> не разрешён'); break; }
@@ -487,7 +638,7 @@ function processArticle(src, lang, ctx, opts) {
 
   const clean = text.replace(/\s+/g, ' ').trim();
   if (!errors.length && !clean && !(opts && opts.inner)) errors.push({ code: 12, msg: 'статья пустая' });
-  return { errors, soft, html: out.join(''), text: clean, h2s };
+  return { errors, soft, html: out.join(''), text: clean, h2s, gallery: wstate.gallery };
 }
 
 // --- HTML страниц ---
@@ -588,6 +739,7 @@ function articlePage(lang, pub, art, layout) {
     + '<p class="pub-lead">' + escapeHtml(d.lead) + '</p>'
     + toc
     + '<div class="pub-body">' + art.html + '</div></article>'
+    + (art.gallery ? '<script src="/js/gallery.js"></script>' : '')
     // Подписка на уведомления: карточку показывает js/push.js (если браузер умеет веб-пуш и читатель не подписан)
     + '<aside class="push-cta" data-push-cta hidden><p>' + st.cta.q + '<small>' + st.cta.note + '</small></p>'
     + '<button type="button" class="push-btn" data-push-open>' + st.cta.btn + '</button></aside>';
@@ -595,7 +747,8 @@ function articlePage(lang, pub, art, layout) {
   const head = metaTags(lang, {
     url, desc: clipMeta(d.lead, META_DESC_MAX, lang), type: 'article', title: d.headline, image: cfg.coverUrl(d.cover)
   });
-  return { file: d.html, html: cfg.withLangSwitch(fill(layout, { title: escapeHtml(d.headline), head, h1: escapeHtml(d.headline), main }), cfg.articlePath(d.html), lang), url };
+  const headAll = head + (art.gallery ? '\n<link rel="stylesheet" href="/css/gallery.css">' : '');
+  return { file: d.html, html: cfg.withLangSwitch(fill(layout, { title: escapeHtml(d.headline), head: headAll, h1: escapeHtml(d.headline), main }), cfg.articlePath(d.html), lang), url };
 }
 
 // Текст заголовка для оглавления: теги внутри h2 убираем, текст оставляем как есть
@@ -610,6 +763,14 @@ function build(opts) {
   const ctx = {
     jsonDir: path.join(srcDir, 'json'), htmlDir: path.join(srcDir, 'html'), coversDir: path.join(pubDir, 'covers'),
     pagesDir: pubDir, tplDir: path.join(srcDir, 'template'), terms: loadTerms(termsDir)
+  };
+  // Галерея: фото в publications/gallery/, превью в gallery/thumbs/ (делает сборка)
+  const gDir = path.join(pubDir, 'gallery'), tDir = path.join(gDir, 'thumbs'), recFile = path.join(tDir, '.sources.json');
+  let record = {};
+  try { record = JSON.parse(fs.readFileSync(recFile, 'utf8')) || {}; } catch (e) { record = {}; }
+  ctx.gallery = {
+    dir: gDir, thumbsDir: tDir, record, cache: new Map(), used: new Set(), warn: new Set(), changed: false, noTool: false,
+    thumbnailer: opts.thumbnailer === undefined ? defaultThumbnailer() : opts.thumbnailer
   };
   const errors = [], warnings = [];
   const layouts = {};
@@ -659,6 +820,20 @@ function build(opts) {
     if (art.text.length < TEXT_WARN) warnings.push({ file: e.data.html, msg: 'текст статьи короче ' + TEXT_WARN + ' символов (' + art.text.length + ')' });
     articles.set(e.file, art);
   });
+
+  // Превью галерей: убрать превью фото, которых больше нет ни в одной галерее; сохранить учёт
+  const g = ctx.gallery;
+  if (fs.existsSync(g.thumbsDir)) {
+    fs.readdirSync(g.thumbsDir).filter(f => !f.startsWith('.') && !g.used.has(f)).forEach(f => { fs.unlinkSync(path.join(g.thumbsDir, f)); delete g.record[f]; g.changed = true; });
+    Object.keys(g.record).forEach(k => { if (!g.used.has(k)) { delete g.record[k]; g.changed = true; } });
+    if (g.changed || !fs.existsSync(recFile)) {
+      const sorted = {};
+      Object.keys(g.record).sort().forEach(k => { sorted[k] = g.record[k]; });
+      fs.writeFileSync(recFile, JSON.stringify(sorted, null, 2) + '\n', 'utf8');
+    }
+  }
+  g.warn.forEach(m => warnings.push({ file: 'gallery', msg: m }));
+  if (g.noTool && g.used.size) warnings.push({ file: 'gallery', msg: 'нет ImageMagick: превью не созданы, в галереях показываются сами фото' });
 
   // 4. Статьи без JSON
   const referenced = new Set();

@@ -1,4 +1,4 @@
-// Обогатители публикаций: поповер у ссылки на термин и чек-лист с памятью отметок.
+// Обогатители публикаций: поповер у ссылки на термин и у слова с доп. инфо, чек-лист с памятью отметок.
 // Разметку делает сборка публикаций (build-publications.js). Без этого скрипта ссылка
 // остаётся обычной (новая вкладка), чек-лист и «вопросы и ответы» работают как простая разметка.
 // Язык — по <html lang>. Весь текст вставляется через textContent, разметка из данных не создаётся.
@@ -11,6 +11,7 @@
   var MARGIN = 16;
 
   // ---------- Поповер ----------
+  var SELECTOR = 'a.pub-term[data-interp], .pub-info[data-interp]';
   var pop = null;      // открытый поповер
   var current = null;  // ссылка, к которой он открыт
   var point = null;    // место клика в координатах страницы (null — открыто с клавиатуры)
@@ -80,12 +81,17 @@
     text.className = 'pub-popover-text';
     text.textContent = link.getAttribute('data-interp') || '';
 
-    var more = doc.createElement('a');
-    more.className = 'pub-popover-more';
-    more.setAttribute('href', link.getAttribute('href') || '#');
-    more.setAttribute('target', '_blank');
-    more.setAttribute('rel', 'noopener noreferrer');
-    more.textContent = LABEL.more;
+    // «Подробнее» — только у ссылки на термин; у слова с доп. инфо (без href) бабл без ссылки
+    var href = link.getAttribute('href');
+    var more = null;
+    if (href) {
+      more = doc.createElement('a');
+      more.className = 'pub-popover-more';
+      more.setAttribute('href', href);
+      more.setAttribute('target', '_blank');
+      more.setAttribute('rel', 'noopener noreferrer');
+      more.textContent = LABEL.more;
+    }
 
     var close = doc.createElement('button');
     close.className = 'pub-popover-close';
@@ -96,7 +102,7 @@
 
     if (head) p.appendChild(head);
     p.appendChild(text);
-    p.appendChild(more);
+    if (more) p.appendChild(more);
     p.appendChild(close);
     doc.body.appendChild(p);
 
@@ -110,7 +116,7 @@
 
   doc.addEventListener('click', function (e) {
     var t = e.target;
-    var link = t && t.closest ? t.closest('a.pub-term[data-interp]') : null;
+    var link = t && t.closest ? t.closest(SELECTOR) : null;
     if (link) {
       if (e.defaultPrevented || e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
       e.preventDefault();
@@ -122,6 +128,14 @@
   });
 
   doc.addEventListener('keydown', function (e) {
+    // Слово с доп. инфо открывается с клавиатуры, как кнопка: Enter или пробел
+    var t = e.target;
+    if (t && t.classList && t.classList.contains('pub-info') && (e.key === 'Enter' || e.key === ' ')) {
+      e.preventDefault();
+      if (current === t) closePopover(false);
+      else openPopover(t, null);
+      return;
+    }
     if (!pop) return;
     if (e.key === 'Escape' || e.key === 'Esc') {
       closePopover(true);
@@ -148,10 +162,17 @@
   window.addEventListener('resize', position);
 
   function initLinks() {
-    var links = doc.querySelectorAll('a.pub-term[data-interp]');
+    var links = doc.querySelectorAll(SELECTOR);
     for (var i = 0; i < links.length; i++) {
-      links[i].setAttribute('aria-haspopup', 'dialog');
-      links[i].setAttribute('aria-expanded', 'false');
+      var el = links[i];
+      el.setAttribute('aria-haspopup', 'dialog');
+      el.setAttribute('aria-expanded', 'false');
+      if (!el.getAttribute('href')) {
+        // Слово с доп. инфо: становится кнопкой; системная подсказка (запасной вариант без скрипта) больше не нужна
+        el.setAttribute('role', 'button');
+        el.tabIndex = 0;
+        el.removeAttribute('title');
+      }
     }
   }
 

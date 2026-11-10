@@ -42,6 +42,12 @@ check('поповер: закрытие по Esc', /Escape|['"]Esc['"]/.test(s))
 check('поповер: ссылка со стандартным модификатором не перехватывается', /ctrlKey/.test(s) && /metaKey/.test(s) && /shiftKey/.test(s) && /altKey/.test(s) && /button/.test(s));
 check('поповер: уход фокуса закрывает (focusin/focusout или keydown Tab)', /focusin|focusout|['"]Tab['"]/.test(s));
 
+// 2а. Доп. инфо: тот же поповер без ссылки «Подробнее»
+check('доп. инфо: скрипт обрабатывает .pub-info с data-interp', /\.pub-info\[data-interp\]/.test(s));
+check('доп. инфо: слово доступно с клавиатуры (role="button", tabIndex, Enter/пробел)', /role['"],\s*['"]button/.test(s) && /tabIndex|tabindex/.test(s) && /Enter/.test(s) && /[' ]['"]\s*\|\||e\.key === ' '/.test(s));
+check('доп. инфо: системная подсказка title убирается скриптом', /removeAttribute\(['"]title['"]\)/.test(s));
+check('доп. инфо: «Подробнее» только у ссылки на термин (есть href)', /getAttribute\(['"]href['"]\)/.test(s) && /if\s*\(\s*href\s*\)|href\s*\?/.test(s));
+
 // 3. Чек-лист: хранение отметок
 check('чек-лист: ключ хранения terms-pub-check:', s.includes('terms-pub-check:'));
 check('чек-лист: отпечаток FNV-1a (смещение и простое число)', s.includes('2166136261') && s.includes('16777619'));
@@ -51,7 +57,7 @@ check('чек-лист: скрипт не знает о разделах «Не 
 
 // 4. Стили для того, что создаёт скрипт
 const css = read('css/publications.css') || '';
-['.pub-popover-title', '.pub-popover-text', '.pub-popover-more', '.pub-popover-close', '.pub-check-list', '.pub-faq-item'].forEach(sel =>
+['.pub-popover-title', '.pub-popover-text', '.pub-popover-more', '.pub-popover-close', '.pub-check-list', '.pub-faq-item', '.pub-info'].forEach(sel =>
   check('стили: в css/publications.css есть ' + sel, css.includes(sel)));
 
 check('стили: отметка зачёркивает текст (input:checked + span)', /\.pub-check-list\s+input\[type="checkbox"\]:checked\s*\+\s*span\s*\{[^}]*line-through/.test(css));
