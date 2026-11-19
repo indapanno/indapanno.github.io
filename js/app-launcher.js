@@ -151,10 +151,10 @@
       btn.textContent = st && st.started ? s.resume : s.launch;
       btn.hidden = false;
     }
-    if (icon && !icon.firstChild && def && typeof def.cardIcon === 'function' && ctx.data) {
+    if (icon && def && typeof def.cardIcon === 'function' && ctx.data) {
       try {
         var node = def.cardIcon(ctx);
-        if (node && node.nodeType === 1) icon.appendChild(node);
+        if (node && node.nodeType === 1) { while (icon.firstChild) icon.removeChild(icon.firstChild); icon.appendChild(node); }
       } catch (e) { /* без значка */ }
     }
     card.classList.toggle('app-card--has-icon', !!(icon && icon.firstChild));
@@ -266,6 +266,8 @@
     dlg.tabIndex = -1;
     if (!storageOk) dlg.appendChild(el('p', 'app-launcher-strip', s.noStorage));
     var root = el('div', 'app-root app-' + name);
+    // Тема сайта для стилей приложения: правило вида .app-<имя>[data-app-theme="light"] (все правила приложения — с .app-<имя>)
+    root.setAttribute('data-app-theme', document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark');
     dlg.appendChild(root);
     document.body.appendChild(dlg);
 

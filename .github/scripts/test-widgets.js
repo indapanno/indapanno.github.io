@@ -90,6 +90,7 @@ if (ljs !== null) {
 }
 const l = ljs || '';
 check('app-launcher.js: реестр window.PubApps.register', /window\.PubApps\s*=/.test(l) && /register\s*:/.test(l));
+check('app-launcher.js: тема сайта для стилей приложения (data-app-theme)', l.includes('data-app-theme'));
 check('app-launcher.js: окно — <dialog> через showModal, вставляется в body', /createElement|el\(\s*'dialog'/.test(l) && l.includes("'dialog'") && l.includes('showModal') && l.includes('document.body.appendChild'));
 check('app-launcher.js: «Назад» закрывает окно (pushState и popstate)', l.includes('pushState') && l.includes('popstate'));
 check('app-launcher.js: хранилище с приставкой terms-app: и try/catch', l.includes("'terms-app:'") && /try\s*\{[\s\S]*localStorage[\s\S]*\}\s*catch/.test(l));
@@ -136,6 +137,7 @@ function cssSelectors(text) {
 function appRuleProblems(name, js, css) {
   const p = [];
   const pre = '.app-' + name;
+  js = js.split('http://www.w3.org/2000/svg').join(''); // пространство имён SVG — не сетевой адрес
   cssSelectors(css).forEach(r => {
     if (r.kind === 'rule') r.text.split(',').map(x => x.trim()).forEach(sel => {
       if (!(sel === pre || sel.startsWith(pre + ' ') || sel.startsWith(pre + '.') || sel.startsWith(pre + ':') || sel.startsWith(pre + '>') || sel.startsWith(pre + '[') || sel.startsWith(pre + '::') || sel.startsWith(pre + ' >'))) p.push('правило CSS без приставки ' + pre + ': «' + sel + '»');
