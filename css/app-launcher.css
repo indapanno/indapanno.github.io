@@ -1,0 +1,142 @@
+/* Обогатитель «Приложение»: карточка в статье и окно приложения на весь экран.
+   Общие стили запуска; стили самого приложения — в publications/apps/<имя>/app.css
+   (каждое правило там начинается с .app-<имя>). Цвета и шрифты — из темы сайта. */
+
+/* --- Карточка в статье --- */
+.app-card {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  margin: 1.5rem 0;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-elevated);
+}
+
+.app-card-icon { flex: none; display: none; width: 64px; height: 64px; }
+.app-card--has-icon .app-card-icon { display: block; }
+.app-card-icon > * { display: block; width: 100%; height: 100%; }
+
+.app-card-body { flex: 1; min-width: 0; }
+
+.pub-body .app-card-body p { margin: 0; }
+
+.pub-body .app-card-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.1rem;
+  line-height: 1.35;
+}
+
+.pub-body .app-card-desc { margin-top: 0.25rem; color: var(--text-secondary); font-size: 0.95rem; }
+
+.pub-body .app-card-progress { margin-top: 0.35rem; font-size: 0.9rem; font-variant-numeric: tabular-nums; }
+
+.pub-body .app-card-nojs { margin-top: 0.5rem; color: var(--text-secondary); font-size: 0.9rem; font-style: italic; }
+
+.app-card-btn,
+.app-launcher-btn {
+  min-height: 44px;
+  padding: 0.55rem 1.2rem;
+  border: 1px solid var(--accent-deep);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.app-card-btn { margin-top: 0.75rem; background: var(--accent-deep); color: #fff; }
+
+.app-card-btn:hover,
+.app-launcher-btn:hover { filter: brightness(1.08); }
+
+.app-card-btn:focus-visible,
+.app-launcher-btn:focus-visible { outline: 2px solid var(--link-color); outline-offset: 2px; }
+
+/* --- Окно приложения: нативный <dialog> на весь экран ---
+   Высота — через position: fixed и inset: 0 (без vh и innerHeight: в iOS они врут). */
+.app-dialog {
+  position: fixed;
+  inset: 0;
+  width: auto;
+  height: auto;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  overflow: hidden;
+  overscroll-behavior: contain;
+}
+
+.app-dialog[open] { display: flex; flex-direction: column; animation: app-launcher-in 0.18s ease-out; }
+
+.app-dialog::backdrop { background: transparent; }
+
+.app-dialog:focus { outline: none; }
+
+@keyframes app-launcher-in { from { opacity: 0; } to { opacity: 1; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .app-dialog[open] { animation: none; }
+}
+
+/* Прокрутка статьи под окном заблокирована */
+html.app-open,
+html.app-open body { overflow: hidden; }
+
+/* Корень приложения занимает всё окно; отступы под вырез и полосу «домой» — забота приложения */
+.app-root {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Полоска «Прогресс не сохранится» (частный режим) */
+.app-launcher-strip {
+  flex: none;
+  margin: 0;
+  padding: 0.5rem 1rem;
+  padding-top: max(0.5rem, env(safe-area-inset-top));
+  background: var(--bg-highlight);
+  border-bottom: 1px solid var(--border);
+  font-size: 0.85rem;
+  line-height: 1.4;
+  text-align: center;
+}
+
+/* --- Экран ошибки (рисует launcher, даже если приложение не загрузилось) --- */
+.app-launcher-error {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  justify-content: center;
+  padding: max(1.5rem, env(safe-area-inset-top)) 1.25rem max(1.5rem, env(safe-area-inset-bottom));
+}
+
+.app-launcher-error-box { width: 100%; max-width: 32rem; margin: auto 0; }
+
+.app-launcher-error-title { margin: 0 0 0.75rem; color: var(--text); font-family: var(--font-display); font-size: 1.35rem; line-height: 1.3; }
+
+.app-launcher-error-text { margin: 0 0 1rem; line-height: 1.55; }
+
+.app-launcher-error-what { margin: 0 0 0.35rem; font-weight: 700; }
+
+.app-launcher-error-steps { margin: 0 0 1.5rem; padding-left: 1.4rem; line-height: 1.55; }
+
+.app-launcher-error-steps li + li { margin-top: 0.3rem; }
+
+.app-launcher-error-steps a { color: var(--link-color); }
+
+.app-launcher-error-actions { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+
+.app-launcher-btn--main { background: var(--accent-deep); color: #fff; }

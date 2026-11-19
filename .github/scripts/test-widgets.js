@@ -78,5 +78,106 @@ const wf = read('.github/workflows/build-publications.yml') || '';
 check('workflow: шаг запускает test-widgets.js', /run:\s*node \.github\/scripts\/test-widgets\.js/.test(wf));
 check('workflow: пути запуска включают js/publication-widgets.js и test-widgets.js', wf.includes("'js/publication-widgets.js'") && wf.includes("'.github/scripts/test-widgets.js'"));
 
+// 7. Обогатитель «Приложение»: общий запуск js/app-launcher.js и css/app-launcher.css
+const LJS = 'js/app-launcher.js';
+const ljs = read(LJS);
+check('запуск приложений: js/app-launcher.js существует', ljs !== null);
+if (ljs !== null) {
+  const syn = spawnSync(process.execPath, ['--check', path.join(ROOT, LJS)], { encoding: 'utf8' });
+  check('app-launcher.js: синтаксис корректен (node --check)', syn.status === 0, (syn.stderr || '').split('\n')[0]);
+  check('app-launcher.js: без сети и исполнения строк', !/\bfetch\s*\(|XMLHttpRequest|WebSocket|sendBeacon|\beval\s*\(|new Function|document\.write|\bimport\s*\(/.test(ljs));
+  check('app-launcher.js: разметку строит через createElement (нет innerHTML)', !/innerHTML|insertAdjacentHTML|outerHTML/.test(ljs));
+}
+const l = ljs || '';
+check('app-launcher.js: реестр window.PubApps.register', /window\.PubApps\s*=/.test(l) && /register\s*:/.test(l));
+check('app-launcher.js: окно — <dialog> через showModal, вставляется в body', /createElement|el\(\s*'dialog'/.test(l) && l.includes("'dialog'") && l.includes('showModal') && l.includes('document.body.appendChild'));
+check('app-launcher.js: «Назад» закрывает окно (pushState и popstate)', l.includes('pushState') && l.includes('popstate'));
+check('app-launcher.js: хранилище с приставкой terms-app: и try/catch', l.includes("'terms-app:'") && /try\s*\{[\s\S]*localStorage[\s\S]*\}\s*catch/.test(l));
+check('app-launcher.js: контекст приложения (lang, data, storage, close, track, reportError, reducedMotion, rereadArticle)',
+  ['lang:', 'data:', 'storage:', 'ctx.close', 'ctx.track', 'ctx.reportError', 'reducedMotion:', 'ctx.rereadArticle'].every(k => l.includes(k)));
+check('app-launcher.js: события GoatCounter app/<имя>/<событие>, запуск — launch', l.includes("'app/' + name + '/' + event") && l.includes("track(name, 'launch')"));
+check('app-launcher.js: монтирование в try/catch, экран ошибки своими силами', /try\s*\{\s*current\.instance\s*=\s*def\.mount/.test(l) && l.includes('showError'));
+check('app-launcher.js: тексты ошибки и частного режима на двух языках', l.includes('Не удалось открыть тренажёр') && l.includes('เปิดแบบฝึกไม่สำเร็จ') && l.includes('Прогресс не сохранится') && l.includes('max.ru/channel_buddhism') && l.includes('line.me/ti/g2/'));
+check('app-launcher.js: подписи кнопки «Запустить» / «Продолжить» на двух языках', l.includes('Запустить') && l.includes('Продолжить') && l.includes('เริ่ม') && l.includes('ทำต่อ'));
+const lcss = read('css/app-launcher.css') || '';
+check('app-launcher.css: окно на весь экран без vh (position: fixed; inset: 0)', /\.app-dialog\s*\{[^}]*position:\s*fixed[^}]*inset:\s*0/.test(lcss) && !/\.app-dialog\s*\{[^}]*\bvh\b/.test(lcss));
+check('app-launcher.css: блокировка прокрутки статьи (html.app-open)', /html\.app-open/.test(lcss));
+check('app-launcher.css: safe-area учтена', lcss.includes('env(safe-area-inset'));
+['.app-card', '.app-card-btn', '.app-card-nojs', '.app-launcher-error', '.app-launcher-strip'].forEach(sel => check('app-launcher.css: есть ' + sel, lcss.includes(sel)));
+check('app-launcher.css: касания не меньше 44 px', /min-height:\s*44px/.test(lcss));
+check('workflow: пути запуска включают приложения и их запуск', ['publications/apps/**', 'js/app-launcher.js', 'css/app-launcher.css'].every(p => wf.includes("'" + p + "'")));
+
+// 8. Правила для каждого приложения в publications/apps/<имя>/ (TZ_app_paticcasamuppada.md, 3.5)
+const APPS_DIR = path.join(ROOT, 'publications/apps');
+const appsList = fs.existsSync(APPS_DIR) ? fs.readdirSync(APPS_DIR, { withFileTypes: true }).filter(d => d.isDirectory()).map(d => d.name) : [];
+
+// Селекторы CSS верхнего уровня (и внутри @media / @supports); @keyframes — имя анимации
+function cssSelectors(text) {
+  const src = text.replace(/\/\*[\s\S]*?\*\//g, '');
+  const out = [], stack = [];
+  let buf = '';
+  for (const ch of src) {
+    if (ch === '{') {
+      const head = buf.trim(); buf = '';
+      const parent = stack[stack.length - 1];
+      if (parent === 'keyframes') { stack.push('frame'); continue; }
+      if (head.startsWith('@')) {
+        if (/^@(-webkit-)?keyframes\s/.test(head)) { out.push({ kind: 'keyframes', text: head.replace(/^@(-webkit-)?keyframes\s+/, '') }); stack.push('keyframes'); }
+        else if (/^@(media|supports|container|layer)\b/.test(head)) stack.push('group');
+        else { out.push({ kind: 'at', text: head }); stack.push('other'); }
+      } else { out.push({ kind: 'rule', text: head }); stack.push('rule'); }
+    } else if (ch === '}') { stack.pop(); buf = ''; }
+    else if (ch === ';' && (!stack.length || stack[stack.length - 1] === 'group')) buf = '';
+    else buf += ch;
+  }
+  return out;
+}
+
+function appRuleProblems(name, js, css) {
+  const p = [];
+  const pre = '.app-' + name;
+  cssSelectors(css).forEach(r => {
+    if (r.kind === 'rule') r.text.split(',').map(x => x.trim()).forEach(sel => {
+      if (!(sel === pre || sel.startsWith(pre + ' ') || sel.startsWith(pre + '.') || sel.startsWith(pre + ':') || sel.startsWith(pre + '>') || sel.startsWith(pre + '[') || sel.startsWith(pre + '::') || sel.startsWith(pre + ' >'))) p.push('правило CSS без приставки ' + pre + ': «' + sel + '»');
+    });
+    else if (r.kind === 'keyframes' && !r.text.startsWith('app-' + name)) p.push('@keyframes без приставки app-' + name + ': «' + r.text + '»');
+    else if (r.kind === 'at') p.push('в app.css не разрешено «' + r.text.split(/\s/)[0] + '»');
+  });
+  const banned = [[/\bfetch\s*\(/, 'fetch'], [/XMLHttpRequest/, 'XMLHttpRequest'], [/WebSocket/, 'WebSocket'], [/\bimport\s*\(/, 'import()'], [/\bimport\s+[\w{*]/, 'import'],
+    [/https?:\/\//, 'внешний адрес'], [/\beval\s*\(/, 'eval'], [/new\s+Function/, 'new Function'], [/innerHTML|outerHTML|insertAdjacentHTML/, 'innerHTML'],
+    [/document\.write/, 'document.write'], [/localStorage|sessionStorage|indexedDB|document\.cookie/, 'хранение не через ctx.storage'], [/sendBeacon/, 'sendBeacon']];
+  banned.forEach(([re, what]) => { if (re.test(js)) p.push('в app.js запрещено: ' + what); });
+  if (!new RegExp("PubApps\\.register\\(\\s*['\"]" + name + "['\"]").test(js)) p.push("app.js не регистрирует приложение: window.PubApps.register('" + name + "', …)");
+  return p;
+}
+
+// Проверка самой проверки на заведомо плохом и хорошем приложении
+{
+  const good = appRuleProblems('demo', "window.PubApps.register('demo', { mount: function (root, ctx) { var b = document.createElement('button'); b.textContent = ctx.data.x; root.appendChild(b); ctx.storage.set('p', 1); return { unmount: function () {} }; } });",
+    '.app-demo { color: red; } .app-demo .card, .app-demo:focus { margin: 0; } @media (max-width: 400px) { .app-demo .card { margin: 1px; } } @keyframes app-demo-spin { from { opacity: 0; } to { opacity: 1; } }');
+  check('правила приложений: хорошее приложение проходит', good.length === 0, good.join('; '));
+  const badCss = appRuleProblems('demo', "window.PubApps.register('demo', {});", '.app-demo { color: red; } body { margin: 0; } @media (max-width: 1px) { .card { x: 1; } } @keyframes spin { from { opacity: 0; } } .app-demox { color: red; }');
+  check('правила приложений: правило без приставки ловится (в т.ч. в @media, @keyframes, похожее имя)', badCss.filter(x => /приставки/.test(x)).length === 4, badCss.join('; '));
+  ['fetch("/a")', 'new XMLHttpRequest()', 'new WebSocket("x")', 'import("x")', '"https://example.com"', 'eval("1")', 'el.innerHTML = d', 'localStorage.getItem("a")'].forEach(code => {
+    const b = appRuleProblems('demo', "window.PubApps.register('demo', {}); " + code, '.app-demo {}');
+    check('правила приложений: запрещено ' + code, b.some(x => /запрещено/.test(x)), b.join('; '));
+  });
+}
+
+appsList.forEach(name => {
+  const dir = 'publications/apps/' + name + '/';
+  check('приложение ' + name + ': имя — строчные латинские буквы, цифры, дефис', /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(name));
+  const files = fs.readdirSync(path.join(APPS_DIR, name));
+  check('приложение ' + name + ': нет .md (GitHub Pages сделал бы их страницами)', !files.some(f => /\.md$/i.test(f)));
+  const ajs = read(dir + 'app.js'), acss = read(dir + 'app.css');
+  check('приложение ' + name + ': есть app.json, app.js, app.css', read(dir + 'app.json') !== null && ajs !== null && acss !== null);
+  if (ajs !== null) {
+    const syn = spawnSync(process.execPath, ['--check', path.join(APPS_DIR, name, 'app.js')], { encoding: 'utf8' });
+    check('приложение ' + name + ': синтаксис app.js (node --check)', syn.status === 0, (syn.stderr || '').split('\n')[0]);
+  }
+  const probs = appRuleProblems(name, ajs || '', acss || '');
+  check('приложение ' + name + ': правила 3.5 (CSS с приставкой, без сети, хранение через ctx.storage)', probs.length === 0, probs.join('; '));
+});
+
 console.log(failed ? 'ПРОВАЛЕНО: ' + failed + ', пройдено: ' + passed : 'ВСЕ ТЕСТЫ ПРОЙДЕНЫ: ' + passed);
 process.exitCode = failed ? 1 : 0;

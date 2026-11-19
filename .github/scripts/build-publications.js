@@ -37,6 +37,7 @@ const S = {
     toc: 'Содержание',
     more: 'Читать далее',
     gallery: 'Фото',
+    app: { launch: 'Запустить', nojs: 'Для приложения нужен JavaScript' },
     cta: { q: 'Хотите узнавать о новых публикациях?', note: 'Не чаще раза в день.', btn: 'Подписаться' },
     callout: { key: 'Ключевая мысль', practice: 'Практика', important: 'Важно' }
   },
@@ -48,6 +49,7 @@ const S = {
     toc: 'สารบัญ',
     more: 'อ่านต่อ',
     gallery: 'ภาพ',
+    app: { launch: 'เริ่ม', nojs: 'แอปนี้ต้องเปิด JavaScript' },
     cta: { q: 'อยากรู้เมื่อมีบทความใหม่ไหม?', note: 'แจ้งเตือนไม่เกินวันละครั้ง', btn: 'ติดตาม' },
     callout: { key: 'ประเด็นสำคัญ', practice: 'ลงมือปฏิบัติ', important: 'โปรดทราบ' }
   }
@@ -175,7 +177,52 @@ const plain = s => s.replace(/&[A-Za-z#0-9]+;/g, ' ').replace(/\s+/g, ' ').trim(
 // --- Обогатители публикаций: <div data-widget="…"> (widgets_TZ.md) ---
 // Обёртка только на верхнем уровне статьи; внутри — проверка структуры своими правилами, затем
 // тот же разбор процессором статьи (ссылки, термины, экранирование), чтобы правила были едиными.
-const WIDGET_KINDS = ['checklist', 'faq', 'publication', 'gallery'];
+const WIDGET_KINDS = ['checklist', 'faq', 'publication', 'gallery', 'app'];
+const APP_NAME_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const APP_FILES = ['app.json', 'app.js', 'app.css'];
+
+// --- Приложение: publications/apps/<имя>/ (app.json, app.js, app.css, data_<язык>.json, необязательный check.js) ---
+// Сборка ничего не знает о содержимом приложения: проверяет файлы, общие поля app.json и данных,
+// а правила самих данных — функцией из check.js приложения (если он есть).
+// Результат: { error: 'текст' } или { app, data, json } (json — данные для встраивания в страницу).
+function loadApp(ctx, name, lang) {
+  const key = name + ':' + lang;
+  if (ctx.apps.cache.has(key)) return ctx.apps.cache.get(key);
+  const res = (() => {
+    const dir = path.join(ctx.apps.dir, name);
+    if (!fs.existsSync(dir) || !fs.statSync(dir).isDirectory()) return { error: 'нет папки publications/apps/' + name + '/' };
+    const missing = APP_FILES.concat('data_' + lang + '.json').filter(f => !fs.existsSync(path.join(dir, f)));
+    if (missing.length) return { error: 'в publications/apps/' + name + '/ нет файлов: ' + missing.join(', ') };
+    const readJson = f => JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8').replace(/^\uFEFF/, ''));
+    let app, data;
+    try { app = readJson('app.json'); } catch (e) { return { error: 'app.json: невалидный JSON (' + e.message + ')' }; }
+    const str = v => typeof v === 'string' && v.trim() !== '';
+    if (!app || app.name !== name) return { error: 'app.json: «name» должно быть «' + name + '»' };
+    if (!str(app.version)) return { error: 'app.json: нет «version»' };
+    if (!Array.isArray(app.langs) || !app.langs.includes(lang)) return { error: 'app.json: язык «' + lang + '» не указан в «langs»' };
+    for (const k of ['title', 'description']) {
+      if (!app[k] || !str(app[k][lang])) return { error: 'app.json: нет «' + k + '» на языке «' + lang + '»' };
+    }
+    try { data = readJson('data_' + lang + '.json'); } catch (e) { return { error: 'data_' + lang + '.json: невалидный JSON (' + e.message + ')' }; }
+    if (!data || typeof data !== 'object' || Array.isArray(data)) return { error: 'data_' + lang + '.json: корень должен быть объектом' };
+    if (data.app !== name) return { error: 'data_' + lang + '.json: «app» должно быть «' + name + '»' };
+    if (data.lang !== lang) return { error: 'data_' + lang + '.json: «lang» должно быть «' + lang + '»' };
+    if (data.version !== app.version) return { error: 'data_' + lang + '.json: версия «' + data.version + '» не совпадает с app.json («' + app.version + '»)' };
+    const checkFile = path.join(dir, 'check.js');
+    if (fs.existsSync(checkFile)) {
+      const all = {};
+      app.langs.forEach(l => { try { all[l] = readJson('data_' + l + '.json'); } catch (e) { all[l] = null; } });
+      let problems;
+      try { problems = require(checkFile)(data, { lang, all }); } catch (e) { return { error: 'check.js упал: ' + e.message }; }
+      if (Array.isArray(problems) && problems.length) return { error: 'data_' + lang + '.json: ' + problems.slice(0, 5).join('; ') + (problems.length > 5 ? ' (и ещё ' + (problems.length - 5) + ')' : '') };
+    }
+    // В <script type="application/json"> нельзя «</script>»: экранируем «<» и разделители строк
+    const json = JSON.stringify(data).replace(/</g, '\\u003c').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
+    return { app, data, json };
+  })();
+  ctx.apps.cache.set(key, res);
+  return res;
+}
 const PUB_NAME_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*\.html$/;
 const INLINE_TAGS = new Set(['strong', 'em', 'a', 'sup', 'sub', 'code', 'small', 'br', 'span']);
 const FAQ_SUMMARY_TAGS = new Set(['strong', 'em']);
@@ -441,6 +488,28 @@ function renderWidget(kind, attrs, inner, lang, ctx, wstate) {
     return { soft, text, html: '<section class="gallery" aria-label="' + S[lang].gallery + '"><ul class="gallery-grid">' + lis.join('') + '</ul></section>' };
   }
 
+  if (kind === 'app') {
+    const bad24 = msg => ({ error: { code: 24, msg: 'приложение: ' + msg } });
+    if (!('data-app' in attrs)) return bad24('нет атрибута data-app');
+    const name = attrs['data-app'].trim();
+    if (!APP_NAME_RE.test(name)) return bad24('data-app «' + name.slice(0, 40) + '»: имя приложения — строчные латинские буквы, цифры и дефис');
+    if (inner.trim()) return bad24('обёртка должна быть пустой');
+    const a = loadApp(ctx, name, lang);
+    if (a.error) { soft.push({ code: 25, msg: 'приложение «' + name + '»: ' + a.error + '; карточка не выведена' }); return { soft, text, html: '' }; }
+    const first = !wstate.apps.has(name);
+    wstate.apps.set(name, a.app.version);
+    const st = S[lang].app;
+    const nojs = a.app.nojs && typeof a.app.nojs[lang] === 'string' && a.app.nojs[lang].trim() ? a.app.nojs[lang] : st.nojs;
+    return { soft, text, html: '<section class="app-card" data-app="' + name + '" data-app-lang="' + lang + '" data-app-version="' + escAttr(a.app.version) + '">'
+      + '<div class="app-card-icon" aria-hidden="true"></div>'
+      + '<div class="app-card-body"><p class="app-card-title">' + escapeHtml(a.app.title[lang]) + '</p>'
+      + '<p class="app-card-desc">' + escapeHtml(a.app.description[lang]) + '</p>'
+      + '<p class="app-card-progress" hidden></p>'
+      + '<p class="app-card-nojs">' + escapeHtml(nojs) + '</p>'
+      + '<button type="button" class="app-card-btn" hidden>' + st.launch + '</button></div></section>'
+      + (first ? '<script type="application/json" data-app-data="' + name + '">' + a.json + '</script>' : '') };
+  }
+
   // publication
   const bad = msg => ({ error: { code: 19, msg: 'плитка: ' + msg } });
   if (!('data-publication' in attrs)) return bad('нет атрибута data-publication');
@@ -458,7 +527,7 @@ function renderWidget(kind, attrs, inner, lang, ctx, wstate) {
 
 function processArticle(src, lang, ctx, opts) {
   const errors = [], soft = [];
-  const wstate = { check: 0, gallery: false };
+  const wstate = { check: 0, gallery: false, apps: new Map() };
   const fail = msg => errors.push({ code: 11, msg });
   const out = [];
   const stack = [];
@@ -490,11 +559,11 @@ function processArticle(src, lang, ctx, opts) {
       let wm;
       ATTR_RE.lastIndex = 0;
       while ((wm = ATTR_RE.exec(attrSrc)) !== null) wa[wm[1].toLowerCase()] = wm[2] !== undefined ? wm[2] : wm[3] !== undefined ? wm[3] : wm[4] !== undefined ? wm[4] : '';
-      if (!('data-widget' in wa)) { fail('тег <div> не разрешён (допустим только <div data-widget="checklist|faq|publication|gallery">)'); break; }
+      if (!('data-widget' in wa)) { fail('тег <div> не разрешён (допустим только <div data-widget="checklist|faq|publication|gallery|app">)'); break; }
       const w16 = msg => errors.push({ code: 16, msg });
       const kind = wa['data-widget'].trim();
       if (!WIDGET_KINDS.includes(kind)) { w16('неизвестное значение data-widget «' + kind + '» (допустимо: ' + WIDGET_KINDS.join(', ') + ')'); break; }
-      const extra = Object.keys(wa).filter(k => k !== 'data-widget' && !(kind === 'publication' && k === 'data-publication'));
+      const extra = Object.keys(wa).filter(k => k !== 'data-widget' && !(kind === 'publication' && k === 'data-publication') && !(kind === 'app' && k === 'data-app'));
       if (extra.length) { w16('у обёртки «' + kind + '» лишние атрибуты: ' + extra.join(', ')); break; }
       if (stack.length) { w16('обёртка data-widget допустима только на верхнем уровне статьи (найдена внутри <' + stack[stack.length - 1].tag + '>)'); break; }
       const from = TAG_RE.lastIndex;
@@ -638,7 +707,7 @@ function processArticle(src, lang, ctx, opts) {
 
   const clean = text.replace(/\s+/g, ' ').trim();
   if (!errors.length && !clean && !(opts && opts.inner)) errors.push({ code: 12, msg: 'статья пустая' });
-  return { errors, soft, html: out.join(''), text: clean, h2s, gallery: wstate.gallery };
+  return { errors, soft, html: out.join(''), text: clean, h2s, gallery: wstate.gallery, apps: wstate.apps };
 }
 
 // --- HTML страниц ---
@@ -740,6 +809,9 @@ function articlePage(lang, pub, art, layout) {
     + toc
     + '<div class="pub-body">' + art.html + '</div></article>'
     + (art.gallery ? '<script src="/js/gallery.js"></script>' : '')
+    // Приложения: общий запуск и файлы каждого приложения — только в статьях, где они есть
+    + (art.apps && art.apps.size ? '<script src="/js/app-launcher.js"></script>'
+      + Array.from(art.apps).map(([n, v]) => '<script src="' + escAttr(cfg.appPath(n, 'app.js')) + '?v=' + encodeURIComponent(v) + '"></script>').join('') : '')
     // Подписка на уведомления: карточку показывает js/push.js (если браузер умеет веб-пуш и читатель не подписан)
     + '<aside class="push-cta" data-push-cta hidden><p>' + st.cta.q + '<small>' + st.cta.note + '</small></p>'
     + '<button type="button" class="push-btn" data-push-open>' + st.cta.btn + '</button></aside>';
@@ -747,7 +819,9 @@ function articlePage(lang, pub, art, layout) {
   const head = metaTags(lang, {
     url, desc: clipMeta(d.lead, META_DESC_MAX, lang), type: 'article', title: d.headline, image: cfg.coverUrl(d.cover)
   });
-  const headAll = head + (art.gallery ? '\n<link rel="stylesheet" href="/css/gallery.css">' : '');
+  const headAll = head + (art.gallery ? '\n<link rel="stylesheet" href="/css/gallery.css">' : '')
+    + (art.apps && art.apps.size ? '\n<link rel="stylesheet" href="/css/app-launcher.css">'
+      + Array.from(art.apps).map(([n, v]) => '\n<link rel="stylesheet" href="' + escAttr(cfg.appPath(n, 'app.css')) + '?v=' + encodeURIComponent(v) + '">').join('') : '');
   return { file: d.html, html: cfg.withLangSwitch(fill(layout, { title: escapeHtml(d.headline), head: headAll, h1: escapeHtml(d.headline), main }), cfg.articlePath(d.html), lang), url };
 }
 
@@ -772,6 +846,8 @@ function build(opts) {
     dir: gDir, thumbsDir: tDir, record, cache: new Map(), used: new Set(), warn: new Set(), changed: false, noTool: false,
     thumbnailer: opts.thumbnailer === undefined ? defaultThumbnailer() : opts.thumbnailer
   };
+  // Приложения: publications/apps/<имя>/ (кладёт разработчик; сборка только читает)
+  ctx.apps = { dir: path.join(pubDir, 'apps'), cache: new Map() };
   const errors = [], warnings = [];
   const layouts = {};
   LANGS.forEach(l => { layouts[l] = fs.readFileSync(path.join(ctx.tplDir, '_layout_' + l + '.html'), 'utf8'); });

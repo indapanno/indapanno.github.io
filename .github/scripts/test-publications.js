@@ -50,6 +50,10 @@ function makeEnv(files) {
     typeof set[f] === 'string' || Buffer.isBuffer(set[f]) ? set[f] : JSON.stringify(set[f])));
   wr('json', files.json); wr('html', files.html); wr('covers', files.covers);
   Object.keys(files.gallery || {}).forEach(f => fs.writeFileSync(path.join(pubDir, 'gallery', f), files.gallery[f]));
+  Object.keys(files.apps || {}).forEach(n => {
+    fs.mkdirSync(path.join(pubDir, 'apps', n), { recursive: true });
+    Object.keys(files.apps[n]).forEach(f => { const v = files.apps[n][f]; fs.writeFileSync(path.join(pubDir, 'apps', n, f), typeof v === 'string' ? v : JSON.stringify(v)); });
+  });
   if (files.stalePage) fs.writeFileSync(path.join(pubDir, 'stale.html'), 'old');
   if (files.before) files.before(pubDir);
   // thumbnailer: функция (src, dst, w) => делает превью; false — инструмента нет; по умолчанию — поддельный, пишет метку
@@ -558,6 +562,85 @@ const gal = (html, extra) => makeEnv(Object.assign({ json: { 'publication_1_ru.j
 {
   const r = one(BODY + '<hr>' + BODY);
   check('разделитель <hr> проходит как есть', r.errors.length === 0 && r.read('a-one.html').includes(BODY + '<hr>' + BODY), JSON.stringify(r.errors));
+}
+
+// ===== Обогатитель «Приложение» (TZ_app_paticcasamuppada.md): 24 — обёртка (ошибка), 25 — приложение/данные (мягкая) =====
+const APP_JSON = (o) => Object.assign({ name: 'demo', version: '1.0', title: { ru: 'Тренажёр', thai: 'แบบฝึก' }, description: { ru: 'Описание тренажёра.', thai: 'คำอธิบาย' }, langs: ['ru', 'thai'] }, o);
+const APP_DATA = (lang, o) => Object.assign({ app: 'demo', lang, version: '1.0', items: ['a', 'b'], note: 'x</script><b>' }, o);
+const APP_FILES = (o) => Object.assign({ 'app.json': APP_JSON(), 'app.js': "window.PubApps.register('demo', { mount: function () { return { unmount: function () {} }; } });", 'app.css': '.app-demo { color: red; }', 'data_ru.json': APP_DATA('ru'), 'data_thai.json': APP_DATA('thai') }, o);
+const APPW = '<div data-widget="app" data-app="demo"></div>';
+const appEnv = (html, apps, extra) => makeEnv(Object.assign({ json: { 'publication_1_ru.json': tile() }, html: { 'a-one.html': BODY + html }, covers: cov(), apps: apps === undefined ? { demo: APP_FILES() } : apps }, extra || {}));
+
+// 17. Приложение: карточка, данные, подключение файлов
+{
+  const r = appEnv(APPW);
+  const a = r.read('a-one.html');
+  check('приложение: без ошибок', r.errors.length === 0, JSON.stringify(r.errors));
+  check('приложение: обёртка заменена карточкой', noWidgetLeft(a) && a.includes('<section class="app-card" data-app="demo" data-app-lang="ru" data-app-version="1.0">'));
+  check('приложение: название и описание из app.json на языке статьи', a.includes('<p class="app-card-title">Тренажёр</p>') && a.includes('<p class="app-card-desc">Описание тренажёра.</p>'));
+  check('приложение: кнопка «Запустить» скрыта до запуска скрипта, текст без JS виден', a.includes('<button type="button" class="app-card-btn" hidden>Запустить</button>') && a.includes('<p class="app-card-nojs">Для приложения нужен JavaScript</p>'));
+  const m = a.match(/<script type="application\/json" data-app-data="demo">([\s\S]*?)<\/script>/);
+  check('приложение: данные встроены в страницу', !!m);
+  check('приложение: в данных «<» экранирован, данные читаются', m && !m[1].includes('<') && JSON.parse(m[1]).note === 'x</script><b>' && JSON.parse(m[1]).lang === 'ru');
+  check('приложение: подключены launcher и файлы приложения с версией', a.includes('<script src="/js/app-launcher.js"></script><script src="/publications/apps/demo/app.js?v=1.0"></script>')
+    && a.includes('<link rel="stylesheet" href="/css/app-launcher.css">') && a.includes('<link rel="stylesheet" href="/publications/apps/demo/app.css?v=1.0">'));
+  check('приложение: launcher подключён после разметки статьи', a.indexOf('/js/app-launcher.js') > a.indexOf('class="app-card"'));
+  check('приложение: своей страницы нет, sitemap без apps', !r.sitemap.includes('/apps/') && !r.has('apps.html'));
+  const two = appEnv(APPW + BODY + APPW);
+  const b = two.read('a-one.html');
+  check('приложение дважды: две карточки, данные и файлы один раз', two.errors.length === 0 && count(b, 'class="app-card"') === 2 && count(b, 'data-app-data="demo"') === 1 && count(b, '/js/app-launcher.js') === 1 && count(b, 'apps/demo/app.js') === 1, JSON.stringify(two.errors));
+  const th = makeEnv({ json: { 'publication_1_thai.json': tileTh() }, covers: cov(), apps: { demo: APP_FILES() }, html: { 'b-one.html': BODY_TH + APPW } });
+  const t = th.read('b-one.html');
+  check('приложение thai: подписи и данные на тайском', th.errors.length === 0 && t.includes('<p class="app-card-title">แบบฝึก</p>') && t.includes('data-app-lang="thai"') && t.includes('>เริ่ม</button>') && /"lang":"thai"/.test(t), JSON.stringify(th.errors));
+  const nj = appEnv(APPW, { demo: APP_FILES({ 'app.json': APP_JSON({ nojs: { ru: 'Для тренажёра нужен JavaScript', thai: 'แบบฝึกนี้ต้องเปิด JavaScript' } }) }) });
+  check('приложение: текст «без JS» из app.json', nj.read('a-one.html').includes('<p class="app-card-nojs">Для тренажёра нужен JavaScript</p>'));
+  const ex = one(BODY);
+  check('без приложения launcher и стили приложений не подключаются', !ex.read('a-one.html').includes('app-launcher') && !ex.read('a-one.html').includes('/apps/'));
+}
+
+// 18. Ошибка 24: обёртка приложения — статья не создаётся
+{
+  const bad24 = (name, html) => {
+    const r = appEnv(html);
+    check('24 ' + name, r.codes.includes(24) && !r.has('a-one.html'), JSON.stringify(r.codes));
+  };
+  bad24('нет data-app', '<div data-widget="app"></div>');
+  bad24('пустой data-app', '<div data-widget="app" data-app=""></div>');
+  bad24('имя с заглавными', '<div data-widget="app" data-app="Demo"></div>');
+  bad24('имя с путём', '<div data-widget="app" data-app="../demo"></div>');
+  bad24('обёртка не пустая', '<div data-widget="app" data-app="demo">текст</div>');
+  const extra = appEnv('<div data-widget="app" data-app="demo" data-x="1"></div>');
+  check('лишний атрибут у обёртки app: 16', extra.codes.includes(16) && !extra.has('a-one.html'), JSON.stringify(extra.codes));
+  const dp = appEnv('<div data-widget="gallery" data-app="demo"><figure><img src="p1.jpg"></figure></div>');
+  check('data-app у другой обёртки не разрешён (16)', dp.codes.includes(16), JSON.stringify(dp.codes));
+  const nested = appEnv('<div data-widget="faq"><details><summary>В?</summary>' + APPW + '</details></div>');
+  check('приложение внутри другой обёртки: 16', nested.codes.includes(16) && !nested.has('a-one.html'), JSON.stringify(nested.codes));
+}
+
+// 19. Мягкая ошибка 25: карточки нет, статья публикуется
+{
+  const soft25 = (name, apps, html) => {
+    const r = appEnv(html || APPW, apps);
+    const a = r.read('a-one.html');
+    check('25 ' + name, r.codes.join() === '25' && r.errors[0].soft && r.has('a-one.html') && !a.includes('app-card') && !a.includes('app-launcher') && !a.includes('data-app-data'), JSON.stringify(r.errors));
+  };
+  soft25('нет приложения', {});
+  soft25('нет app.js', { demo: (() => { const f = APP_FILES(); delete f['app.js']; return f; })() });
+  soft25('нет app.css', { demo: (() => { const f = APP_FILES(); delete f['app.css']; return f; })() });
+  soft25('нет данных на язык статьи', { demo: (() => { const f = APP_FILES(); delete f['data_ru.json']; return f; })() });
+  soft25('битый app.json', { demo: APP_FILES({ 'app.json': '{ сломано' }) });
+  soft25('чужое имя в app.json', { demo: APP_FILES({ 'app.json': APP_JSON({ name: 'other' }) }) });
+  soft25('язык не в langs', { demo: APP_FILES({ 'app.json': APP_JSON({ langs: ['thai'] }) }) });
+  soft25('нет названия на языке статьи', { demo: APP_FILES({ 'app.json': APP_JSON({ title: { thai: 'แบบฝึก' } }) }) });
+  soft25('битые данные', { demo: APP_FILES({ 'data_ru.json': '{ сломано' }) });
+  soft25('данные другого языка', { demo: APP_FILES({ 'data_ru.json': APP_DATA('thai') }) });
+  soft25('версия данных не совпадает', { demo: APP_FILES({ 'data_ru.json': APP_DATA('ru', { version: '0.9' }) }) });
+  soft25('check.js нашёл ошибки', { demo: APP_FILES({ 'check.js': "module.exports = function (d, o) { return d.items.length === 3 ? [] : ['нужно 3 пункта, а не ' + d.items.length]; };" }) });
+  soft25('check.js упал', { demo: APP_FILES({ 'check.js': "module.exports = function () { throw new Error('бум'); };" }) });
+  const ok = appEnv(APPW, { demo: APP_FILES({ 'check.js': "module.exports = function (d, o) { return o.all.thai && o.all.thai.items.length === d.items.length ? [] : ['разные пункты']; };" }) });
+  check('check.js без ошибок: карточка есть, check.js видит оба языка', ok.errors.length === 0 && ok.read('a-one.html').includes('class="app-card"'), JSON.stringify(ok.errors));
+  const msg = appEnv(APPW, {});
+  check('25: сообщение называет приложение и папку', msg.errors[0] && /приложение «demo»/.test(msg.errors[0].msg) && /publications\/apps\/demo/.test(msg.errors[0].msg), msg.errors[0] && msg.errors[0].msg);
 }
 
 console.log('Пройдено: ' + passed + ', провалено: ' + failed);

@@ -345,19 +345,19 @@ check('formatDate thai: тайские цифры, буддийская эра',
 {
   const root = makeSite({ terms: { ru: ['t1', 't2'], thai: [] }, state: { ru: '{ сломано' } });
   const r = run(root, 'ru', '2026-10-30');
-  check('ошибка 21: повреждённый снимок', r.codes.indexOf(21) >= 0, r.codes.join());
-  check('ошибка 21: снимок не тронут, сводки нет', r.read('_src/news/state_ru.json') === '{ сломано' && r.list('_src/news/digests').length === 0 && !r.digest);
+  check('ошибка 31: повреждённый снимок', r.codes.indexOf(31) >= 0, r.codes.join());
+  check('ошибка 31: снимок не тронут, сводки нет', r.read('_src/news/state_ru.json') === '{ сломано' && r.list('_src/news/digests').length === 0 && !r.digest);
 }
 {
   const r = site({ terms: { ru: ['t1'], thai: [] }, state: { ru: snap(['t1']) }, digests: { '2026-10-28_ru': '{ сломано', '2026-10-29_ru': digestOn('2026-10-29', 2) } });
-  check('ошибка 22: повреждённые данные сводки', r.codes.indexOf(22) >= 0, r.codes.join());
-  check('ошибка 22: эта сводка пропущена, остальные страницы собраны', !r.has('new/2026-10-28_ru.html') && r.has('new/2026-10-29_ru.html') && r.read('new/index.html').includes('/new/2026-10-29_ru.html'));
+  check('ошибка 32: повреждённые данные сводки', r.codes.indexOf(32) >= 0, r.codes.join());
+  check('ошибка 32: эта сводка пропущена, остальные страницы собраны', !r.has('new/2026-10-28_ru.html') && r.has('new/2026-10-29_ru.html') && r.read('new/index.html').includes('/new/2026-10-29_ru.html'));
 }
 {
   const root = makeSite({ terms: { ru: ['t1', 't2'], thai: [] }, state: { ru: snap(['t1']) } });
   const r = run(root, 'ru', '2026-13-40');
-  check('ошибка 23: неверная дата', r.codes.indexOf(23) >= 0, r.codes.join());
-  check('ошибка 23: ничего не записано', !r.has('new') && r.list('_src/news/digests').length === 0 && has(r.json('_src/news/state_ru.json').terms, 't1') && !has(r.json('_src/news/state_ru.json').terms, 't2'));
+  check('ошибка 33: неверная дата', r.codes.indexOf(33) >= 0, r.codes.join());
+  check('ошибка 33: ничего не записано', !r.has('new') && r.list('_src/news/digests').length === 0 && has(r.json('_src/news/state_ru.json').terms, 't1') && !has(r.json('_src/news/state_ru.json').terms, 't2'));
 }
 {
   const r = site({ terms: { ru: ['t1'], thai: [] }, state: { ru: snap(['t1']) } }, 'en');

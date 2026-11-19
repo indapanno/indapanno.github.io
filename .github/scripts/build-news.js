@@ -311,7 +311,7 @@ function buildPages(root, errors) {
       const m = f.match(DIGEST_FILE);
       if (!m) return;
       const d = tryJson(path.join(digestDir, f));
-      if (!validDigest(d, m[1], m[2]) || !validDate(m[1])) { errors.push({ code: 22, file: f, msg: 'данные сводки повреждены; сводка пропущена' }); return; }
+      if (!validDigest(d, m[1], m[2]) || !validDate(m[1])) { errors.push({ code: 32, file: f, msg: 'данные сводки повреждены; сводка пропущена' }); return; }
       byLang[m[2]].push(d);
     });
   }
@@ -348,7 +348,7 @@ function detect(root, lang, date, errors) {
   }
   let state;
   try { state = readJson(stateFile); } catch (e) { state = null; }
-  if (!validState(state)) { errors.push({ code: 21, file: 'state_' + lang + '.json', msg: 'снимок повреждён; сводка не построена, снимок не изменён' }); return { firstRun: false, digest: null }; }
+  if (!validState(state)) { errors.push({ code: 31, file: 'state_' + lang + '.json', msg: 'снимок повреждён; сводка не построена, снимок не изменён' }); return { firstRun: false, digest: null }; }
   if (date === null || fs.existsSync(digestFile)) return { firstRun: false, digest: null }; // сводка за этот день уже есть
 
   const known = { terms: new Set(state.terms), bundles: new Set(state.bundles), publications: new Set(state.publications) };
@@ -379,8 +379,8 @@ function build(opts) {
   if (opts.pagesOnly) {
     LANGS.forEach(l => { if (!fs.existsSync(path.join(root, '_src/news/state_' + l + '.json'))) detect(root, l, null, errors); });
   } else {
-    if (!LANGS.includes(opts.lang)) { errors.push({ code: 23, msg: 'неизвестный язык «' + opts.lang + '» (ожидается ru или thai)' }); return { errors, firstRun, digest }; }
-    if (!validDate(opts.date)) { errors.push({ code: 23, msg: 'неверная дата «' + opts.date + '» (ожидается ГГГГ-ММ-ДД)' }); return { errors, firstRun, digest }; }
+    if (!LANGS.includes(opts.lang)) { errors.push({ code: 33, msg: 'неизвестный язык «' + opts.lang + '» (ожидается ru или thai)' }); return { errors, firstRun, digest }; }
+    if (!validDate(opts.date)) { errors.push({ code: 33, msg: 'неверная дата «' + opts.date + '» (ожидается ГГГГ-ММ-ДД)' }); return { errors, firstRun, digest }; }
     const r = detect(root, opts.lang, opts.date, errors);
     firstRun = r.firstRun; digest = r.digest;
   }
