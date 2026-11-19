@@ -141,9 +141,7 @@
     var pLabel = h('span', 'pt-prog-label');
     var bar = h('div', 'pt-bar'), barFill = h('i');
     bar.appendChild(barFill);
-    var pNote = h('span', 'pt-note');
-    pNote.setAttribute('aria-live', 'polite');
-    prog.appendChild(pLabel); prog.appendChild(bar); prog.appendChild(pNote);
+    prog.appendChild(pLabel); prog.appendChild(bar);
     var bReset = btn('pt-round', null, U.aria.reset);
     bReset.appendChild(iconReset());
     top.appendChild(bClose); top.appendChild(prog); top.appendChild(bReset);
@@ -194,12 +192,14 @@
       if (bump && !RM) { pLabel.classList.remove('pt-bump'); void pLabel.offsetWidth; pLabel.classList.add('pt-bump'); }
       bReset.disabled = remembered.length === 0;
     }
-    function note(text) {
-      pNote.textContent = text;
-      pNote.classList.remove('pt-note-on');
-      void pNote.offsetWidth;
-      pNote.classList.add('pt-note-on');
-      later(function () { pNote.classList.remove('pt-note-on'); pNote.textContent = ''; }, 2600);
+    // Плашка внизу карточки: «… вернётся позже» (около 2,5 с, не перекрывает шапку и кнопки)
+    function toast(text) {
+      var card = stage.querySelector('.pt-card');
+      if (!card) return;
+      var t = h('div', 'pt-toast' + (RM ? '' : ' pt-toast-anim'), text);
+      t.setAttribute('role', 'status');
+      card.appendChild(t);
+      timers.push(setTimeout(function () { if (t.parentNode) t.parentNode.removeChild(t); }, 2600)); // и без анимаций — чтобы успеть прочитать
     }
     function clearBottom() { bottom.textContent = ''; bottom.className = 'pt-bottom'; }
     function setStage(el) { stage.textContent = ''; stage.appendChild(el); }
@@ -241,14 +241,22 @@
       var card = h('div', 'pt-card pt-back');
       var head = h('div', 'pt-head');
       var wheel = btn('pt-wheel', null, U.aria.open_map);
-      wheel.appendChild(miniWheel(64, n, { life: lifeOf }));
+      var wheelReal = miniWheel(64, n, { life: lifeOf });
+      var wheelBlind = miniWheel(64, 0, { lit: {} });
+      wheel.appendChild(view ? wheelReal : wheelBlind);
       var exp = h('span', 'pt-wheel-open');
       exp.appendChild(iconExpand());
       wheel.appendChild(exp);
       wheel.addEventListener('click', function () { if (!busy) openMap(n); });
       head.appendChild(wheel);
       var meta = h('div', 'pt-meta');
-      meta.appendChild(h('b', '', T(fill(U.link_of, { n: n }))));
+      var lo = String(U.link_of).split('{n}');
+      var loB = h('b', '');
+      loB.appendChild(document.createTextNode(lo[0]));
+      var numEl = h('span', 'pt-num', T(n));
+      loB.appendChild(numEl);
+      loB.appendChild(document.createTextNode(lo[1] || ''));
+      meta.appendChild(loB);
       var lifeLine = h('span', 'pt-life');
       var dot = h('i', 'pt-dot pt-bg-' + lifeOf(n));
       lifeLine.appendChild(dot);
@@ -265,8 +273,8 @@
       var chain = h('div', 'pt-chain');
       var prev = btn('pt-nb', L(n - 1).name, fill(U.aria.prev, {}) + ': ' + L(n - 1).name);
       var next = btn('pt-nb', L(n + 1).name, fill(U.aria.next, {}) + ': ' + L(n + 1).name);
-      prev.addEventListener('click', function () { if (!busy) openView(L(n - 1).n); });
-      next.addEventListener('click', function () { if (!busy) openView(L(n + 1).n); });
+      prev.addEventListener('click', function () { if (!busy && !prev.classList.contains('pt-covered')) openView(L(n - 1).n); });
+      next.addEventListener('click', function () { if (!busy && !next.classList.contains('pt-covered')) openView(L(n + 1).n); });
       chain.appendChild(prev); chain.appendChild(h('span', 'pt-me')); chain.appendChild(next);
       card.appendChild(chain);
 
@@ -304,10 +312,12 @@
         el.removeAttribute('tabindex'); el.removeAttribute('role'); el.removeAttribute('aria-label');
         var sh = el.querySelector('.pt-shade');
         if (sh) sh.parentNode.removeChild(sh);
+        if (el === numEl && wheelBlind.parentNode) wheel.replaceChild(wheelReal, wheelBlind);
       }
       function recover(el) {
         if (el.classList.contains('pt-covered')) return;
         var label = el.getAttribute('data-pt-label') || '';
+        if (el === numEl && wheelReal.parentNode) wheel.replaceChild(wheelBlind, wheelReal);
         el.classList.add('pt-covered');
         el.setAttribute('tabindex', '0'); el.setAttribute('role', 'button');
         el.setAttribute('aria-label', U.aria.show + (label ? ' ' + label : ''));
@@ -317,6 +327,12 @@
         if (label) shade.appendChild(document.createTextNode(label));
         el.appendChild(shade);
       }
+      numEl.setAttribute('data-pt-label', '');
+      cover(numEl, '');
+      prev.setAttribute('data-pt-label', '\u2190');
+      next.setAttribute('data-pt-label', '\u2192');
+      cover(prev, '\u2190');
+      cover(next, '\u2192');
       lifeLine.setAttribute('data-pt-label', '');
       mean.setAttribute('data-pt-label', '');
       cover(lifeLine, '');
@@ -385,7 +401,7 @@
         queue = queue.filter(function (k) { return k !== n; });
         queue.push(n);
         showFront(queue[0], 'enter');
-        note(fill(U.returns_later, { name: L(n).name }));
+        toast(fill(U.returns_later, { name: L(n).name }));
       }, 360);
     }
 

@@ -53,11 +53,14 @@
 .app-paticcasamuppada .pt-bar { width: 180px; max-width: 100%; height: 6px; border-radius: 3px; background: var(--pt-bd); overflow: hidden; }
 .app-paticcasamuppada .pt-bar i { display: block; width: 0; height: 6px; border-radius: 3px; background: var(--pt-ac); transition: width 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), background 0.6s; }
 .app-paticcasamuppada .pt-bar.pt-bar-done i { background: var(--pt-ok); }
-.app-paticcasamuppada .pt-note {
-  position: absolute; top: 100%; left: 50%; z-index: 3; width: max-content; max-width: 100%; margin-top: 4px; transform: translateX(-50%);
-  font-size: 12px; color: var(--pt-tx2); text-align: center; opacity: 0; pointer-events: none;
+
+/* Плашка «… вернётся позже» внизу карточки */
+.app-paticcasamuppada .pt-toast {
+  position: absolute; left: 50%; bottom: 16px; z-index: 2; max-width: calc(100% - 32px); transform: translateX(-50%);
+  padding: 8px 14px; border-radius: 999px; border: 1px solid var(--pt-bd); background: var(--pt-hl); color: var(--pt-tx2);
+  font-size: 13px; line-height: 1.35; text-align: center; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18); pointer-events: none;
 }
-.app-paticcasamuppada .pt-note.pt-note-on { animation: app-paticcasamuppada-later 2.6s ease both; }
+.app-paticcasamuppada .pt-toast-anim { animation: app-paticcasamuppada-later 2.6s ease both; }
 
 /* --- Сцена и карточки --- */
 .app-paticcasamuppada .pt-stage { position: relative; flex: 1; min-height: 0; }
@@ -286,7 +289,7 @@
 
 /* --- Анимации --- */
 @keyframes app-paticcasamuppada-bump { 40% { transform: scale(1.18); color: var(--pt-ac); } }
-@keyframes app-paticcasamuppada-later { 0%, 100% { opacity: 0; } 12%, 80% { opacity: 1; } }
+@keyframes app-paticcasamuppada-later { 0% { opacity: 0; transform: translate(-50%, 8px); } 12%, 82% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; transform: translate(-50%, 0); } }
 @keyframes app-paticcasamuppada-enter { from { opacity: 0; transform: translateX(36px); } to { opacity: 1; transform: none; } }
 @keyframes app-paticcasamuppada-flip { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: none; } }
 @keyframes app-paticcasamuppada-leave { to { opacity: 0; transform: translateX(-44px) scale(0.96); } }
@@ -309,3 +312,11 @@
   .app-paticcasamuppada *::after { animation: none !important; transition: none !important; }
   .app-paticcasamuppada .pt-stag { opacity: 1; }
 }
+.app-paticcasamuppada .pt-num { position: relative; display: inline-block; min-width: 1.6em; text-align: center; }
+.app-paticcasamuppada .pt-num.pt-covered { min-width: 2.6em; }
+.app-paticcasamuppada .pt-num .pt-shade { inset: -3px -2px; border-radius: 7px; }
+.app-paticcasamuppada .pt-nb { position: relative; }
+.app-paticcasamuppada .pt-nb.pt-covered { text-decoration: none; }
+.app-paticcasamuppada .pt-nb .pt-shade { inset: 6px 0; }
+.app-paticcasamuppada .pt-wheel .pt-unlit { fill: var(--pt-tx2); opacity: 0.35; }
+.app-paticcasamuppada .pt-num.pt-covered { margin: 0 4px; }
