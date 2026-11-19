@@ -707,6 +707,16 @@
     <xhtml:link rel="alternate" hreflang="th" href="https://indapanno.github.io/terms/paticcasamuppada_thai.html"/>
   </url>
   <url>
+    <loc>https://indapanno.github.io/terms/patisandhi_ru.html</loc>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://indapanno.github.io/terms/patisandhi_ru.html"/>
+    <xhtml:link rel="alternate" hreflang="th" href="https://indapanno.github.io/terms/patisandhi_thai.html"/>
+  </url>
+  <url>
+    <loc>https://indapanno.github.io/terms/patisandhi_thai.html</loc>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://indapanno.github.io/terms/patisandhi_ru.html"/>
+    <xhtml:link rel="alternate" hreflang="th" href="https://indapanno.github.io/terms/patisandhi_thai.html"/>
+  </url>
+  <url>
     <loc>https://indapanno.github.io/terms/patta_ru.html</loc>
     <xhtml:link rel="alternate" hreflang="ru" href="https://indapanno.github.io/terms/patta_ru.html"/>
     <xhtml:link rel="alternate" hreflang="th" href="https://indapanno.github.io/terms/patta_thai.html"/>
@@ -885,6 +895,16 @@
     <loc>https://indapanno.github.io/terms/sammakammanta_thai.html</loc>
     <xhtml:link rel="alternate" hreflang="ru" href="https://indapanno.github.io/terms/sammakammanta_ru.html"/>
     <xhtml:link rel="alternate" hreflang="th" href="https://indapanno.github.io/terms/sammakammanta_thai.html"/>
+  </url>
+  <url>
+    <loc>https://indapanno.github.io/terms/samsara_ru.html</loc>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://indapanno.github.io/terms/samsara_ru.html"/>
+    <xhtml:link rel="alternate" hreflang="th" href="https://indapanno.github.io/terms/samsara_thai.html"/>
+  </url>
+  <url>
+    <loc>https://indapanno.github.io/terms/samsara_thai.html</loc>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://indapanno.github.io/terms/samsara_ru.html"/>
+    <xhtml:link rel="alternate" hreflang="th" href="https://indapanno.github.io/terms/samsara_thai.html"/>
   </url>
   <url>
     <loc>https://indapanno.github.io/terms/samudaya_ru.html</loc>
