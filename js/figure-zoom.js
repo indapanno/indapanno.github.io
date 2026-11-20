@@ -10,14 +10,15 @@
   var STR = {
     ru: { open: 'Увеличить', openAria: 'Увеличить рисунок', dialog: 'Просмотр рисунка', close: 'Закрыть',
       zin: 'Увеличить', zout: 'Уменьшить', fit: 'Вписать', fitted: 'Вписано',
-      helpMouse: 'Двойной щелчок по рисунку — увеличить · колесо с Ctrl — плавно · Esc — закрыть',
-      helpMouseZoomed: 'Перетаскивайте рисунок · двойной щелчок — вписать',
-      helpTouch: 'Разведите пальцы или коснитесь дважды, чтобы увеличить' },
+      // Подсказки-«клавиши» в верхней панели (зона управления, а не текст рисунка)
+      tipsFit: [{ i: 'mouse', k: ['2× щелчок'], t: 'увеличить' }, { k: ['Ctrl', 'колесо'], t: 'плавно', opt: 1 }, { k: ['Esc'], t: 'закрыть' }],
+      tipsZoomed: [{ i: 'hand', k: ['перетащить'], t: 'сдвинуть' }, { i: 'mouse', k: ['2× щелчок'], t: 'вписать' }, { k: ['Esc'], t: 'закрыть' }],
+      tipTouch: 'Два пальца или двойное касание — увеличить' },
     thai: { open: 'ขยาย', openAria: 'ขยายรูป', dialog: 'ดูรูป', close: 'ปิด',
       zin: 'ขยาย', zout: 'ย่อ', fit: 'พอดีจอ', fitted: 'พอดีจอ',
-      helpMouse: 'ดับเบิลคลิกที่รูปเพื่อขยาย · Ctrl + ล้อเมาส์ เพื่อขยายทีละน้อย · Esc เพื่อปิด',
-      helpMouseZoomed: 'ลากเพื่อเลื่อนดูรูป · ดับเบิลคลิกเพื่อพอดีจอ',
-      helpTouch: 'ถ่างสองนิ้วหรือแตะสองครั้งเพื่อขยาย' }
+      tipsFit: [{ i: 'mouse', k: ['ดับเบิลคลิก'], t: 'ขยาย' }, { k: ['Ctrl', 'ล้อเมาส์'], t: 'ขยายทีละน้อย', opt: 1 }, { k: ['Esc'], t: 'ปิด' }],
+      tipsZoomed: [{ i: 'hand', k: ['ลาก'], t: 'เลื่อนดู' }, { i: 'mouse', k: ['ดับเบิลคลิก'], t: 'พอดีจอ' }, { k: ['Esc'], t: 'ปิด' }],
+      tipTouch: 'ถ่างสองนิ้วหรือแตะสองครั้งเพื่อขยาย' }
   };
   var MAX = 4;                           // наибольшее увеличение относительно «вписано»
   var STEPS = [1, 1.5, 2, 3, 4];         // шаги кнопок − / + и клавиш
@@ -30,6 +31,11 @@
   }
   var ICON_ZOOM = svgIcon('M15.5 15.5L21 21M10.5 7.5v6M7.5 10.5h6', '<circle cx="10.5" cy="10.5" r="6.5"/>');
   var ICON_FIT = svgIcon('M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5');
+  var TIP_ICON = {
+    mouse: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true" focusable="false"><rect x="6" y="3" width="12" height="18" rx="6"/><path d="M12 7v3"/></svg>',
+    hand: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M8 11V6.5a1.5 1.5 0 0 1 3 0V11V5a1.5 1.5 0 0 1 3 0v6V6.5a1.5 1.5 0 0 1 3 0V14c0 3.5-2.4 6-5.8 6-2.4 0-3.9-1.1-5.3-3.2L4 13.4a1.5 1.5 0 0 1 2.4-1.8L8 13.5z"/></svg>',
+    pinch: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M14 4h6v6M10 20H4v-6M20 4l-6.5 6.5M4 20l6.5-6.5"/></svg>'
+  };
 
   document.addEventListener('DOMContentLoaded', function () {
     var figures = [];
@@ -74,22 +80,43 @@
       '<div class="fz-zoom"><button type="button" class="fz-btn fz-out">−</button>' +
       '<button type="button" class="fz-pct"></button>' +
       '<button type="button" class="fz-btn fz-in">+</button></div>' +
-      '<button type="button" class="fz-pct fz-fit">' + ICON_FIT + '<span></span></button></div>' +
+      '<button type="button" class="fz-pct fz-fit">' + ICON_FIT + '<span></span></button>' +
+      '<p class="fz-tiptouch">' + TIP_ICON.pinch + '<span></span></p></div>' +
+      '<div class="fz-tips" aria-hidden="true"></div>' +
       '<button type="button" class="fz-btn fz-close">✕</button></div>' +
       '<div class="fz-stage"><img class="fz-img" alt="" draggable="false">' +
       '<div class="fz-mini" aria-hidden="true"><span><img alt="" draggable="false"><i></i></span></div>' +
       '<div class="fz-pctflash" aria-hidden="true"></div></div>' +
-      '<p class="fz-cap"></p>' +
-      '<p class="fz-help"></p>';
+      '<p class="fz-cap"></p>';
     document.body.appendChild(dlg);
     var stage = dlg.querySelector('.fz-stage'), img = dlg.querySelector('.fz-img');
     var mini = dlg.querySelector('.fz-mini'), miniImg = mini.querySelector('img'), miniView = mini.querySelector('i');
-    var cap = dlg.querySelector('.fz-cap'), help = dlg.querySelector('.fz-help'), flash = dlg.querySelector('.fz-pctflash');
+    var cap = dlg.querySelector('.fz-cap'), tipsBox = dlg.querySelector('.fz-tips'), flash = dlg.querySelector('.fz-pctflash');
     var bOut = dlg.querySelector('.fz-out'), bIn = dlg.querySelector('.fz-in'), bPct = dlg.querySelector('.fz-zoom .fz-pct');
     var bFit = dlg.querySelector('.fz-fit'), bClose = dlg.querySelector('.fz-close');
     bOut.setAttribute('aria-label', s.zout); bIn.setAttribute('aria-label', s.zin);
     bPct.setAttribute('aria-label', s.fit); bClose.setAttribute('aria-label', s.close);
     bFit.querySelector('span').textContent = s.fit;
+    dlg.querySelector('.fz-tiptouch span').textContent = s.tipTouch;
+    // Подсказки для мыши: значок, «клавиши», действие; второстепенные прячутся на узком экране
+    function buildTips(list) {
+      var box = document.createElement('div');
+      list.forEach(function (tip, n) {
+        var el = document.createElement('span');
+        el.className = 'fz-tip' + (tip.opt ? ' fz-tip-opt' : '');
+        if (tip.i) el.insertAdjacentHTML('beforeend', TIP_ICON[tip.i]);
+        tip.k.forEach(function (k, j) {
+          if (j) el.appendChild(document.createTextNode('+'));
+          var kb = document.createElement('kbd'); kb.textContent = k; el.appendChild(kb);
+        });
+        var t = document.createElement('span'); t.className = 'fz-tip-t'; t.textContent = tip.t; el.appendChild(t);
+        box.appendChild(el);
+      });
+      return box;
+    }
+    var tipsFit = buildTips(s.tipsFit), tipsZoomed = buildTips(s.tipsZoomed);
+    tipsFit.className = 'fz-tips-fit'; tipsZoomed.className = 'fz-tips-zoomed';
+    tipsBox.appendChild(tipsFit); tipsBox.appendChild(tipsZoomed);
 
     var cur = null, opener = null, pushed = false, flashTimer = null;
     var W = 0, H = 0, fitW = 0, fitH = 0, ratio = 1;   // размеры сцены и вписанного рисунка
@@ -140,8 +167,6 @@
       bPct.textContent = '';
       if (zoomed) { bPct.innerHTML = ICON_FIT; bPct.appendChild(document.createTextNode(pctText())); }
       else bPct.textContent = s.fitted;
-      // Подсказка внизу — всегда на виду, по состоянию: как увеличить / как двигать и вписать
-      help.textContent = isTouch() ? (zoomed ? '' : s.helpTouch) : (zoomed ? s.helpMouseZoomed : s.helpMouse);
       bPct.disabled = !zoomed; bOut.disabled = !zoomed; bIn.disabled = sc >= MAX - 0.01;
       // Мини-карта: какая часть рисунка сейчас видна
       if (zoomed) {
