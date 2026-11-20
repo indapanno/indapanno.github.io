@@ -241,13 +241,11 @@
       var card = h('div', 'pt-card pt-back');
       var head = h('div', 'pt-head');
       var wheel = btn('pt-wheel', null, U.aria.open_map);
-      var wheelReal = miniWheel(64, n, { life: lifeOf });
-      var wheelBlind = miniWheel(64, 0, { lit: {} });
-      wheel.appendChild(view ? wheelReal : wheelBlind);
+      wheel.appendChild(miniWheel(64, n, { life: lifeOf }));
       var exp = h('span', 'pt-wheel-open');
       exp.appendChild(iconExpand());
       wheel.appendChild(exp);
-      wheel.addEventListener('click', function () { if (!busy) openMap(n); });
+      wheel.addEventListener('click', function () { if (!busy && !wheel.classList.contains('pt-covered')) openMap(n); });
       head.appendChild(wheel);
       var meta = h('div', 'pt-meta');
       var lo = String(U.link_of).split('{n}');
@@ -312,12 +310,10 @@
         el.removeAttribute('tabindex'); el.removeAttribute('role'); el.removeAttribute('aria-label');
         var sh = el.querySelector('.pt-shade');
         if (sh) sh.parentNode.removeChild(sh);
-        if (el === numEl && wheelBlind.parentNode) wheel.replaceChild(wheelReal, wheelBlind);
       }
       function recover(el) {
         if (el.classList.contains('pt-covered')) return;
         var label = el.getAttribute('data-pt-label') || '';
-        if (el === numEl && wheelReal.parentNode) wheel.replaceChild(wheelBlind, wheelReal);
         el.classList.add('pt-covered');
         el.setAttribute('tabindex', '0'); el.setAttribute('role', 'button');
         el.setAttribute('aria-label', U.aria.show + (label ? ' ' + label : ''));
@@ -327,6 +323,8 @@
         if (label) shade.appendChild(document.createTextNode(label));
         el.appendChild(shade);
       }
+      wheel.setAttribute('data-pt-label', '');
+      cover(wheel, '');
       numEl.setAttribute('data-pt-label', '');
       cover(numEl, '');
       prev.setAttribute('data-pt-label', '\u2190');

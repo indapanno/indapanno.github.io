@@ -318,5 +318,7 @@
 .app-paticcasamuppada .pt-nb { position: relative; }
 .app-paticcasamuppada .pt-nb.pt-covered { text-decoration: none; }
 .app-paticcasamuppada .pt-nb .pt-shade { inset: 6px 0; }
-.app-paticcasamuppada .pt-wheel .pt-unlit { fill: var(--pt-tx2); opacity: 0.35; }
 .app-paticcasamuppada .pt-num.pt-covered { margin: 0 4px; }
+.app-paticcasamuppada .pt-wheel.pt-covered > svg,
+.app-paticcasamuppada .pt-wheel.pt-covered .pt-wheel-open { visibility: hidden; }
+.app-paticcasamuppada .pt-wheel .pt-shade { border-radius: 50%; }
