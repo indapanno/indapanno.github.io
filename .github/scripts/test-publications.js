@@ -209,7 +209,7 @@ const count = (s, sub) => s.split(sub).length - 1;
   check('data-term → адрес карточки, новая вкладка', a.includes('<a href="/terms/t1_ru.html" target="_blank" rel="noopener noreferrer">термин</a>'));
   check('внешняя ссылка: новая вкладка и rel', a.includes('href="https://example.com/x?a=1&b=2" target="_blank" rel="noopener noreferrer"'));
   check('якорная ссылка без target', a.includes('<a href="#s1">якорь</a>'));
-  check('картинка: путь, размеры, lazy', a.includes('<img src="/publications/covers/c1.png" alt="Рисунок &quot;один&quot;" width="1200" height="630" loading="lazy">'));
+  check('картинка: путь, размеры, lazy', a.includes('<img src="/publications/covers/c1.png" alt="Рисунок &quot;один&quot;" width="1200" height="630" loading="lazy" data-zoom="/publications/covers/c1.png">'));
   const two = one('<h2>Один</h2>' + BODY + '<h2>Два</h2>');
   check('оглавления нет при двух h2', !two.read('a-one.html').includes('pub-toc'));
 }
@@ -233,8 +233,8 @@ const count = (s, sub) => s.split(sub).length - 1;
   const r = env({ 's1.png': png(1700, 1150), 's1-dark.png': png(1700, 1150) });
   const a = r.read('a-one.html');
   check('тёмная версия: без ошибок', r.errors.length === 0, JSON.stringify(r.errors));
-  check('тёмная версия: светлая картинка с классом', a.includes('<img class="pub-img-light" src="/publications/covers/s1.png" alt="Схема" width="1700" height="1150" loading="lazy">'));
-  check('тёмная версия: тёмная картинка с классом', a.includes('<img class="pub-img-dark" src="/publications/covers/s1-dark.png" alt="Схема" width="1700" height="1150" loading="lazy">'));
+  check('тёмная версия: светлая картинка с классом', a.includes('<img class="pub-img-light" src="/publications/covers/s1.png" alt="Схема" width="1700" height="1150" loading="lazy" data-zoom="/publications/covers/s1.png">'));
+  check('тёмная версия: тёмная картинка с классом', a.includes('<img class="pub-img-dark" src="/publications/covers/s1-dark.png" alt="Схема" width="1700" height="1150" loading="lazy" data-zoom="/publications/covers/s1-dark.png">'));
   check('тёмная версия: подпись одна', (a.match(/<figcaption>/g) || []).length === 1);
   const n = env({ 's1.png': png(1700, 1150) });
   check('без тёмной версии: одна картинка без класса', n.errors.length === 0 && n.read('a-one.html').includes('<img src="/publications/covers/s1.png" alt="Схема"') && !n.read('a-one.html').includes('pub-img-'));
@@ -244,6 +244,27 @@ const count = (s, sub) => s.split(sub).length - 1;
   check('битая тёмная версия: предупреждение 14, только светлая', bd.codes.join() === '14' && !bd.read('a-one.html').includes('s1-dark.png') && bd.has('a-one.html'));
   const own = makeEnv({ json: { 'publication_1_ru.json': tile() }, html: { 'a-one.html': BODY + '<figure><img src="s1-dark.png" alt="Тёмная"></figure>' }, covers: Object.assign(cov(), { 's1-dark.png': png(1700, 1150), 's1-dark-dark.png': png(1700, 1150) }) });
   check('рисунок «-dark» напрямую: одна картинка, без пары', own.errors.length === 0 && !own.read('a-one.html').includes('s1-dark-dark') && !own.read('a-one.html').includes('pub-img-'));
+}
+
+// 6б. Увеличение рисунка: data-zoom, крупная версия «имя-2x.png», скрипт и стили окна просмотра
+{
+  const FIG = '<figure><img src="s1.png" alt="Схема"><figcaption>Подпись</figcaption></figure>';
+  const env = covers => makeEnv({ json: { 'publication_1_ru.json': tile() }, html: { 'a-one.html': BODY + FIG }, covers: Object.assign(cov(), covers) });
+  const r = env({ 's1.png': png(1700, 1150), 's1-2x.png': png(3400, 2300), 's1-dark.png': png(1700, 1150), 's1-dark-2x.png': png(3400, 2300) });
+  const a = r.read('a-one.html');
+  check('увеличение: без ошибок', r.errors.length === 0, JSON.stringify(r.errors));
+  check('увеличение: светлая — крупная версия в data-zoom', a.includes('src="/publications/covers/s1.png" alt="Схема" width="1700" height="1150" loading="lazy" data-zoom="/publications/covers/s1-2x.png"'));
+  check('увеличение: тёмная — своя крупная версия', a.includes('src="/publications/covers/s1-dark.png" alt="Схема" width="1700" height="1150" loading="lazy" data-zoom="/publications/covers/s1-dark-2x.png"'));
+  check('увеличение: подключены скрипт и стили', a.includes('<script src="/js/figure-zoom.js"></script>') && a.includes('<link rel="stylesheet" href="/css/figure-zoom.css">'));
+  check('увеличение: обложка без data-zoom', !/pub-cover"><img[^>]*data-zoom/.test(a));
+  const one = env({ 's1.png': png(1700, 1150) });
+  check('без крупной версии: data-zoom — сам рисунок', one.errors.length === 0 && one.read('a-one.html').includes('loading="lazy" data-zoom="/publications/covers/s1.png"'));
+  const bad = env({ 's1.png': png(1700, 1150), 's1-2x.png': png(3400, 1700) });
+  check('крупная версия другой пропорции: предупреждение 14, data-zoom — сам рисунок', bad.codes.join() === '14' && bad.read('a-one.html').includes('data-zoom="/publications/covers/s1.png"'));
+  const small = env({ 's1.png': png(1700, 1150), 's1-2x.png': png(1700, 1150) });
+  check('крупная версия не крупнее: предупреждение 14', small.codes.join() === '14' && !small.read('a-one.html').includes('s1-2x'));
+  const plain = makeEnv({ json: { 'publication_1_ru.json': tile() }, html: { 'a-one.html': BODY }, covers: cov() });
+  check('статья без рисунков: окно просмотра не подключено', !plain.read('a-one.html').includes('figure-zoom'));
 }
 
 // 7. Предупреждения

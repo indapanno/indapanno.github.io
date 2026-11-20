@@ -129,6 +129,21 @@ function darkVersion(coversDir, name, info, soft) {
   return darkName;
 }
 
+// Крупная версия рисунка для увеличения: «имя.png» → «имя-2x.png» (тёмная: «имя-dark-2x.png»).
+// Нет файла — null. Файл битый, больше 1 МБ или с другой пропорцией — предупреждение 14, null (увеличивается сам рисунок).
+function zoomVersion(coversDir, name, info, soft) {
+  if (/-2x\.[A-Za-z]+$/.test(name)) return null;
+  const big = name.replace(/(\.[A-Za-z]+)$/, '-2x$1');
+  if (big === name || !fs.existsSync(path.join(coversDir, big))) return null;
+  const z = checkImageFile(coversDir, big);
+  if (z.error) { soft.push({ code: 14, msg: 'крупная версия рисунка: ' + z.error.msg + '; увеличивается обычная' }); return null; }
+  if (!info.w || !info.h || !z.info.w || !z.info.h || Math.abs(z.info.w / z.info.h - info.w / info.h) > 0.01 || z.info.w <= info.w) {
+    soft.push({ code: 14, msg: 'крупная версия «' + big + '»: ' + z.info.w + '×' + z.info.h + ' — должна быть шире ' + info.w + ' px и той же пропорции, что ' + info.w + '×' + info.h + '; увеличивается обычная' });
+    return null;
+  }
+  return big;
+}
+
 // --- Проверка одного JSON плитки (ошибки №1–10, предупреждения) ---
 function validateJson(file, lang, text, ctx) {
   const errors = [], warnings = [];
@@ -542,7 +557,7 @@ function renderWidget(kind, attrs, inner, lang, ctx, wstate) {
 
 function processArticle(src, lang, ctx, opts) {
   const errors = [], soft = [];
-  const wstate = { check: 0, gallery: false, apps: new Map() };
+  const wstate = { check: 0, gallery: false, figures: false, apps: new Map() };
   const fail = msg => errors.push({ code: 11, msg });
   const out = [];
   const stack = [];
@@ -685,10 +700,13 @@ function processArticle(src, lang, ctx, opts) {
         const alt = escAttr(attrs.alt.trim());
         // Тёмная версия: рядом файл «имя-dark.расширение» того же размера → две картинки, видна одна — по теме сайта
         const dark = darkVersion(ctx.coversDir, srcName, r.info, soft);
+        // Увеличение в окне просмотра (js/figure-zoom.js): data-zoom — крупная версия «имя-2x.расширение», если есть, иначе сам рисунок
+        const zoom = n => ' data-zoom="' + escAttr(cfg.coverPath(zoomVersion(ctx.coversDir, n, r.info, soft) || n)) + '"';
+        wstate.figures = true;
         open = dark
-          ? '<img class="pub-img-light" src="' + escAttr(cfg.coverPath(srcName)) + '" alt="' + alt + '"' + size + ' loading="lazy">'
-            + '<img class="pub-img-dark" src="' + escAttr(cfg.coverPath(dark)) + '" alt="' + alt + '"' + size + ' loading="lazy">'
-          : '<img src="' + escAttr(cfg.coverPath(srcName)) + '" alt="' + alt + '"' + size + ' loading="lazy">';
+          ? '<img class="pub-img-light" src="' + escAttr(cfg.coverPath(srcName)) + '" alt="' + alt + '"' + size + ' loading="lazy"' + zoom(srcName) + '>'
+            + '<img class="pub-img-dark" src="' + escAttr(cfg.coverPath(dark)) + '" alt="' + alt + '"' + size + ' loading="lazy"' + zoom(dark) + '>'
+          : '<img src="' + escAttr(cfg.coverPath(srcName)) + '" alt="' + alt + '"' + size + ' loading="lazy"' + zoom(srcName) + '>';
       }
     } else if (tag === 'aside') {
       const classes = (attrs.class || '').split(/\s+/).filter(Boolean);
@@ -728,7 +746,7 @@ function processArticle(src, lang, ctx, opts) {
 
   const clean = text.replace(/\s+/g, ' ').trim();
   if (!errors.length && !clean && !(opts && opts.inner)) errors.push({ code: 12, msg: 'статья пустая' });
-  return { errors, soft, html: out.join(''), text: clean, h2s, gallery: wstate.gallery, apps: wstate.apps };
+  return { errors, soft, html: out.join(''), text: clean, h2s, gallery: wstate.gallery, figures: wstate.figures, apps: wstate.apps };
 }
 
 // --- HTML страниц ---
@@ -830,6 +848,7 @@ function articlePage(lang, pub, art, layout) {
     + toc
     + '<div class="pub-body">' + art.html + '</div></article>'
     + (art.gallery ? '<script src="/js/gallery.js"></script>' : '')
+    + (art.figures ? '<script src="/js/figure-zoom.js"></script>' : '')
     // Приложения: общий запуск и файлы каждого приложения — только в статьях, где они есть
     + (art.apps && art.apps.size ? '<script src="/js/app-launcher.js"></script>'
       + Array.from(art.apps).map(([n, v]) => '<script src="' + escAttr(cfg.appPath(n, 'app.js')) + '?v=' + encodeURIComponent(v) + '"></script>').join('') : '')
@@ -841,6 +860,7 @@ function articlePage(lang, pub, art, layout) {
     url, desc: clipMeta(d.lead, META_DESC_MAX, lang), type: 'article', title: d.headline, image: cfg.coverUrl(d.cover)
   });
   const headAll = head + (art.gallery ? '\n<link rel="stylesheet" href="/css/gallery.css">' : '')
+    + (art.figures ? '\n<link rel="stylesheet" href="/css/figure-zoom.css">' : '')
     + (art.apps && art.apps.size ? '\n<link rel="stylesheet" href="/css/app-launcher.css">'
       + Array.from(art.apps).map(([n, v]) => '\n<link rel="stylesheet" href="' + escAttr(cfg.appPath(n, 'app.css')) + '?v=' + encodeURIComponent(v) + '">').join('') : '');
   return { file: d.html, html: cfg.withLangSwitch(fill(layout, { title: escapeHtml(d.headline), head: headAll, h1: escapeHtml(d.headline), main }), cfg.articlePath(d.html), lang), url };
