@@ -419,7 +419,16 @@
       box.setAttribute('role', 'status');
       var wheelBox = h('div', 'pt-mswheel');
       var s = svg('svg', { viewBox: '0 0 200 200', 'aria-hidden': 'true', focusable: 'false' });
-      s.appendChild(svg('circle', { cx: 100, cy: 100, r: 86, fill: 'none', 'stroke-width': 2, 'class': 'pt-bd-s' }));
+      for (var j = 1; j <= 12; j++) {
+        var nx = j % 12 + 1, a1 = (-90 + (j - 1) * 30 + 11) * Math.PI / 180, a2 = a1 + 8 * Math.PI / 180;
+        var same = lifeOf(j) === lifeOf(nx);
+        s.appendChild(svg('path', {
+          d: 'M' + (100 + 86 * Math.cos(a1)).toFixed(2) + ' ' + (100 + 86 * Math.sin(a1)).toFixed(2) +
+             ' A86 86 0 0 1 ' + (100 + 86 * Math.cos(a2)).toFixed(2) + ' ' + (100 + 86 * Math.sin(a2)).toFixed(2),
+          fill: 'none', 'stroke-width': 2.5, 'stroke-linecap': 'round',
+          'class': 'pt-msarc ' + (same ? 'pt-life-s-' + lifeOf(j) : 'pt-bd-s')
+        }));
+      }
       for (var k = 1; k <= 12; k++) {
         var p = pt(100, 100, 86, k);
         if (k === n) {
