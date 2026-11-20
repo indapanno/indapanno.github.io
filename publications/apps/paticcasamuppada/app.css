@@ -175,8 +175,9 @@
 .app-paticcasamuppada .pt-msover { margin-top: 16px; font-size: 12px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; color: var(--pt-ok); }
 .app-paticcasamuppada .pt-msname { margin-top: 4px; font-family: var(--font-display); font-size: 32px; font-weight: 700; line-height: 1.2; }
 .app-paticcasamuppada .pt-msmean { margin-top: 2px; font-family: var(--font-display); font-style: italic; font-size: 16px; color: var(--pt-ink); }
-.app-paticcasamuppada .pt-chips { margin-top: 16px; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px; }
-.app-paticcasamuppada .pt-chip { padding: 5px 10px; border-radius: 999px; border: 1px solid var(--pt-bd); background: var(--pt-el); color: var(--pt-tx2); font-size: 13px; font-weight: 600; }
+.app-paticcasamuppada .pt-chips { margin-top: 16px; max-width: 100%; display: flex; flex-wrap: nowrap; align-items: center; justify-content: center; gap: 6px; }
+.app-paticcasamuppada .pt-chips svg { flex: none; }
+.app-paticcasamuppada .pt-chip { flex: none; white-space: nowrap; padding: 5px 10px; border-radius: 999px; border: 1px solid var(--pt-bd); background: var(--pt-el); color: var(--pt-tx2); font-size: 13px; font-weight: 600; }
 .app-paticcasamuppada .pt-chip-me { border-color: var(--pt-ac); background: var(--pt-ac); color: var(--pt-pritx); }
 .app-paticcasamuppada .pt-arr { stroke: var(--pt-tx2); }
 .app-paticcasamuppada .pt-arr-draw { stroke-dasharray: 24; stroke-dashoffset: 24; animation: app-paticcasamuppada-draw 0.5s ease forwards; }

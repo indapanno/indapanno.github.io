@@ -466,6 +466,7 @@
       delay = 1.3; stag(ex);
       delay = 1.5; stag(h('div', 'pt-msphrase', nextPhrase()));
       setStage(box);
+      fitChips(chips);
       clearBottom();
       var b = btn('pt-btn pt-btn-pri pt-wide', U.continue);
       b.disabled = true;
@@ -483,6 +484,19 @@
         if (!RM) { path.classList.add('pt-arr-draw'); path.style.animationDelay = dl + 's'; }
         a2.appendChild(path);
         return a2;
+      }
+    }
+
+    // Цепочка «пред → звено → след» в одну строку: уменьшаем шрифт, отступы и промежутки, пока не влезет
+    function fitChips(chips) {
+      var steps = [[13, 10, 6, 20], [12, 8, 5, 18], [11, 7, 4, 16], [10, 6, 3, 14], [9, 5, 2, 12]];
+      var items = chips.querySelectorAll('.pt-chip'), arrows = chips.querySelectorAll('svg');
+      for (var i = 0; i < steps.length; i++) {
+        var st = steps[i];
+        chips.style.gap = st[2] + 'px';
+        for (var j = 0; j < items.length; j++) { items[j].style.fontSize = st[0] + 'px'; items[j].style.paddingLeft = items[j].style.paddingRight = st[1] + 'px'; }
+        for (var k = 0; k < arrows.length; k++) arrows[k].setAttribute('width', st[3]);
+        if (chips.scrollWidth <= chips.clientWidth + 1) return;
       }
     }
 
