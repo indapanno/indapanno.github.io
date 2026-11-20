@@ -117,6 +117,7 @@
     var screen = null;                      // основной экран: { type: 'front'|'back'|'milestone'|'finale', n }
     var overlays = [];                      // поверх основного: карта и просмотр звена
     var busy = false;
+    var opened = null;                      // открытые заглушки текущей карточки — до «Помню» / «Не помню»
 
     function rebuildQueue() {
       queue = shuffle(D.links.filter(function (l) { return remembered.indexOf(l.id) === -1; }).map(function (l) { return l.n; }));
@@ -303,16 +304,18 @@
         el.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } });
         covered.push(el);
       }
-      function uncover(el) {
+      function uncover(el, quiet) {
         if (!el.classList.contains('pt-covered')) return;
         el.classList.remove('pt-covered');
-        if (!RM) { el.classList.remove('pt-reveal'); void el.offsetWidth; el.classList.add('pt-reveal'); }
+        if (!view && opened && opened.n === n) opened.idx[covered.indexOf(el)] = true;
+        if (!RM && !quiet) { el.classList.remove('pt-reveal'); void el.offsetWidth; el.classList.add('pt-reveal'); }
         el.removeAttribute('tabindex'); el.removeAttribute('role'); el.removeAttribute('aria-label');
         var sh = el.querySelector('.pt-shade');
         if (sh) sh.parentNode.removeChild(sh);
       }
       function recover(el) {
         if (el.classList.contains('pt-covered')) return;
+        if (!view && opened && opened.n === n) delete opened.idx[covered.indexOf(el)];
         var label = el.getAttribute('data-pt-label') || '';
         el.classList.add('pt-covered');
         el.setAttribute('tabindex', '0'); el.setAttribute('role', 'button');
@@ -336,6 +339,8 @@
       cover(lifeLine, '');
       cover(mean, '');
       bubbles.forEach(function (b, i) { b.setAttribute('data-pt-label', T(i + 1)); cover(b, T(i + 1)); });
+      // Что уже открыто на этой карточке (после карты или просмотра соседа) — снова открыто
+      if (!view && opened && opened.n === n) Object.keys(opened.idx).forEach(function (i) { if (covered[i]) uncover(covered[i], true); });
 
       var toggle = null;
       function sync() {
@@ -360,6 +365,7 @@
 
     function showBack(n) {
       screen = { type: 'back', n: n };
+      if (!opened || opened.n !== n) opened = { n: n, idx: {} };
       var b = backCard(n, false);
       if (!RM) b.card.classList.add('pt-flip');
       setStage(b.card);
@@ -377,6 +383,7 @@
 
     function remember(n, b) {
       busy = true;
+      opened = null;
       var d = L(n);
       if (remembered.indexOf(d.id) === -1) remembered.push(d.id);
       saveRemembered(ctx, remembered);
@@ -393,6 +400,7 @@
 
     function notYet(n, card) {
       busy = true;
+      opened = null;
       if (!RM) card.classList.add('pt-leave');
       later(function () {
         busy = false;
