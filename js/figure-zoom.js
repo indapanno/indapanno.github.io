@@ -238,7 +238,10 @@
     }
     // Мышь: двойной щелчок по рисунку — 200 % в этой точке; при увеличении двойной щелчок — вписать
     // (одиночный щелчок ничего не меняет: меньше случайных срабатываний)
+    // Двойной щелчок не должен выделять мини-карту и текст (браузер закрашивает выделенное синим)
+    stage.addEventListener('mousedown', function (e) { if (e.detail > 1) e.preventDefault(); });
     stage.addEventListener('dblclick', function (e) {
+      try { var sel = window.getSelection(); if (sel && sel.removeAllRanges) sel.removeAllRanges(); } catch (er) { /* ничего */ }
       if (isTouch()) return;
       if (sc > 1.01) { fit(); return; }
       if (insideImg(e)) { var r = rel(e); zoomTo(2, r.x, r.y, true); }

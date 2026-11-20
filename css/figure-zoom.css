@@ -79,7 +79,8 @@ html.figzoom-open { overflow: hidden; }
 .fz-btn:focus-visible, .fz-pct:focus-visible { outline: 2px solid var(--link-color); outline-offset: 2px; }
 .fz-fit { display: none; border-color: var(--accent); color: var(--accent); }
 
-.fz-stage { position: relative; flex: 1; min-height: 0; overflow: hidden; touch-action: none; cursor: zoom-in; }
+.fz-stage { position: relative; flex: 1; min-height: 0; overflow: hidden; touch-action: none; cursor: zoom-in; user-select: none; -webkit-user-select: none; }
+.fz-top, .fz-mini, .fz-mini img { user-select: none; -webkit-user-select: none; }
 .figzoom-dlg.fz-zoomed .fz-stage { cursor: grab; }
 .fz-stage.fz-grabbing { cursor: grabbing !important; }
 .fz-img { position: absolute; max-width: none; border-radius: 8px; transform-origin: 50% 50%; user-select: none; -webkit-user-select: none; -webkit-user-drag: none; pointer-events: none; }
