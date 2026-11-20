@@ -226,6 +226,26 @@ const count = (s, sub) => s.split(sub).length - 1;
   check('мягкие ошибки: плитка в списке и sitemap', r.read('index.html').includes('a-one.html') && r.sitemap.includes('a-one.html'));
 }
 
+// 6а. Тёмная версия рисунка: «имя-dark.png» рядом → две картинки, видна одна по теме сайта
+{
+  const FIG = '<figure><img src="s1.png" alt="Схема"><figcaption>Подпись</figcaption></figure>';
+  const env = covers => makeEnv({ json: { 'publication_1_ru.json': tile() }, html: { 'a-one.html': BODY + FIG }, covers: Object.assign(cov(), covers) });
+  const r = env({ 's1.png': png(1700, 1150), 's1-dark.png': png(1700, 1150) });
+  const a = r.read('a-one.html');
+  check('тёмная версия: без ошибок', r.errors.length === 0, JSON.stringify(r.errors));
+  check('тёмная версия: светлая картинка с классом', a.includes('<img class="pub-img-light" src="/publications/covers/s1.png" alt="Схема" width="1700" height="1150" loading="lazy">'));
+  check('тёмная версия: тёмная картинка с классом', a.includes('<img class="pub-img-dark" src="/publications/covers/s1-dark.png" alt="Схема" width="1700" height="1150" loading="lazy">'));
+  check('тёмная версия: подпись одна', (a.match(/<figcaption>/g) || []).length === 1);
+  const n = env({ 's1.png': png(1700, 1150) });
+  check('без тёмной версии: одна картинка без класса', n.errors.length === 0 && n.read('a-one.html').includes('<img src="/publications/covers/s1.png" alt="Схема"') && !n.read('a-one.html').includes('pub-img-'));
+  const sz = env({ 's1.png': png(1700, 1150), 's1-dark.png': png(1600, 1150) });
+  check('тёмная версия другого размера: предупреждение 14, только светлая', sz.codes.join() === '14' && sz.errors.every(e => e.soft) && !sz.read('a-one.html').includes('s1-dark.png') && sz.read('a-one.html').includes('s1.png'));
+  const bd = env({ 's1.png': png(1700, 1150), 's1-dark.png': Buffer.from('не картинка') });
+  check('битая тёмная версия: предупреждение 14, только светлая', bd.codes.join() === '14' && !bd.read('a-one.html').includes('s1-dark.png') && bd.has('a-one.html'));
+  const own = makeEnv({ json: { 'publication_1_ru.json': tile() }, html: { 'a-one.html': BODY + '<figure><img src="s1-dark.png" alt="Тёмная"></figure>' }, covers: Object.assign(cov(), { 's1-dark.png': png(1700, 1150), 's1-dark-dark.png': png(1700, 1150) }) });
+  check('рисунок «-dark» напрямую: одна картинка, без пары', own.errors.length === 0 && !own.read('a-one.html').includes('s1-dark-dark') && !own.read('a-one.html').includes('pub-img-'));
+}
+
 // 7. Предупреждения
 {
   const r = makeEnv({

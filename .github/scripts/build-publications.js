@@ -114,6 +114,21 @@ function checkImageFile(coversDir, name, where) {
   return { error: null, info };
 }
 
+// Тёмная версия рисунка для тёмной темы сайта: «имя.png» → «имя-dark.png» в той же папке.
+// Нет файла — null (рисунок один). Файл есть, но битый или другого размера — предупреждение 14, null.
+function darkVersion(coversDir, name, info, soft) {
+  if (/-dark\.[A-Za-z]+$/.test(name)) return null;
+  const darkName = name.replace(/(\.[A-Za-z]+)$/, '-dark$1');
+  if (darkName === name || !fs.existsSync(path.join(coversDir, darkName))) return null;
+  const d = checkImageFile(coversDir, darkName);
+  if (d.error) { soft.push({ code: 14, msg: 'тёмная версия рисунка: ' + d.error.msg + '; во всех темах показана светлая' }); return null; }
+  if (d.info.w !== info.w || d.info.h !== info.h) {
+    soft.push({ code: 14, msg: 'тёмная версия «' + darkName + '»: размер ' + d.info.w + '×' + d.info.h + ' не совпадает со светлой ' + info.w + '×' + info.h + '; во всех темах показана светлая' });
+    return null;
+  }
+  return darkName;
+}
+
 // --- Проверка одного JSON плитки (ошибки №1–10, предупреждения) ---
 function validateJson(file, lang, text, ctx) {
   const errors = [], warnings = [];
@@ -667,7 +682,13 @@ function processArticle(src, lang, ctx, opts) {
       if (r.error) { soft.push({ code: 14, msg: 'рисунок: ' + r.error.msg + '; рисунок пропущен' }); drop = true; }
       else {
         const size = r.info.w && r.info.h ? ' width="' + r.info.w + '" height="' + r.info.h + '"' : '';
-        open = '<img src="' + escAttr(cfg.coverPath(srcName)) + '" alt="' + escAttr(attrs.alt.trim()) + '"' + size + ' loading="lazy">';
+        const alt = escAttr(attrs.alt.trim());
+        // Тёмная версия: рядом файл «имя-dark.расширение» того же размера → две картинки, видна одна — по теме сайта
+        const dark = darkVersion(ctx.coversDir, srcName, r.info, soft);
+        open = dark
+          ? '<img class="pub-img-light" src="' + escAttr(cfg.coverPath(srcName)) + '" alt="' + alt + '"' + size + ' loading="lazy">'
+            + '<img class="pub-img-dark" src="' + escAttr(cfg.coverPath(dark)) + '" alt="' + alt + '"' + size + ' loading="lazy">'
+          : '<img src="' + escAttr(cfg.coverPath(srcName)) + '" alt="' + alt + '"' + size + ' loading="lazy">';
       }
     } else if (tag === 'aside') {
       const classes = (attrs.class || '').split(/\s+/).filter(Boolean);

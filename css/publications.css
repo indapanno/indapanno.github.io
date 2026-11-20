@@ -235,6 +235,16 @@
   border-radius: 10px;
 }
 
+/* Рисунок с тёмной версией (рядом файл «имя-dark.png»): сборка ставит обе картинки,
+   видна одна — по теме сайта (тёмная тема по умолчанию, светлая — html[data-theme="light"]). При печати — светлая. */
+.pub-body figure img.pub-img-light { display: none; }
+html[data-theme="light"] .pub-body figure img.pub-img-light { display: block; }
+html[data-theme="light"] .pub-body figure img.pub-img-dark { display: none; }
+@media print {
+  .pub-body figure img.pub-img-light { display: block; }
+  .pub-body figure img.pub-img-dark { display: none; }
+}
+
 .pub-body figcaption {
   margin-top: 0.4rem;
   font-size: 0.82rem;
