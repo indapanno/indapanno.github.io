@@ -590,8 +590,10 @@
 
       var area = h('div', 'pt-maparea');
       var s = svg('svg', { viewBox: '0 0 330 330', 'aria-hidden': 'true', focusable: 'false' });
+      // Радиус круга звеньев в единицах viewBox; подписи ставятся от края кружка в пикселях
+      var RN = 78, LGAP = 20;   // LGAP, px: половина кружка (16) + зазор 4
       function arc(fromDeg, toDeg, cls) {
-        var r = 90, a1 = fromDeg * Math.PI / 180, a2 = toDeg * Math.PI / 180;
+        var r = RN, a1 = fromDeg * Math.PI / 180, a2 = toDeg * Math.PI / 180;
         var large = (toDeg - fromDeg) > 180 ? 1 : 0;
         var d = 'M' + (165 + r * Math.cos(a1)).toFixed(1) + ' ' + (165 + r * Math.sin(a1)).toFixed(1)
           + ' A' + r + ' ' + r + ' 0 ' + large + ' 1 ' + (165 + r * Math.cos(a2)).toFixed(1) + ' ' + (165 + r * Math.sin(a2)).toFixed(1);
@@ -608,7 +610,7 @@
       // Переходы между жизнями — пунктир; место разрыва цепи (звено с break и следующее) — акцентом
       function mark(k, cls, width, dash) {
         var aDeg = deg(k) + 15, aa = aDeg * Math.PI / 180;
-        var attrs = { x1: (165 + 74 * Math.cos(aa)).toFixed(1), y1: (165 + 74 * Math.sin(aa)).toFixed(1), x2: (165 + 106 * Math.cos(aa)).toFixed(1), y2: (165 + 106 * Math.sin(aa)).toFixed(1),
+        var attrs = { x1: (165 + (RN - 16) * Math.cos(aa)).toFixed(1), y1: (165 + (RN - 16) * Math.sin(aa)).toFixed(1), x2: (165 + (RN + 16) * Math.cos(aa)).toFixed(1), y2: (165 + (RN + 16) * Math.sin(aa)).toFixed(1),
           'stroke-width': width, 'stroke-linecap': 'round', 'class': cls };
         if (dash) attrs['stroke-dasharray'] = '3 3';
         s.appendChild(svg('line', attrs));
@@ -622,19 +624,21 @@
       });
       area.appendChild(s);
       for (var k = 1; k <= 12; k++) (function (k) {
-        var p = pt(165, 165, 90, k);
+        var p = pt(165, 165, RN, k);
         var nb = btn('pt-mn pt-bd-' + lifeOf(k) + (k === current ? ' pt-mn-cur' : ''), T(k), fill(U.aria.link, { n: T(k), name: L(k).name }));
         nb.style.left = (p.x / 330 * 100) + '%';
         nb.style.top = (p.y / 330 * 100) + '%';
         nb.addEventListener('click', function () { overlays.push({ type: 'view', n: k }); renderOverlay(); });
         area.appendChild(nb);
-        var lp = pt(165, 165, 124, k);
         var lab = h('span', 'pt-ml' + (k === current ? ' pt-ml-cur' : ''), L(k).name);
         lab.setAttribute('aria-hidden', 'true');
-        lab.style.left = (lp.x / 330 * 100) + '%';
-        lab.style.top = (lp.y / 330 * 100) + '%';
-        var ax = lp.x - 165;
-        lab.style.transform = 'translate(' + (Math.abs(ax) < 5 ? '-50%' : ax > 0 ? '0' : '-100%') + ', -50%)';
+        // Подпись — в 4 px за краем кружка (кружок 32 px при любой ширине карты), снаружи круга:
+        // справа — от точки вправо, слева — влево, сверху — вверх, снизу — вниз
+        var la = (-90 + (k - 1) * 30) * Math.PI / 180, ca = Math.cos(la), sa = Math.sin(la);
+        lab.style.left = 'calc(' + (50 + RN / 330 * 100 * ca).toFixed(2) + '% + ' + (LGAP * ca).toFixed(1) + 'px)';
+        lab.style.top = 'calc(' + (50 + RN / 330 * 100 * sa).toFixed(2) + '% + ' + (LGAP * sa).toFixed(1) + 'px)';
+        var cl = function (v) { return Math.max(-1, Math.min(1, v * 2)); };   // на диагоналях — целиком в сторону от кружка
+        lab.style.transform = 'translate(' + (-50 * (1 - cl(ca))).toFixed(1) + '%, ' + (-50 * (1 - cl(sa))).toFixed(1) + '%)';
         lab.addEventListener('click', function () { nb.click(); });
         area.appendChild(lab);
       })(k);
@@ -662,8 +666,29 @@
       legend.appendChild(h('div', 'pt-lhint', M.hint));
       box.appendChild(legend);
       setStage(box);
+      fitLabels(box, area);
       clearBottom();
       focusQuiet(x);
+    }
+
+    // Подписи карты не выходят за карточку: уменьшаем шрифт всех подписей, пока не влезут (не меньше 9 px)
+    function fitLabels(box, area) {
+      var labs = area.querySelectorAll('.pt-ml');
+      if (!labs.length) return;
+      var size = parseFloat(getComputedStyle(labs[0]).fontSize) || 12;
+      var guard = 6;
+      function over() {
+        var b = box.getBoundingClientRect();
+        for (var i = 0; i < labs.length; i++) {
+          var r = labs[i].getBoundingClientRect();
+          if (r.left < b.left + 2 || r.right > b.right - 2) return true;
+        }
+        return false;
+      }
+      while (over() && size > 9 && guard--) {
+        size -= 1;
+        for (var i = 0; i < labs.length; i++) labs[i].style.fontSize = size + 'px';
+      }
     }
 
     // --- Сброс: подтверждение снизу ---
