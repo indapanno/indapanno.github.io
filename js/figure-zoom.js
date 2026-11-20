@@ -10,13 +10,13 @@
   var STR = {
     ru: { open: 'Увеличить', openAria: 'Увеличить рисунок', dialog: 'Просмотр рисунка', close: 'Закрыть',
       zin: 'Увеличить', zout: 'Уменьшить', fit: 'Вписать', fitted: 'Вписано',
-      helpMouse: 'Щелчок по рисунку — увеличить · колесо с Ctrl — плавно · Esc — закрыть',
-      helpMouseZoomed: 'Перетаскивайте рисунок · щелчок — вписать',
+      helpMouse: 'Двойной щелчок по рисунку — увеличить · колесо с Ctrl — плавно · Esc — закрыть',
+      helpMouseZoomed: 'Перетаскивайте рисунок · двойной щелчок — вписать',
       helpTouch: 'Разведите пальцы или коснитесь дважды, чтобы увеличить' },
     thai: { open: 'ขยาย', openAria: 'ขยายรูป', dialog: 'ดูรูป', close: 'ปิด',
       zin: 'ขยาย', zout: 'ย่อ', fit: 'พอดีจอ', fitted: 'พอดีจอ',
-      helpMouse: 'คลิกที่รูปเพื่อขยาย · Ctrl + ล้อเมาส์ เพื่อขยายทีละน้อย · Esc เพื่อปิด',
-      helpMouseZoomed: 'ลากเพื่อเลื่อนดูรูป · คลิกเพื่อพอดีจอ',
+      helpMouse: 'ดับเบิลคลิกที่รูปเพื่อขยาย · Ctrl + ล้อเมาส์ เพื่อขยายทีละน้อย · Esc เพื่อปิด',
+      helpMouseZoomed: 'ลากเพื่อเลื่อนดูรูป · ดับเบิลคลิกเพื่อพอดีจอ',
       helpTouch: 'ถ่างสองนิ้วหรือแตะสองครั้งเพื่อขยาย' }
   };
   var MAX = 4;                           // наибольшее увеличение относительно «вписано»
@@ -232,6 +232,18 @@
       else if (sc > 1.01) { tx -= e.deltaX * mult; ty -= e.deltaY * mult; clampPan(); render(false); }
     }, { passive: false });
 
+    function insideImg(e) {
+      var ir = img.getBoundingClientRect();
+      return e.clientX >= ir.left && e.clientX <= ir.right && e.clientY >= ir.top && e.clientY <= ir.bottom;
+    }
+    // Мышь: двойной щелчок по рисунку — 200 % в этой точке; при увеличении двойной щелчок — вписать
+    // (одиночный щелчок ничего не меняет: меньше случайных срабатываний)
+    stage.addEventListener('dblclick', function (e) {
+      if (isTouch()) return;
+      if (sc > 1.01) { fit(); return; }
+      if (insideImg(e)) { var r = rel(e); zoomTo(2, r.x, r.y, true); }
+    });
+
     // Касания и мышь: перетаскивание, щипок, двойное касание, свайп вниз
     var pts = {}, drag = null, pinch = null, lastTap = null, moved = false;
     function count() { return Object.keys(pts).length; }
@@ -303,11 +315,8 @@
         } else lastTap = { t: now, x: e.clientX, y: e.clientY };
         return;
       }
-      // Мышь: щелчок по рисунку — 200 % в этой точке; при увеличении щелчок — вписать; мимо рисунка без увеличения — закрыть
-      if (sc > 1.01) { fit(); return; }
-      var ir = img.getBoundingClientRect();
-      if (e.clientX < ir.left || e.clientX > ir.right || e.clientY < ir.top || e.clientY > ir.bottom) close(false);
-      else { var rr = rel(e); zoomTo(2, rr.x, rr.y, true); }
+      // Мышь: одиночный щелчок мимо рисунка без увеличения — закрыть (увеличение — двойным щелчком, ниже)
+      if (sc <= 1.01 && !insideImg(e)) close(false);
     }
     stage.addEventListener('pointerup', endPointer);
     stage.addEventListener('pointercancel', function (e) { if (drag && drag.swipe) { dlg.style.opacity = ''; render(true); } drag = null; endPointer(e); });
