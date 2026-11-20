@@ -134,6 +134,7 @@
     // Каркас: шапка, сцена, кнопки, подвал
     root.textContent = '';
     var wrap = h('div', 'pt');
+    wrap.setAttribute('tabindex', '-1');
     if (ctx.lang === 'thai') wrap.classList.add('pt-thai');
     var top = h('div', 'pt-top');
     var bClose = btn('pt-round', null, U.aria.close);
@@ -204,7 +205,15 @@
     }
     function clearBottom() { bottom.textContent = ''; bottom.className = 'pt-bottom'; }
     function setStage(el) { stage.textContent = ''; stage.appendChild(el); }
-    function focusQuiet(el) { if (el) { try { el.focus({ preventScroll: true }); } catch (e) { /* ничего */ } } }
+    // Фокус на кнопку переводим только тем, кто работает с клавиатуры: при касании и мыши кнопка
+    // не должна выглядеть выбранной. Иначе фокус — на само приложение (без рамки), чтобы не уйти из окна.
+    var keyboard = false;
+    function onKey(e) { if (e.key === 'Tab' || e.key === 'Enter' || e.key === ' ' || e.key.indexOf('Arrow') === 0) keyboard = true; }
+    function onPointer() { keyboard = false; }
+    document.addEventListener('keydown', onKey, true);
+    document.addEventListener('pointerdown', onPointer, true);
+    function focusTo(el) { if (el) { try { el.focus({ preventScroll: true }); } catch (e) { /* ничего */ } } }
+    function focusQuiet(el, quietEl) { focusTo(keyboard ? el : (quietEl || wrap)); }
 
     // Название звена в одну строку: уменьшаем шрифт, пока не влезет
     function fitText(el, max, min) {
@@ -779,7 +788,8 @@
       wrap.setAttribute('aria-hidden', 'true');
       root.appendChild(back);
       root.appendChild(sheet);
-      focusQuiet(cancel);
+      sheet.setAttribute('tabindex', '-1');
+      focusQuiet(cancel, sheet);
     }
     // Esc в окне: сначала закрывает подтверждение и карту, а не всё приложение
     function onCancel(e) {
@@ -805,6 +815,8 @@
       unmount: function () {
         clearTimers();
         if (dlg) dlg.removeEventListener('cancel', onCancel);
+        document.removeEventListener('keydown', onKey, true);
+        document.removeEventListener('pointerdown', onPointer, true);
         window.removeEventListener('resize', onResize);
         root.textContent = '';
       }
