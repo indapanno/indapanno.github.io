@@ -2,7 +2,7 @@
 // Сборка ставит рисунку data-zoom — адрес крупной версии «имя-2x.png» (или самого рисунка).
 // Без JavaScript рисунок остаётся обычной картинкой. Со скриптом: кнопка-лупа на рисунке, окно во весь экран
 // в теме сайта (как у галереи). Компьютер: − / процент / +, двойной щелчок, колесо с Ctrl, перетаскивание,
-// мини-карта. Телефон: щипок, двойное касание, «Вписать», свайп вниз закрывает. Esc, ✕ и «Назад» закрывают.
+// мини-карта. Подсказка внизу окна видна всегда. Телефон: щипок, двойное касание, «Вписать», свайп вниз закрывает. Esc, ✕ и «Назад» закрывают.
 // Тёмная версия рисунка (пара pub-img-light / pub-img-dark): в окне — та, что видна в текущей теме.
 (function () {
   'use strict';
@@ -10,16 +10,17 @@
   var STR = {
     ru: { open: 'Увеличить', openAria: 'Увеличить рисунок', dialog: 'Просмотр рисунка', close: 'Закрыть',
       zin: 'Увеличить', zout: 'Уменьшить', fit: 'Вписать', fitted: 'Вписано',
-      hintMouse: 'Двойной щелчок, колесо с Ctrl или «+» — увеличить · Esc — закрыть',
-      hintTouch: 'Разведите пальцы или коснитесь дважды' },
+      helpMouse: 'Щелчок по рисунку — увеличить · колесо с Ctrl — плавно · Esc — закрыть',
+      helpMouseZoomed: 'Перетаскивайте рисунок · щелчок — вписать',
+      helpTouch: 'Разведите пальцы или коснитесь дважды, чтобы увеличить' },
     thai: { open: 'ขยาย', openAria: 'ขยายรูป', dialog: 'ดูรูป', close: 'ปิด',
       zin: 'ขยาย', zout: 'ย่อ', fit: 'พอดีจอ', fitted: 'พอดีจอ',
-      hintMouse: 'ดับเบิลคลิก, Ctrl + ล้อเมาส์ หรือ «+» เพื่อขยาย · Esc เพื่อปิด',
-      hintTouch: 'ถ่างสองนิ้วหรือแตะสองครั้งเพื่อขยาย' }
+      helpMouse: 'คลิกที่รูปเพื่อขยาย · Ctrl + ล้อเมาส์ เพื่อขยายทีละน้อย · Esc เพื่อปิด',
+      helpMouseZoomed: 'ลากเพื่อเลื่อนดูรูป · คลิกเพื่อพอดีจอ',
+      helpTouch: 'ถ่างสองนิ้วหรือแตะสองครั้งเพื่อขยาย' }
   };
   var MAX = 4;                           // наибольшее увеличение относительно «вписано»
   var STEPS = [1, 1.5, 2, 3, 4];         // шаги кнопок − / + и клавиш
-  var HINT_KEY = 'terms-figzoom-hint';   // сколько раз показана подсказка (не больше двух)
 
   function langOf() { return window.TermsLang && window.TermsLang.get ? window.TermsLang.get() : 'ru'; }
   function num(n, lang) { return lang === 'thai' && typeof toThaiNumerals === 'function' ? toThaiNumerals(n) : String(n); }
@@ -79,18 +80,18 @@
       '<div class="fz-mini" aria-hidden="true"><span><img alt="" draggable="false"><i></i></span></div>' +
       '<div class="fz-pctflash" aria-hidden="true"></div></div>' +
       '<p class="fz-cap"></p>' +
-      '<div class="fz-hint" role="status"></div>';
+      '<p class="fz-help"></p>';
     document.body.appendChild(dlg);
     var stage = dlg.querySelector('.fz-stage'), img = dlg.querySelector('.fz-img');
     var mini = dlg.querySelector('.fz-mini'), miniImg = mini.querySelector('img'), miniView = mini.querySelector('i');
-    var cap = dlg.querySelector('.fz-cap'), hint = dlg.querySelector('.fz-hint'), flash = dlg.querySelector('.fz-pctflash');
+    var cap = dlg.querySelector('.fz-cap'), help = dlg.querySelector('.fz-help'), flash = dlg.querySelector('.fz-pctflash');
     var bOut = dlg.querySelector('.fz-out'), bIn = dlg.querySelector('.fz-in'), bPct = dlg.querySelector('.fz-zoom .fz-pct');
     var bFit = dlg.querySelector('.fz-fit'), bClose = dlg.querySelector('.fz-close');
     bOut.setAttribute('aria-label', s.zout); bIn.setAttribute('aria-label', s.zin);
     bPct.setAttribute('aria-label', s.fit); bClose.setAttribute('aria-label', s.close);
     bFit.querySelector('span').textContent = s.fit;
 
-    var cur = null, opener = null, pushed = false, hintTimer = null, flashTimer = null;
+    var cur = null, opener = null, pushed = false, flashTimer = null;
     var W = 0, H = 0, fitW = 0, fitH = 0, ratio = 1;   // размеры сцены и вписанного рисунка
     var sc = 1, tx = 0, ty = 0;                        // увеличение и сдвиг (от центра сцены)
 
@@ -139,6 +140,8 @@
       bPct.textContent = '';
       if (zoomed) { bPct.innerHTML = ICON_FIT; bPct.appendChild(document.createTextNode(pctText())); }
       else bPct.textContent = s.fitted;
+      // Подсказка внизу — всегда на виду, по состоянию: как увеличить / как двигать и вписать
+      help.textContent = isTouch() ? (zoomed ? '' : s.helpTouch) : (zoomed ? s.helpMouseZoomed : s.helpMouse);
       bPct.disabled = !zoomed; bOut.disabled = !zoomed; bIn.disabled = sc >= MAX - 0.01;
       // Мини-карта: какая часть рисунка сейчас видна
       if (zoomed) {
@@ -168,17 +171,6 @@
     }
     function rel(e) { var r = stage.getBoundingClientRect(); return { x: e.clientX - r.left - W / 2, y: e.clientY - r.top - H / 2 }; }
 
-    function showHint() {
-      var n = 0;
-      try { n = +localStorage.getItem(HINT_KEY) || 0; } catch (e) { n = 2; }
-      if (n >= 2) return;
-      try { localStorage.setItem(HINT_KEY, String(n + 1)); } catch (e) { /* без хранилища — только этот раз */ }
-      hint.textContent = isTouch() ? s.hintTouch : s.hintMouse;
-      hint.classList.add('on');
-      clearTimeout(hintTimer); hintTimer = setTimeout(hideHint, 3000);
-    }
-    function hideHint() { clearTimeout(hintTimer); hint.classList.remove('on'); }
-
     function open(f, btn) {
       cur = f; opener = btn;
       sc = 1; tx = 0; ty = 0;
@@ -193,11 +185,9 @@
       document.documentElement.classList.add('figzoom-open');
       try { history.pushState({ figzoom: true }, ''); pushed = true; } catch (e) { pushed = false; }
       layout();
-      showHint();
     }
     function close(fromHistory) {
       if (!dlg.open) return;
-      hideHint();
       dlg.close();
       document.documentElement.classList.remove('figzoom-open');
       dlg.style.opacity = '';
@@ -237,18 +227,10 @@
     // Колесо: с Ctrl (и щипок тачпада на Mac) — масштаб в точке курсора; без Ctrl при увеличении — сдвиг
     stage.addEventListener('wheel', function (e) {
       e.preventDefault();
-      hideHint();
       var mult = e.deltaMode === 1 ? 16 : 1;
       if (e.ctrlKey || e.metaKey) { var r = rel(e); zoomTo(sc * Math.exp(-e.deltaY * mult * 0.01), r.x, r.y, false); }
       else if (sc > 1.01) { tx -= e.deltaX * mult; ty -= e.deltaY * mult; clampPan(); render(false); }
     }, { passive: false });
-
-    // Мышь: двойной щелчок — 200 % в точке / вписать; щелчок мимо рисунка без увеличения — закрыть
-    stage.addEventListener('dblclick', function (e) {
-      if (isTouch()) return;
-      var r = rel(e);
-      if (sc > 1.01) fit(); else zoomTo(2, r.x, r.y, true);
-    });
 
     // Касания и мышь: перетаскивание, щипок, двойное касание, свайп вниз
     var pts = {}, drag = null, pinch = null, lastTap = null, moved = false;
@@ -256,7 +238,6 @@
     function startDrag(e) { drag = { x: e.clientX, y: e.clientY, tx: tx, ty: ty, type: e.pointerType, swipe: false }; moved = false; }
     stage.addEventListener('pointerdown', function (e) {
       if (e.button > 0) return;
-      hideHint();
       // Первое касание новой серии: забываем «зависшие» касания (если система не прислала их окончание)
       if (e.isPrimary) { pts = {}; pinch = null; drag = null; }
       pts[e.pointerId] = { x: e.clientX, y: e.clientY };
@@ -322,11 +303,11 @@
         } else lastTap = { t: now, x: e.clientX, y: e.clientY };
         return;
       }
-      // Мышь: щелчок мимо рисунка (не по нему) без увеличения — закрыть
-      if (sc <= 1.01) {
-        var ir = img.getBoundingClientRect();
-        if (e.clientX < ir.left || e.clientX > ir.right || e.clientY < ir.top || e.clientY > ir.bottom) close(false);
-      }
+      // Мышь: щелчок по рисунку — 200 % в этой точке; при увеличении щелчок — вписать; мимо рисунка без увеличения — закрыть
+      if (sc > 1.01) { fit(); return; }
+      var ir = img.getBoundingClientRect();
+      if (e.clientX < ir.left || e.clientX > ir.right || e.clientY < ir.top || e.clientY > ir.bottom) close(false);
+      else { var rr = rel(e); zoomTo(2, rr.x, rr.y, true); }
     }
     stage.addEventListener('pointerup', endPointer);
     stage.addEventListener('pointercancel', function (e) { if (drag && drag.swipe) { dlg.style.opacity = ''; render(true); } drag = null; endPointer(e); });

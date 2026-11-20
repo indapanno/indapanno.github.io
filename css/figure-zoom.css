@@ -105,7 +105,7 @@ html.figzoom-open { overflow: hidden; }
 .fz-mini i { position: absolute; border: 2px solid var(--accent); border-radius: 2px; box-sizing: border-box; }
 .figzoom-dlg.fz-zoomed:not(.fz-touch) .fz-mini { opacity: 1; visibility: visible; }
 
-.fz-pctflash, .fz-hint {
+.fz-pctflash {
   position: absolute;
   left: 50%;
   z-index: 4;
@@ -125,11 +125,14 @@ html.figzoom-open { overflow: hidden; }
   pointer-events: none;
 }
 .fz-pctflash { top: 10px; font-weight: 600; }
-.fz-hint { top: 70px; max-width: calc(100% - 32px); }
-.figzoom-dlg.fz-touch .fz-hint { top: auto; bottom: calc(90px + env(safe-area-inset-bottom)); }
-.fz-pctflash.on, .fz-hint.on { opacity: 1; visibility: visible; }
+.fz-pctflash.on { opacity: 1; visibility: visible; }
 
-.fz-cap { flex: none; max-width: 42rem; margin: 0 auto; padding: 10px 20px 16px; font-size: 0.92rem; line-height: 1.55; text-align: center; }
+/* Подсказка внизу окна: всегда на виду, меняется по состоянию (вписано / увеличено) */
+.fz-help { flex: none; max-width: 42rem; margin: 0 auto; padding: 2px 20px 14px; font-size: 0.8rem; line-height: 1.45; text-align: center; color: var(--text-secondary); }
+.fz-help:empty { display: none; }
+.fz-cap[hidden] + .fz-help, .figzoom-dlg.fz-touch.fz-zoomed .fz-help { padding-top: 10px; }
+
+.fz-cap { flex: none; max-width: 42rem; margin: 0 auto; padding: 10px 20px 4px; font-size: 0.92rem; line-height: 1.55; text-align: center; }
 
 /* Телефон: без − / +, вместо них «Вписать» при увеличении; подпись скрыта при увеличении и в горизонтальном положении */
 .figzoom-dlg.fz-touch .fz-zoom { display: none; }
@@ -141,6 +144,6 @@ html.figzoom-open { overflow: hidden; }
 
 @media (prefers-reduced-motion: reduce) {
   .figzoom-dlg[open] { animation: none; }
-  .figzoom-btn, .fz-mini, .fz-hint, .fz-pctflash { transition: none; }
+  .figzoom-btn, .fz-mini, .fz-pctflash { transition: none; }
 }
 @media print { .figzoom-btn { display: none; } }
