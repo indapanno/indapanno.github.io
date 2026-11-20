@@ -423,12 +423,13 @@
       for (var k = 1; k <= 12; k++) {
         var p = pt(100, 100, 86, k);
         if (k === n) {
+          s.appendChild(svg('circle', { cx: p.x, cy: p.y, r: 16, 'class': 'pt-halo pt-mshalo' }));
           s.appendChild(svg('circle', { cx: p.x, cy: p.y, r: 10, fill: 'none', 'stroke-width': 2, 'class': 'pt-ac-s pt-msring' }));
           s.appendChild(svg('circle', { cx: p.x, cy: p.y, r: 9, 'class': 'pt-ac-f pt-msnow' }));
         } else if (remembered.indexOf(L(k).id) !== -1) {
           s.appendChild(svg('circle', { cx: p.x, cy: p.y, r: 7, 'class': 'pt-life-' + lifeOf(k) }));
         } else {
-          s.appendChild(svg('circle', { cx: p.x, cy: p.y, r: 5.5, fill: 'none', 'stroke-width': 2, opacity: 0.55, 'class': 'pt-life-s-' + lifeOf(k) }));
+          s.appendChild(svg('circle', { cx: p.x, cy: p.y, r: 5.5, 'stroke-width': 2, 'class': 'pt-el-f pt-life-s-' + lifeOf(k) }));
         }
       }
       wheelBox.appendChild(s);
