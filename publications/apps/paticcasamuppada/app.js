@@ -500,6 +500,14 @@
       }
     }
 
+    // Колесо финала: до 240 px, но так, чтобы колесо и текст помещались в карточку (не меньше 150 px)
+    function fitFinale(box, fw, text) {
+      var cs = getComputedStyle(box);
+      var avail = box.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom) - parseFloat(cs.rowGap || cs.gap || 0) - text.offsetHeight;
+      var size = Math.max(150, Math.min(240, Math.floor(avail), box.clientWidth - 44));
+      fw.style.width = fw.style.height = size + 'px';
+    }
+
     // --- Финал: 12 точек по порядку → кольцо → Колесо Дхаммы → текст → кнопки ---
     function showFinale(animate) {
       screen = { type: 'finale' };
@@ -543,6 +551,9 @@
       again.addEventListener('click', function () { askReset(); });
       row.appendChild(reread); row.appendChild(again);
       bottom.appendChild(row);
+      // Размер колеса — когда кнопки внизу уже на месте: от них зависит высота карточки
+      fitFinale(box, fw, text);
+      refit = function () { if (screen && screen.type === 'finale' && box.parentNode) fitFinale(box, fw, text); };
 
       function finalState() {
         dots.forEach(function (c) { c.classList.add('pt-on', 'pt-gone'); });
@@ -550,11 +561,19 @@
         text.classList.add('pt-on'); row.classList.add('pt-on');
       }
       if (!anim) { box.classList.add('pt-static'); finalState(); focusQuiet(reread); return; }
+      // Пока текста не видно, колесо — по центру карточки; с появлением текста поднимается на своё место
+      var shift = Math.max(0, Math.round(box.clientHeight / 2 - (fw.offsetTop + fw.offsetHeight / 2)));
+      if (shift) {
+        fw.style.transition = 'none';
+        fw.style.transform = 'translateY(' + shift + 'px)';
+        void fw.offsetWidth;
+        fw.style.transition = '';
+      }
       dots.forEach(function (c, i) { later(function () { c.classList.add('pt-on'); }, 300 + i * 120); });
       var t1 = 300 + 12 * 120 + 150;
       later(function () { ring.classList.add('pt-on'); glow.classList.add('pt-on'); }, t1);
       later(function () { dots.forEach(function (c) { c.classList.add('pt-gone'); }); dharma.classList.add('pt-on'); }, t1 + 950);
-      later(function () { text.classList.add('pt-on'); }, t1 + 1800);
+      later(function () { fw.style.transform = ''; text.classList.add('pt-on'); }, t1 + 1800);
       later(function () { row.classList.add('pt-on'); focusQuiet(reread); }, t1 + 2500);
     }
 
@@ -769,6 +788,10 @@
     }
     var dlg = root.closest ? root.closest('dialog') : null;
     if (dlg) dlg.addEventListener('cancel', onCancel);
+    // Поворот экрана, панели Safari: колесо финала подстраивается под новую высоту
+    var refit = null;
+    function onResize() { if (refit) refit(); }
+    window.addEventListener('resize', onResize);
 
     function start() {
       rebuildQueue();
@@ -782,6 +805,7 @@
       unmount: function () {
         clearTimers();
         if (dlg) dlg.removeEventListener('cancel', onCancel);
+        window.removeEventListener('resize', onResize);
         root.textContent = '';
       }
     };

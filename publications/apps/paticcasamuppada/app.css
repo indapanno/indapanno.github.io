@@ -191,8 +191,11 @@
 .app-paticcasamuppada .pt-stag { opacity: 0; animation: app-paticcasamuppada-cnt 0.5s ease both; }
 
 /* --- Финал --- */
-.app-paticcasamuppada .pt-finale { justify-content: center; gap: 18px; padding: 20px 22px; text-align: center; }
-.app-paticcasamuppada .pt-fwheel { position: relative; flex: none; width: 240px; height: 240px; max-width: 100%; }
+.app-paticcasamuppada .pt-finale { justify-content: flex-start; gap: 18px; padding: 24px 22px; text-align: center; }
+/* Центр без выталкивания вверх: если не помещается — прокрутка с верха, колесо не срезается */
+.app-paticcasamuppada .pt-finale > .pt-fwheel { margin-top: auto; }
+.app-paticcasamuppada .pt-finale > .pt-ftext { margin-bottom: auto; }
+.app-paticcasamuppada .pt-fwheel { position: relative; flex: none; width: 240px; height: 240px; max-width: 100%; transition: transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1); }
 .app-paticcasamuppada .pt-fwheel svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 .app-paticcasamuppada .pt-fglow { position: absolute; inset: -10px; border-radius: 50%; background: radial-gradient(circle, var(--pt-glow) 0%, transparent 66%); opacity: 0; transition: opacity 1.2s; }
 .app-paticcasamuppada .pt-fglow.pt-on { opacity: 1; animation: app-paticcasamuppada-breathe 4s ease-in-out 1.2s infinite; }
