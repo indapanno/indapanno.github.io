@@ -163,6 +163,12 @@
   // --- Окно приложения ---
   var current = null; // { dlg, root, card, instance, name, pushed, after }
 
+  // Клавиатура или касание/мышь: после закрытия фокус на кнопку карточки — только работающим с клавиатуры
+  // (на iPhone иначе вокруг кнопки «Запустить» / «Продолжить» остаётся рамка)
+  var viaKeyboard = false;
+  document.addEventListener('keydown', function (e) { if (e.key === 'Tab' || e.key === 'Enter' || e.key === ' ' || e.key === 'Escape' || e.key === 'Esc') viaKeyboard = true; }, true);
+  document.addEventListener('pointerdown', function () { viaKeyboard = false; }, true);
+
   function lockPage(on) {
     document.documentElement.classList.toggle('app-open', on);
   }
@@ -236,7 +242,10 @@
     updateCard(c.card);
     var btn = c.card.querySelector('.app-card-btn');
     var done = function () {
-      if (btn) { try { btn.focus({ preventScroll: true }); } catch (e) { /* ничего */ } }
+      if (btn && viaKeyboard) { try { btn.focus({ preventScroll: true }); } catch (e) { /* ничего */ } }
+      else if (document.activeElement && document.activeElement !== document.body && document.activeElement.blur) {
+        try { document.activeElement.blur(); } catch (e) { /* ничего */ }
+      }
       if (c.after) { try { c.after(); } catch (e) { /* ничего */ } }
     };
     // Своя запись в истории: убрать её («Назад» уже не нужен), действие — после возврата
