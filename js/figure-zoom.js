@@ -209,6 +209,8 @@
       try { dlg.focus({ preventScroll: true }); } catch (e) { /* ничего */ }
       document.documentElement.classList.add('figzoom-open');
       try { history.pushState({ figzoom: true }, ''); pushed = true; } catch (e) { pushed = false; }
+      // Своя запись — без восстановления прокрутки: переход на неё («Вперёд», свайп от края в Safari) не двигает страницу
+      try { if ('scrollRestoration' in history) history.scrollRestoration = 'manual'; } catch (e) { /* ничего */ }
       layout();
     }
     function close(fromHistory) {
@@ -228,7 +230,11 @@
     bPct.addEventListener('click', fit);
     bFit.addEventListener('click', fit);
     dlg.addEventListener('cancel', function (e) { e.preventDefault(); close(false); });
-    window.addEventListener('popstate', function () { if (dlg.open) { pushed = false; close(true); } });
+    window.addEventListener('popstate', function (e) {
+      if (dlg.open) { pushed = false; close(true); return; }
+      // «Вперёд» на запись уже закрытого окна (свайп от края экрана): сразу назад, страница остаётся на месте
+      if (e.state && e.state.figzoom) history.back();
+    });
     window.addEventListener('resize', function () { if (dlg.open) { dlg.classList.toggle('fz-touch', isTouch()); layout(); } });
     // Тема сменилась при открытом окне — показываем версию рисунка для новой темы
     if (window.MutationObserver) {

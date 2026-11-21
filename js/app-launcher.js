@@ -250,8 +250,10 @@
     } else done();
   }
 
-  window.addEventListener('popstate', function () {
-    if (current && current.pushed) { current.pushed = false; close(); }
+  window.addEventListener('popstate', function (e) {
+    if (current && current.pushed) { current.pushed = false; close(); return; }
+    // «Вперёд» на запись уже закрытого приложения (свайп от края экрана): сразу назад, страница остаётся на месте
+    if (!current && e.state && e.state.pubApp) history.back();
   });
 
   function open(card) {
@@ -279,6 +281,8 @@
     try { dlg.showModal(); } catch (e) { dlg.setAttribute('open', ''); }
     if (document.activeElement !== dlg) { try { dlg.focus({ preventScroll: true }); } catch (e) { /* ничего */ } }
     try { history.pushState({ pubApp: name }, ''); current.pushed = true; } catch (e) { current.pushed = false; }
+    // Своя запись — без восстановления прокрутки: переход на неё («Вперёд», свайп от края в Safari) не двигает страницу
+    try { if ('scrollRestoration' in history) history.scrollRestoration = 'manual'; } catch (e) { /* ничего */ }
 
     track(name, 'launch');
 

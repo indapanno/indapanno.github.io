@@ -131,6 +131,8 @@
       if (document.activeElement !== dlg) dlg.focus();
       // Запись в истории: «Назад» закроет окно
       try { history.pushState({ lightbox: true }, ''); pushed = true; } catch (e) { pushed = false; }
+      // Своя запись — без восстановления прокрутки: переход на неё («Вперёд», свайп от края в Safari) не двигает страницу
+      try { if ('scrollRestoration' in history) history.scrollRestoration = 'manual'; } catch (e) { /* ничего */ }
     }
 
     var pushed = false;
@@ -140,8 +142,10 @@
     }
 
 
-    window.addEventListener('popstate', function () {
-      if (dlg.open) { pushed = false; dlg.close(); }
+    window.addEventListener('popstate', function (e) {
+      if (dlg.open) { pushed = false; dlg.close(); return; }
+      // «Вперёд» на запись уже закрытого окна (свайп от края экрана): сразу назад, страница остаётся на месте
+      if (e.state && e.state.lightbox) history.back();
     });
 
     dlg.addEventListener('close', function () {
