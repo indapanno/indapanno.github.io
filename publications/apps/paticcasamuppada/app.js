@@ -41,19 +41,23 @@
     return function (s) { return lang === 'thai' ? String(s).replace(/[0-9]/g, function (c) { return THAI_DIGITS[+c]; }) : String(s); };
   }
 
-  // --- Прогресс: { v: версия данных, remembered: [id…], updated: мс }; не та версия или повреждён — тихий сброс ---
+  // --- Прогресс: { v: версия данных при записи, remembered: [id…], updated: мс } ---
+  // Прогресс переживает обновления тренажёра: версия в записи только для справки и не проверяется.
+  // Берём запомненные звенья, которые есть в текущих данных; неизвестные id тихо пропускаем, остальное сохраняем.
+  // Стираем запись, только если она испорчена (не объект или без списка remembered).
   function progressKey(ctx) { return 'progress:' + ctx.lang; }
   function loadRemembered(ctx) {
     var d = ctx.data, rec = ctx.storage.get(progressKey(ctx));
     if (!rec) return [];
+    if (typeof rec !== 'object' || !Array.isArray(rec.remembered)) { ctx.storage.remove(progressKey(ctx)); return []; }
     var ids = d.links.map(function (l) { return l.id; });
-    if (typeof rec !== 'object' || rec.v !== d.version || !Array.isArray(rec.remembered)) { ctx.storage.remove(progressKey(ctx)); return []; }
     var out = [];
     for (var i = 0; i < rec.remembered.length; i++) {
       var id = rec.remembered[i];
-      if (ids.indexOf(id) === -1) { ctx.storage.remove(progressKey(ctx)); return []; }
-      if (out.indexOf(id) === -1) out.push(id);
+      if (typeof id === 'string' && ids.indexOf(id) !== -1 && out.indexOf(id) === -1) out.push(id);
     }
+    // Запись из старой версии или с лишними id — переписываем очищенной, с текущей версией
+    if (rec.v !== d.version || out.length !== rec.remembered.length) saveRemembered(ctx, out);
     return out;
   }
   function saveRemembered(ctx, list) {

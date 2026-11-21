@@ -1,7 +1,7 @@
 {
   "app": "paticcasamuppada",
   "lang": "ru",
-  "version": "1.5",
+  "version": "1.6",
   "ui": {
     "title": "Тренажёр: 12 звеньев",
     "remaining": "осталось {n} из 12",

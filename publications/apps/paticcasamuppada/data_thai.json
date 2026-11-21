@@ -1,7 +1,7 @@
 {
   "app": "paticcasamuppada",
   "lang": "thai",
-  "version": "1.5",
+  "version": "1.6",
   "ui": {
     "title": "ฝึกจำปฏิจจสมุปบาท ๑๒ ข้อ",
     "remaining": "เหลือ {n} จาก ๑๒",
