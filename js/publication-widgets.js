@@ -15,6 +15,11 @@
   var pop = null;      // открытый поповер
   var current = null;  // ссылка, к которой он открыт
   var point = null;    // место клика в координатах страницы (null — открыто с клавиатуры)
+  // Чем пользуется читатель: клавиатурой или касанием/мышью. Фокус на ссылку после закрытия
+  // возвращаем только работающим с клавиатуры — иначе на iPhone вокруг ссылки остаётся рамка.
+  var viaKeyboard = false;
+  doc.addEventListener('keydown', function (e) { if (e.key === 'Tab' || e.key === 'Enter' || e.key === ' ' || e.key === 'Escape' || e.key === 'Esc') viaKeyboard = true; }, true);
+  doc.addEventListener('pointerdown', function () { viaKeyboard = false; }, true);
 
   function closePopover(returnFocus) {
     if (!pop) return;
@@ -98,7 +103,7 @@
     close.setAttribute('type', 'button');
     close.setAttribute('aria-label', LABEL.close);
     close.textContent = '\u00d7';
-    close.addEventListener('click', function () { closePopover(true); });
+    close.addEventListener('click', function () { closePopover(viaKeyboard); });
 
     if (head) p.appendChild(head);
     p.appendChild(text);
