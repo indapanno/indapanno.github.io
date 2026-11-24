@@ -144,11 +144,15 @@
     var top = h('div', 'pt-top');
     var bClose = btn('pt-round', null, U.aria.close);
     bClose.appendChild(iconX());
-    var prog = h('div', 'pt-prog');
+    var prog = btn('pt-prog', null, '');
+    var pChev = svg('svg', { viewBox: '0 0 24 24', width: 12, height: 12, fill: 'none', stroke: 'currentColor', 'stroke-width': 2.6, 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'aria-hidden': 'true', focusable: 'false', 'class': 'pt-prog-chev' });
+    pChev.appendChild(svg('path', { d: 'M9 6l6 6-6 6' }));
     var pLabel = h('span', 'pt-prog-label');
     var bar = h('div', 'pt-bar'), barFill = h('i');
     bar.appendChild(barFill);
-    prog.appendChild(pLabel); prog.appendChild(bar);
+    var pRow = h('span', 'pt-prog-row'); pRow.appendChild(pLabel); pRow.appendChild(pChev);
+    prog.appendChild(pRow); prog.appendChild(bar);
+    prog.addEventListener('click', function () { if (busy) return; var o = overlays[overlays.length - 1]; if (o && o.type === 'map') return; openMap(screen && screen.n); });
     var bReset = btn('pt-round', null, U.aria.reset);
     bReset.appendChild(iconReset());
     top.appendChild(bClose); top.appendChild(prog); top.appendChild(bReset);
@@ -194,6 +198,7 @@
     function setProgress(bump) {
       var left = N - remembered.length;
       pLabel.textContent = T(fill(U.remaining, { n: left }));
+      prog.setAttribute('aria-label', T(fill(U.remaining, { n: left })) + '. ' + U.aria.open_progress);
       barFill.style.width = ((N - left) / N * 100) + '%';
       bar.classList.toggle('pt-bar-done', left === 0);
       if (bump && !RM) { pLabel.classList.remove('pt-bump'); void pLabel.offsetWidth; pLabel.classList.add('pt-bump'); }
@@ -266,6 +271,13 @@
       lifeLine.appendChild(document.createTextNode(U.life[d.life]));
       meta.appendChild(lifeLine);
       head.appendChild(meta);
+      if (remembered.indexOf(d.id) !== -1) {
+        var badge = h('span', 'pt-done-badge');
+        var ck = svg('svg', { viewBox: '0 0 24 24', width: 11, height: 11, fill: 'none', stroke: 'currentColor', 'stroke-width': 3.6, 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'aria-hidden': 'true', focusable: 'false' });
+        ck.appendChild(svg('path', { d: 'M5 12.5l4.5 4.5L19 7.5' }));
+        badge.appendChild(ck); badge.appendChild(document.createTextNode(U.map.state_done));
+        head.appendChild(badge);
+      }
       card.appendChild(head);
 
       var term = h('div', 'pt-term pt-term-back', d.name);
@@ -605,7 +617,25 @@
       var back = btn('pt-btn pt-btn-sec pt-wide', U.view_back);
       back.addEventListener('click', function () { overlays = []; restoreScreen(); });
       bottom.appendChild(back);
+      if (remembered.indexOf(L(o.n).id) !== -1) {
+        var again = btn('pt-linkbtn', U.repeat);
+        again.addEventListener('click', function () { if (!busy) forget(o.n); });
+        bottom.appendChild(again);
+      }
       focusQuiet(back);
+    }
+
+    function forget(n) {
+      var id = L(n).id;
+      remembered = remembered.filter(function (x) { return x !== id; });
+      saveRemembered(ctx, remembered);
+      if (queue.indexOf(n) === -1) queue.push(n);
+      setProgress(true);
+      overlays.pop();
+      if (!overlays.length || overlays[overlays.length - 1].type !== 'map') overlays.push({ type: 'map', n: screen && screen.n });
+      if (screen && screen.type === 'finale') screen = { type: 'milestone', n: n };
+      renderOverlay();
+      toast({ tpl: U.back_in_deck, name: L(n).name });
     }
 
     function restoreScreen() {
@@ -632,6 +662,11 @@
       x.addEventListener('click', closeOverlay);
       head.appendChild(x);
       box.appendChild(head);
+      var st = h('div', 'pt-mapstat');
+      var s1 = h('span', 'pt-mapstat-i'); s1.appendChild(h('span', 'pt-sw-done')); s1.appendChild(document.createTextNode(T(fill(M.status_done, { n: remembered.length }))));
+      var s2 = h('span', 'pt-mapstat-i'); s2.appendChild(h('span', 'pt-sw-todo')); s2.appendChild(document.createTextNode(T(fill(M.status_todo, { n: N - remembered.length }))));
+      st.appendChild(s1); st.appendChild(h('span', 'pt-mapstat-dot', '·')); st.appendChild(s2);
+      box.appendChild(st);
 
       var area = h('div', 'pt-maparea');
       var s = svg('svg', { viewBox: '0 0 330 330', 'aria-hidden': 'true', focusable: 'false' });
@@ -670,7 +705,9 @@
       area.appendChild(s);
       for (var k = 1; k <= 12; k++) (function (k) {
         var p = pt(165, 165, RN, k);
-        var nb = btn('pt-mn pt-bd-' + lifeOf(k) + (k === current ? ' pt-mn-cur' : ''), T(k), fill(U.aria.link, { n: T(k), name: L(k).name }));
+        var done = remembered.indexOf(L(k).id) !== -1;
+        var nb = btn('pt-mn pt-bd-' + lifeOf(k) + (done ? ' pt-mn-done pt-bg-' + lifeOf(k) : '') + (k === current ? ' pt-mn-cur' : ''), T(k), fill(U.aria.link, { n: T(k), name: L(k).name }) + ' — ' + (done ? M.state_done : M.state_todo));
+        if (done) { var ck = svg('svg', { viewBox: '0 0 24 24', width: 9, height: 9, fill: 'none', stroke: 'currentColor', 'stroke-width': 4, 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'aria-hidden': 'true', focusable: 'false' }); ck.appendChild(svg('path', { d: 'M5 12.5l4.5 4.5L19 7.5' })); var cb = h('span', 'pt-mn-check'); cb.appendChild(ck); nb.appendChild(cb); }
         nb.style.left = (p.x / 330 * 100) + '%';
         nb.style.top = (p.y / 330 * 100) + '%';
         nb.addEventListener('click', function () { overlays.push({ type: 'view', n: k }); renderOverlay(); });

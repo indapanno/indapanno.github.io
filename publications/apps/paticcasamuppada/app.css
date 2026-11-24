@@ -334,3 +334,22 @@
 .app-paticcasamuppada .pt-wheel.pt-covered > svg,
 .app-paticcasamuppada .pt-wheel.pt-covered .pt-wheel-open { visibility: hidden; }
 .app-paticcasamuppada .pt-wheel .pt-shade { border-radius: 50%; }
+
+/* 2.1: счётчик — кнопка, карта показывает запомненное */
+.app-paticcasamuppada button.pt-prog { border: 0; background: transparent; padding: 4px 10px; border-radius: 12px; color: inherit; font: inherit; cursor: pointer; }
+.app-paticcasamuppada button.pt-prog:hover { background: var(--pt-hl); }
+.app-paticcasamuppada .pt-prog-row { display: inline-flex; align-items: center; gap: 3px; }
+.app-paticcasamuppada .pt-prog-chev { color: var(--pt-tx2); flex: none; }
+.app-paticcasamuppada .pt-mapstat { align-self: stretch; display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 2px; font-size: 13px; color: var(--pt-tx2); font-variant-numeric: tabular-nums; }
+.app-paticcasamuppada .pt-mapstat-i { display: inline-flex; align-items: center; gap: 6px; }
+.app-paticcasamuppada .pt-sw-done, .app-paticcasamuppada .pt-sw-todo { width: 12px; height: 12px; border-radius: 6px; box-sizing: border-box; flex: none; }
+.app-paticcasamuppada .pt-sw-done { background: var(--pt-tx2); }
+.app-paticcasamuppada .pt-sw-todo { border: 2px solid var(--pt-tx2); }
+.app-paticcasamuppada .pt-mn.pt-mn-done { color: var(--pt-el); }
+.app-paticcasamuppada .pt-mn.pt-mn-done.pt-bg-past { background: var(--pt-past); }
+.app-paticcasamuppada .pt-mn.pt-mn-done.pt-bg-pres { background: var(--pt-pres); }
+.app-paticcasamuppada .pt-mn.pt-mn-done.pt-bg-fut { background: var(--pt-fut); }
+.app-paticcasamuppada .pt-mn-check { position: absolute; right: -5px; top: -5px; width: 15px; height: 15px; border-radius: 8px; background: var(--pt-ok); color: var(--pt-oktx); border: 2px solid var(--pt-el); display: flex; align-items: center; justify-content: center; box-sizing: border-box; }
+.app-paticcasamuppada .pt-linkbtn { display: block; margin: 4px auto 0; min-height: 44px; padding: 0 12px; border: 0; background: transparent; color: var(--pt-ink, var(--pt-tx2)); font: inherit; font-size: 14px; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.app-paticcasamuppada .pt-done-badge { margin-left: auto; align-self: flex-start; flex: none; display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px 4px 8px; border-radius: 12px; background: var(--pt-ok); color: var(--pt-oktx); font-size: 12px; font-weight: 700; line-height: 1.2; }
+.app-paticcasamuppada .pt-mn.pt-mn-done.pt-mn-cur { background: var(--pt-ac); color: var(--pt-pritx); }
