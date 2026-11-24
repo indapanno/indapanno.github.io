@@ -58,10 +58,11 @@
 
 /* Плашка «… вернётся позже» внизу карточки */
 .app-paticcasamuppada .pt-toast {
-  position: absolute; left: 50%; bottom: 16px; z-index: 2; max-width: calc(100% - 32px); transform: translateX(-50%);
+  position: absolute; left: 50%; bottom: 16px; z-index: 2; width: max-content; max-width: calc(100% - 32px); transform: translateX(-50%);
   padding: 8px 14px; border-radius: 999px; border: 1px solid var(--pt-bd); background: var(--pt-hl); color: var(--pt-tx2);
   font-size: 13px; line-height: 1.35; text-align: center; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18); pointer-events: none;
 }
+.app-paticcasamuppada .pt-toast-name { font-weight: 700; color: var(--pt-tx); }
 .app-paticcasamuppada .pt-toast-anim { animation: app-paticcasamuppada-later 2.6s ease both; }
 
 /* --- Сцена и карточки --- */
@@ -72,12 +73,15 @@
 }
 .app-paticcasamuppada .pt-front { justify-content: center; gap: 18px; padding: 24px; }
 .app-paticcasamuppada .pt-back { padding: 16px 16px 10px; }
+/* Содержимое оборота не сжимается: если не помещается — карточка прокручивается (иначе на узком экране сжималось название) */
+.app-paticcasamuppada .pt-back > * { flex-shrink: 0; }
 .app-paticcasamuppada .pt-term {
   max-width: 100%; font-family: var(--font-display); font-weight: 700; line-height: 1.2; text-align: center;
   white-space: nowrap; overflow: hidden; color: var(--pt-tx);
 }
 .app-paticcasamuppada .pt-term-back { align-self: stretch; margin-top: 12px; }
 .app-paticcasamuppada .pt-hint { max-width: 260px; font-size: 14px; line-height: 1.55; color: var(--pt-tx2); text-align: center; }
+.app-paticcasamuppada .pt-hint-back { margin: 6px auto 10px; font-size: 13px; line-height: 1.45; }
 .app-paticcasamuppada .pt-enter { animation: app-paticcasamuppada-enter 0.38s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
 .app-paticcasamuppada .pt-flip { animation: app-paticcasamuppada-flip 0.3s ease both; }
 .app-paticcasamuppada .pt-leave { animation: app-paticcasamuppada-leave 0.36s cubic-bezier(0.4, 0, 0.6, 1) both; }

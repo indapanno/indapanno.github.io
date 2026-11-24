@@ -46,6 +46,7 @@
   // Берём запомненные звенья, которые есть в текущих данных; неизвестные id тихо пропускаем, остальное сохраняем.
   // Стираем запись, только если она испорчена (не объект или без списка remembered).
   function progressKey(ctx) { return 'progress:' + ctx.lang; }
+  var HINT_KEY = 'hint-seen', HINT_MAX = 30;
   function loadRemembered(ctx) {
     var d = ctx.data, rec = ctx.storage.get(progressKey(ctx));
     if (!rec) return [];
@@ -202,7 +203,13 @@
     function toast(text) {
       var card = stage.querySelector('.pt-card');
       if (!card) return;
-      var t = h('div', 'pt-toast' + (RM ? '' : ' pt-toast-anim'), text);
+      var t = h('div', 'pt-toast' + (RM ? '' : ' pt-toast-anim'));
+      // Название звена — жирным: шаблон «{name} …» собираем узлами, без разметки в строке
+      var parts = String(text.tpl).split('{name}');
+      parts.forEach(function (p, i) {
+        if (i) t.appendChild(h('strong', 'pt-toast-name', text.name));
+        if (p) t.appendChild(document.createTextNode(p));
+      });
       t.setAttribute('role', 'status');
       card.appendChild(t);
       timers.push(setTimeout(function () { if (t.parentNode) t.parentNode.removeChild(t); }, 2600)); // и без анимаций — чтобы успеть прочитать
@@ -230,24 +237,8 @@
       }
     }
 
-    // --- Лицевая сторона ---
-    function showFront(n, anim) {
-      screen = { type: 'front', n: n };
-      var d = L(n);
-      var card = h('div', 'pt-card pt-front' + (anim && !RM ? ' pt-' + anim : ''));
-      var term = h('div', 'pt-term', d.name);
-      term.setAttribute('role', 'heading');
-      term.setAttribute('aria-level', '2');
-      card.appendChild(term);
-      card.appendChild(h('div', 'pt-hint', U.hint));
-      setStage(card);
-      fitText(term, ctx.lang === 'thai' ? 60 : 46, 22);
-      clearBottom();
-      var b = btn('pt-btn pt-btn-pri pt-wide', U.show_answer);
-      b.addEventListener('click', function () { if (!busy) showBack(n); });
-      bottom.appendChild(b);
-      focusQuiet(b);
-    }
+    // --- Карточка сразу открывается оборотом (лицевой стороны нет с 2.0) ---
+    function showFront(n, anim) { showBack(n, anim); }
 
     // --- Оборот: всё, кроме названия, под заглушками; открытие ничего не сдвигает ---
     function backCard(n, view) {
@@ -281,6 +272,7 @@
       term.setAttribute('role', 'heading');
       term.setAttribute('aria-level', '2');
       card.appendChild(term);
+      if (!view && opened && opened.n === n && opened.hint) card.appendChild(h('div', 'pt-hint pt-hint-back', U.hint));
 
       var chain = h('div', 'pt-chain');
       var prev = btn('pt-nb', L(n - 1).name, fill(U.aria.prev, {}) + ': ' + L(n - 1).name);
@@ -376,11 +368,18 @@
       return { card: card, wheel: wheel };
     }
 
-    function showBack(n) {
+    function showBack(n, anim) {
       screen = { type: 'back', n: n };
-      if (!opened || opened.n !== n) opened = { n: n, idx: {} };
+      if (!opened || opened.n !== n) {
+        // Подсказка «как работать с карточкой» — только на первых HINT_MAX новых карточках.
+        // Счётчик общий для обоих языков и не сбрасывается ни обновлением, ни «Начать заново».
+        var seen = ctx.storage.get(HINT_KEY);
+        seen = typeof seen === 'number' && seen >= 0 ? seen : 0;
+        opened = { n: n, idx: {}, hint: seen < HINT_MAX };
+        if (opened.hint) ctx.storage.set(HINT_KEY, seen + 1);
+      }
       var b = backCard(n, false);
-      if (!RM) b.card.classList.add('pt-flip');
+      if (!RM && anim) b.card.classList.add('pt-' + anim);
       setStage(b.card);
       fitText(b.card.querySelector('.pt-term'), ctx.lang === 'thai' ? 46 : 38, 20);
       clearBottom();
@@ -420,7 +419,7 @@
         queue = queue.filter(function (k) { return k !== n; });
         queue.push(n);
         showFront(queue[0], 'enter');
-        toast(fill(U.returns_later, { name: L(n).name }));
+        toast({ tpl: U.returns_later, name: L(n).name });
       }, 360);
     }
 
