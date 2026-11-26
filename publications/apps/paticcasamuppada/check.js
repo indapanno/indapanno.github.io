@@ -25,6 +25,13 @@ module.exports = function check(data, opts) {
   if (!Array.isArray(cd.day_forms) || cd.day_forms.length !== 3 || !cd.day_forms.every(str)) p.push('ui.card.day_forms: нужно 3 формы слова');
   if (str(cd.days) && !(cd.days.includes('{n}') && cd.days.includes('{d}'))) p.push('ui.card.days: нужны {n} и {d}');
   if (str(ui.card_progress) && !ui.card_progress.includes('{n}')) p.push('ui.card_progress: нет {n}');
+  const ow = ui.own || {};
+  ['edit', 'src_monk', 'src_own', 'title', 'note', 'meaning_label', 'cloud_label', 'word_aria', 'add_word', 'remove_word', 'save', 'cancel',
+    'restore', 'err_meaning', 'err_cloud', 'saved', 'restored', 'none', 'count', 'hint', 'export', 'import', 'exported', 'import_title',
+    'import_text', 'import_ok', 'imported', 'err_file', 'err_lang', 'err_empty'].forEach(k => { if (!str(ow[k])) p.push('ui.own.' + k + ' пусто или нет'); });
+  if (!Array.isArray(ow.links_nom) || ow.links_nom.length !== 3 || !ow.links_nom.every(str)) p.push('ui.own.links_nom: нужно 3 формы слова');
+  ['saved', 'restored'].forEach(k => { if (str(ow[k]) && !ow[k].includes('{name}')) p.push('ui.own.' + k + ': нет {name}'); });
+  ['count', 'import_text', 'imported'].forEach(k => { if (str(ow[k]) && !(ow[k].includes('{n}') && ow[k].includes('{links}'))) p.push('ui.own.' + k + ': нужны {n} и {links}'); });
   if (!Array.isArray(ui.phrases) || ui.phrases.length !== 8 || !ui.phrases.every(str)) p.push('ui.phrases: нужно ровно 8 непустых фраз');
   if (str(ui.remaining) && !ui.remaining.includes('{n}')) p.push('ui.remaining: нет {n}');
   if (str(ui.returns_later) && !ui.returns_later.includes('{name}')) p.push('ui.returns_later: нет {name}');

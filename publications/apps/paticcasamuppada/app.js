@@ -67,6 +67,36 @@
     ctx.storage.set(progressKey(ctx), { v: ctx.data.version, remembered: list.slice(), updated: updated === undefined ? Date.now() : updated });
   }
 
+  // --- Свои слова: { v: 1, links: { id: { meaning, cloud: [..] } } } — отдельно от прогресса, по языку ---
+  var OWN_MAX = 40, OWN_WORDS = 6;
+  function ownKey(ctx) { return 'own:' + ctx.lang; }
+  function cleanOwn(ctx, links) {
+    var out = {}, ids = ctx.data.links.map(function (l) { return l.id; });
+    if (!links || typeof links !== 'object') return out;
+    Object.keys(links).forEach(function (id) {
+      var x = links[id];
+      if (ids.indexOf(id) === -1 || !x || typeof x !== 'object') return;
+      var m = typeof x.meaning === 'string' ? x.meaning.trim() : '';
+      var c = Array.isArray(x.cloud) ? x.cloud.filter(function (w) { return typeof w === 'string' && w.trim(); }).map(function (w) { return w.trim(); }) : [];
+      if (!m || m.length > OWN_MAX || !c.length || c.length > OWN_WORDS || c.some(function (w) { return w.length > OWN_MAX; })) return;
+      out[id] = { meaning: m, cloud: c };
+    });
+    return out;
+  }
+  function loadOwn(ctx) {
+    var rec = ctx.storage.get(ownKey(ctx));
+    return rec && typeof rec === 'object' ? cleanOwn(ctx, rec.links) : {};
+  }
+  function saveOwn(ctx, links) {
+    if (Object.keys(links).length) ctx.storage.set(ownKey(ctx), { v: 1, links: links });
+    else ctx.storage.remove(ownKey(ctx));
+  }
+  function pluralIdx(n, lang) {
+    if (lang !== 'ru') return 0;
+    var m10 = n % 10, m100 = n % 100;
+    return m10 === 1 && m100 !== 11 ? 0 : m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14) ? 1 : 2;
+  }
+
   // --- Колесо Дхаммы (по img/icon.svg сайта): 8 спиц, обод, 8 лепестков, ступица ---
   function dharmaWheel() {
     var g = svg('g');
@@ -126,6 +156,10 @@
     D.links.forEach(function (l) { byId[l.id] = l.n; });
 
     var remembered = loadRemembered(ctx);   // id запомненных звеньев (сохраняются)
+    var own = loadOwn(ctx);                 // свои слова по id звена (смысл и облако)
+    var O = U.own;
+    // Слова звена: свои, если есть, иначе — слова Индапаньо
+    function W(n) { var d = L(n), x = own[d.id]; return x ? { meaning: x.meaning, cloud: x.cloud, own: true } : { meaning: d.meaning, cloud: d.cloud, own: false }; }
     var queue = [];                         // номера звеньев колоды (только в этом запуске)
     var phraseQueue = [], lastPhrase = null;
     var screen = null;                      // основной экран: { type: 'front'|'back'|'milestone'|'finale', n }
@@ -310,13 +344,16 @@
       chain.appendChild(prev); chain.appendChild(h('span', 'pt-me')); chain.appendChild(next);
       card.appendChild(chain);
 
+      var w = W(n);
       var meanBox = h('div', 'pt-meanbox');
-      var mean = h('span', 'pt-mean', d.meaning);
+      var mean = h('span', 'pt-mean', w.meaning);
       meanBox.appendChild(mean);
       card.appendChild(meanBox);
       card.appendChild(h('div', 'pt-rule'));
+      // Чьи слова: при просмотре — всегда; на занятии — только если свои
+      if (view || w.own) card.appendChild(h('div', 'pt-src' + (w.own ? ' pt-src-own' : ''), w.own ? O.src_own : O.src_monk));
       var cloud = h('div', 'pt-cloud');
-      var bubbles = d.cloud.map(function (w) { var b = h('span', 'pt-bub', w); cloud.appendChild(b); return b; });
+      var bubbles = w.cloud.map(function (x) { var b = h('span', 'pt-bub', x); cloud.appendChild(b); return b; });
       card.appendChild(cloud);
 
       // Заглушки: элемент остаётся на месте, закрыт «шторкой» с глазом; нажатие открывает этот элемент
@@ -491,7 +528,7 @@
       function stag(el) { if (!RM) { el.classList.add('pt-stag'); el.style.animationDelay = delay.toFixed(2) + 's'; } delay += 0.12; box.appendChild(el); return el; }
       stag(h('div', 'pt-msover', U.milestone_over));
       stag(h('div', 'pt-msname', d.name));
-      stag(h('div', 'pt-msmean', d.meaning));
+      stag(h('div', 'pt-msmean', W(n).meaning));
       var chips = h('div', 'pt-chips');
       chips.appendChild(h('span', 'pt-chip', L(n - 1).name));
       chips.appendChild(arrow(1.0));
@@ -625,6 +662,7 @@
     function renderOverlay() {
       var o = overlays[overlays.length - 1];
       if (o.type === 'map') return renderMap(o.n);
+      if (o.type === 'edit') return renderEdit(o.n);
       var b = backCard(o.n, true);
       if (!RM) b.card.classList.add('pt-flip');
       setStage(b.card);
@@ -633,12 +671,111 @@
       var back = btn('pt-btn pt-btn-sec pt-wide', U.view_back);
       back.addEventListener('click', function () { overlays = []; restoreScreen(); });
       bottom.appendChild(back);
+      var links = h('div', 'pt-linkrow');
+      var edit = btn('pt-linkbtn', O.edit);
+      edit.addEventListener('click', function () { if (!busy) { overlays.push({ type: 'edit', n: o.n }); renderOverlay(); } });
+      links.appendChild(edit);
       if (remembered.indexOf(L(o.n).id) !== -1) {
         var again = btn('pt-linkbtn', U.repeat);
         again.addEventListener('click', function () { if (!busy) forget(o.n); });
-        bottom.appendChild(again);
+        links.appendChild(again);
       }
+      bottom.appendChild(links);
+      if (o.msg) { var m = o.msg; o.msg = null; toast(m); }
       focusQuiet(back);
+    }
+
+    // --- Свои слова: правка смысла и облака одного звена ---
+    function renderEdit(n) {
+      var d = L(n), w = W(n);
+      var box = h('div', 'pt-card pt-edit' + (RM ? '' : ' pt-flip'));
+      var head = h('div', 'pt-maphead');
+      var title = h('div', 'pt-maptitle', O.title);
+      title.setAttribute('role', 'heading'); title.setAttribute('aria-level', '2');
+      head.appendChild(title);
+      var x = btn('pt-round pt-round-sm', null, O.cancel);
+      x.appendChild(iconX());
+      x.addEventListener('click', closeOverlay);
+      head.appendChild(x);
+      box.appendChild(head);
+      box.appendChild(h('div', 'pt-edit-term', d.name));
+      box.appendChild(h('div', 'pt-edit-note', O.note));
+
+      var f1 = h('label', 'pt-field');
+      f1.appendChild(h('span', 'pt-flabel', O.meaning_label));
+      var inM = document.createElement('input');
+      inM.type = 'text'; inM.className = 'pt-input'; inM.maxLength = OWN_MAX; inM.value = w.meaning;
+      inM.setAttribute('autocomplete', 'off');
+      f1.appendChild(inM);
+      var errM = h('span', 'pt-ferr'); errM.setAttribute('role', 'alert');
+      f1.appendChild(errM);
+      box.appendChild(f1);
+
+      var f2 = h('div', 'pt-field');
+      var cl = h('span', 'pt-flabel', O.cloud_label);
+      cl.id = 'pt-cloud-label';
+      f2.appendChild(cl);
+      var list = h('div', 'pt-wlist');
+      list.setAttribute('role', 'group'); list.setAttribute('aria-labelledby', cl.id);
+      f2.appendChild(list);
+      var add = btn('pt-addw', null, O.add_word);
+      add.appendChild(document.createTextNode('+ ' + O.add_word));
+      f2.appendChild(add);
+      var errC = h('span', 'pt-ferr'); errC.setAttribute('role', 'alert');
+      f2.appendChild(errC);
+      box.appendChild(f2);
+
+      function addRow(val, focus) {
+        var row = h('div', 'pt-wrow');
+        var inp = document.createElement('input');
+        inp.type = 'text'; inp.className = 'pt-input'; inp.maxLength = OWN_MAX; inp.value = val || '';
+        inp.setAttribute('autocomplete', 'off');
+        inp.setAttribute('aria-label', O.word_aria);
+        var del = btn('pt-wdel', null, O.remove_word);
+        del.appendChild(iconX());
+        del.addEventListener('click', function () { list.removeChild(row); syncAdd(); });
+        row.appendChild(inp); row.appendChild(del);
+        list.appendChild(row);
+        if (focus) focusTo(inp);
+        syncAdd();
+      }
+      function syncAdd() { add.disabled = list.children.length >= OWN_WORDS; }
+      w.cloud.forEach(function (v) { addRow(v); });
+      add.addEventListener('click', function () { if (list.children.length < OWN_WORDS) addRow('', true); });
+
+      if (w.own) {
+        var restore = btn('pt-linkbtn pt-restore', O.restore);
+        restore.addEventListener('click', function () {
+          delete own[d.id]; saveOwn(ctx, own);
+          overlays.pop(); overlays[overlays.length - 1].msg = { tpl: O.restored, name: d.name };
+          renderOverlay();
+        });
+        box.appendChild(restore);
+      }
+      setStage(box);
+
+      clearBottom();
+      var row = h('div', 'pt-btns');
+      var cancel = btn('pt-btn pt-btn-sec', O.cancel);
+      var save = btn('pt-btn pt-btn-pri', O.save);
+      cancel.addEventListener('click', closeOverlay);
+      save.addEventListener('click', function () {
+        var m = inM.value.trim();
+        var words = [].map.call(list.querySelectorAll('input'), function (i) { return i.value.trim(); }).filter(Boolean);
+        errM.textContent = m ? '' : O.err_meaning;
+        errC.textContent = words.length ? '' : O.err_cloud;
+        f1.classList.toggle('pt-field-bad', !m); f2.classList.toggle('pt-field-bad', !words.length);
+        if (!m) { focusTo(inM); return; }
+        if (!words.length) { if (list.children.length) focusTo(list.querySelector('input')); else addRow('', true); return; }
+        var same = m === d.meaning && words.join('\n') === d.cloud.join('\n');
+        if (same) delete own[d.id]; else own[d.id] = { meaning: m, cloud: words };
+        saveOwn(ctx, own);
+        overlays.pop(); overlays[overlays.length - 1].msg = { tpl: same ? O.restored : O.saved, name: d.name };
+        renderOverlay();
+      });
+      row.appendChild(cancel); row.appendChild(save);
+      bottom.appendChild(row);
+      focusQuiet(inM);
     }
 
     function forget(n) {
@@ -663,6 +800,106 @@
         if (!queue.length) rebuildQueue();
         showFront(queue[0]);
       } else showFinale(false);
+    }
+
+    // Блок «Свои слова» внизу карты: сколько звеньев со своими словами, выгрузка и загрузка файла.
+    // Сообщения — тут же, под кнопками (рядом с тем, на что нажали)
+    var ownMsg = null;
+    function ownBlock() {
+      var cnt = Object.keys(own).length;
+      var blk = h('div', 'pt-own');
+      blk.appendChild(h('div', 'pt-own-title', cnt ? T(fill(O.count, { n: cnt, links: O.links_nom[pluralIdx(cnt, ctx.lang)] })) : O.none));
+      blk.appendChild(h('div', 'pt-own-hint', O.hint));
+      var row = h('div', 'pt-btns');
+      var ex = btn('pt-btn pt-btn-sec pt-btn-sm', O.export);
+      var im = btn('pt-btn pt-btn-sec pt-btn-sm', O.import);
+      ex.disabled = !cnt;
+      var file = document.createElement('input');
+      file.type = 'file'; file.accept = '.json,application/json'; file.hidden = true; file.className = 'pt-file';
+      row.appendChild(ex); row.appendChild(im);
+      blk.appendChild(row); blk.appendChild(file);
+      var msg = h('div', 'pt-own-msg');
+      msg.setAttribute('role', 'status');
+      if (ownMsg) { msg.textContent = ownMsg.text; msg.classList.add(ownMsg.bad ? 'pt-own-bad' : 'pt-own-ok'); ownMsg = null; }
+      blk.appendChild(msg);
+      function say(text, bad) { msg.textContent = text; msg.className = 'pt-own-msg ' + (bad ? 'pt-own-bad' : 'pt-own-ok'); }
+      ex.addEventListener('click', function () {
+        var data = { app: 'paticcasamuppada', kind: 'own-words', lang: ctx.lang, v: 1, links: own };
+        try {
+          var url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }));
+          var a = document.createElement('a');
+          a.href = url; a.download = 'paticcasamuppada-own-words-' + ctx.lang + '.json';
+          document.body.appendChild(a); a.click(); document.body.removeChild(a);
+          setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+          say(O.exported, false);
+        } catch (e) { say(O.err_file, true); }
+      });
+      im.addEventListener('click', function () { file.value = ''; file.click(); });
+      file.addEventListener('change', function () {
+        var f = file.files && file.files[0];
+        if (!f) return;
+        var r = new FileReader();
+        r.onload = function () {
+          var obj = null;
+          try { obj = JSON.parse(String(r.result)); } catch (e) { obj = null; }
+          if (!obj || obj.app !== 'paticcasamuppada' || obj.kind !== 'own-words') return say(O.err_file, true);
+          if (obj.lang !== ctx.lang) return say(O.err_lang, true);
+          var got = cleanOwn(ctx, obj.links), n = Object.keys(got).length;
+          if (!n) return say(O.err_empty, true);
+          askImport(got, n);
+        };
+        r.onerror = function () { say(O.err_file, true); };
+        r.readAsText(f);
+      });
+      return blk;
+    }
+    function askImport(got, n) {
+      showSheet({
+        title: O.import_title,
+        text: T(fill(O.import_text, { n: n, links: U.reset.links[pluralIdx(n, ctx.lang)] })),
+        confirm: O.import_ok, cancel: O.cancel, danger: false,
+        onConfirm: function () {
+          Object.keys(got).forEach(function (id) { own[id] = got[id]; });
+          saveOwn(ctx, own);
+          ownMsg = { text: T(fill(O.imported, { n: n, links: O.links_nom[pluralIdx(n, ctx.lang)] })), bad: false };
+          renderOverlay();
+        }
+      });
+    }
+    // Подтверждение снизу (как у сброса): заголовок, текст, «действие» и «отмена»
+    function showSheet(o) {
+      if (sheet) return;
+      var back = h('div', 'pt-sheet-back');
+      sheet = h('div', 'pt-sheet' + (RM ? '' : ' pt-sheet-in'));
+      sheet.setAttribute('role', 'alertdialog'); sheet.setAttribute('aria-modal', 'true');
+      var t = h('div', 'pt-sheet-title', o.title); t.id = 'pt-sheet-t';
+      var p = h('p', 'pt-sheet-text', o.text); p.id = 'pt-sheet-p';
+      sheet.setAttribute('aria-labelledby', t.id); sheet.setAttribute('aria-describedby', p.id);
+      sheet.appendChild(t); sheet.appendChild(p);
+      var row = h('div', 'pt-btns pt-btns-col');
+      var ok = btn('pt-btn ' + (o.danger ? 'pt-btn-danger' : 'pt-btn-pri'), o.confirm);
+      var cancel = btn('pt-btn pt-btn-sec', o.cancel);
+      row.appendChild(ok); row.appendChild(cancel);
+      sheet.appendChild(row);
+      var opener = document.activeElement;
+      function close() {
+        if (!sheet) return;
+        back.parentNode && back.parentNode.removeChild(back);
+        sheet.parentNode && sheet.parentNode.removeChild(sheet);
+        sheet = null; wrap.removeAttribute('inert'); wrap.removeAttribute('aria-hidden');
+        focusQuiet(opener && document.contains(opener) ? opener : null);
+      }
+      cancel.addEventListener('click', close);
+      back.addEventListener('click', close);
+      sheet.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); close(); }
+        if (e.key === 'Tab') { var f = [ok, cancel], i = f.indexOf(document.activeElement); e.preventDefault(); f[(i + (e.shiftKey ? f.length - 1 : 1)) % f.length].focus(); }
+      });
+      ok.addEventListener('click', function () { close(); o.onConfirm(); });
+      wrap.setAttribute('inert', ''); wrap.setAttribute('aria-hidden', 'true');
+      root.appendChild(back); root.appendChild(sheet);
+      sheet.setAttribute('tabindex', '-1');
+      focusQuiet(ok, sheet);
     }
 
     // --- Карта круга ---
@@ -763,6 +1000,7 @@
       legend.appendChild(tr);
       legend.appendChild(h('div', 'pt-lhint', M.hint));
       box.appendChild(legend);
+      box.appendChild(ownBlock());
       setStage(box);
       fitLabels(box, area);
       clearBottom();
