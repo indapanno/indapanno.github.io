@@ -145,10 +145,15 @@
     }
     if (prog) {
       prog.textContent = st && st.text ? st.text : '';
+      // Приложение может вернуть тот же текст оформленным узлом
+      if (st && st.text && st.node && st.node.nodeType === 1) { prog.textContent = ''; prog.appendChild(st.node); }
       prog.hidden = !(st && st.text);
     }
+    // compact: приложение уже начато — описание уступает место строке прогресса
+    var desc = card.querySelector('.app-card-desc');
+    if (desc) desc.hidden = !!(st && st.started && st.compact);
     if (btn) {
-      btn.textContent = st && st.started ? s.resume : s.launch;
+      btn.textContent = st && st.button ? st.button : st && st.started ? s.resume : s.launch;
       btn.hidden = false;
     }
     if (icon && def && typeof def.cardIcon === 'function' && ctx.data) {

@@ -20,6 +20,11 @@ module.exports = function check(data, opts) {
   ['title', 'break_range', 'break', 'transitions', 'hint', 'status_done', 'status_todo', 'state_done', 'state_todo'].forEach(k => { if (!str(m[k])) p.push('ui.map.' + k + ' пусто или нет'); });
   if (!Array.isArray(m.center) || !m.center.length || !m.center.every(str)) p.push('ui.map.center: нужен список строк');
   if (!Array.isArray(m.legend) || m.legend.length < 1 || !m.legend.every(x => x && str(x.range) && str(x.text) && LIFES.includes(x.life))) p.push('ui.map.legend: нужны строки { range, life, text }');
+  const cd = ui.card || {};
+  ['done', 'today', 'yesterday', 'days', 'open'].forEach(k => { if (!str(cd[k])) p.push('ui.card.' + k + ' пусто или нет'); });
+  if (!Array.isArray(cd.day_forms) || cd.day_forms.length !== 3 || !cd.day_forms.every(str)) p.push('ui.card.day_forms: нужно 3 формы слова');
+  if (str(cd.days) && !(cd.days.includes('{n}') && cd.days.includes('{d}'))) p.push('ui.card.days: нужны {n} и {d}');
+  if (str(ui.card_progress) && !ui.card_progress.includes('{n}')) p.push('ui.card_progress: нет {n}');
   if (!Array.isArray(ui.phrases) || ui.phrases.length !== 8 || !ui.phrases.every(str)) p.push('ui.phrases: нужно ровно 8 непустых фраз');
   if (str(ui.remaining) && !ui.remaining.includes('{n}')) p.push('ui.remaining: нет {n}');
   if (str(ui.returns_later) && !ui.returns_later.includes('{name}')) p.push('ui.returns_later: нет {name}');

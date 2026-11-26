@@ -352,3 +352,15 @@
 .app-paticcasamuppada .pt-linkbtn { display: block; margin: 4px auto 0; min-height: 44px; padding: 0 12px; border: 0; background: transparent; color: var(--pt-ink, var(--pt-tx2)); font: inherit; font-size: 14px; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 .app-paticcasamuppada .pt-done-badge { margin-left: auto; align-self: flex-start; flex: none; display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px 4px 8px; border-radius: 12px; background: var(--pt-ok); color: var(--pt-oktx); font-size: 12px; font-weight: 700; line-height: 1.2; }
 .app-paticcasamuppada .pt-mn.pt-mn-done.pt-mn-cur { background: var(--pt-ac); color: var(--pt-pritx); }
+
+/* 2.3: карточка в статье — колесо с числом запомненных; одинаковые заглушки */
+.app-paticcasamuppada.pt-icon { --pt-cg: #86B892; }
+.app-paticcasamuppada.pt-icon:where(html[data-theme="light"] *) { --pt-cg: #2F6B3E; }
+.app-paticcasamuppada.pt-icon.pt-icon-on .pt-lit { fill: var(--pt-cg); }
+.app-paticcasamuppada.pt-icon .pt-icon-n { fill: var(--pt-cg); font-family: var(--font-display); font-weight: 700; font-size: 18px; }
+.app-paticcasamuppada.pt-icon .pt-unlit { fill: var(--text-secondary); opacity: 0.35; }
+.app-paticcasamuppada.pt-cardline { --pt-cg: #86B892; }
+.app-paticcasamuppada.pt-cardline:where(html[data-theme="light"] *) { --pt-cg: #2F6B3E; }
+.app-paticcasamuppada.pt-cardline .pt-cardline-n { color: var(--pt-cg); font-weight: 700; }
+.app-paticcasamuppada.pt-cardline .pt-cardline-when { display: block; color: var(--text-secondary); }
+.app-paticcasamuppada .pt-bub.pt-covered { background: var(--pt-el); border-color: transparent; }

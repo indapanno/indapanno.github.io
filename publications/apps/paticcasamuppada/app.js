@@ -57,12 +57,14 @@
       var id = rec.remembered[i];
       if (typeof id === 'string' && ids.indexOf(id) !== -1 && out.indexOf(id) === -1) out.push(id);
     }
-    // Запись из старой версии или с лишними id — переписываем очищенной, с текущей версией
-    if (rec.v !== d.version || out.length !== rec.remembered.length) saveRemembered(ctx, out);
+    // Запись из старой версии или с лишними id — переписываем очищенной, с текущей версией.
+    // Дату последнего занятия при этом сохраняем как была: это не занятие (по ней карточка пишет «занимались вчера»)
+    if (rec.v !== d.version || out.length !== rec.remembered.length) saveRemembered(ctx, out, typeof rec.updated === 'number' ? rec.updated : null);
     return out;
   }
-  function saveRemembered(ctx, list) {
-    ctx.storage.set(progressKey(ctx), { v: ctx.data.version, remembered: list.slice(), updated: Date.now() });
+  // updated: по умолчанию — сейчас (отметка «Помню» / «Вернуть в колоду»); при очистке записи — прежняя дата или null
+  function saveRemembered(ctx, list, updated) {
+    ctx.storage.set(progressKey(ctx), { v: ctx.data.version, remembered: list.slice(), updated: updated === undefined ? Date.now() : updated });
   }
 
   // --- Колесо Дхаммы (по img/icon.svg сайта): 8 спиц, обод, 8 лепестков, ступица ---
@@ -102,6 +104,13 @@
       }
     }
     return s;
+  }
+
+  function startOfDay(ms) { var d = new Date(ms); d.setHours(0, 0, 0, 0); return d.getTime(); }
+  function plural(n, forms, lang) {
+    if (lang !== 'ru') return forms[0];
+    var m10 = n % 10, m100 = n % 100;
+    return forms[m10 === 1 && m100 !== 11 ? 0 : m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14) ? 1 : 2];
   }
 
   // --- Приложение ---
@@ -217,6 +226,13 @@
       });
       t.setAttribute('role', 'status');
       card.appendChild(t);
+      // На обороте плашка стоит над «показать всё / скрыть всё», чтобы не закрывать кнопку
+      var tg = card.querySelector('.pt-showall');
+      if (tg) {
+        // Над кнопкой, но всегда в видимой части карточки: на низком экране кнопка может быть ниже края
+        var top = Math.min(tg.offsetTop, card.scrollTop + card.clientHeight) - t.offsetHeight - 8;
+        t.style.bottom = 'auto'; t.style.top = Math.max(card.scrollTop + 8, top) + 'px';
+      }
       timers.push(setTimeout(function () { if (t.parentNode) t.parentNode.removeChild(t); }, 2600)); // и без анимаций — чтобы успеть прочитать
     }
     function clearBottom() { bottom.textContent = ''; bottom.className = 'pt-bottom'; }
@@ -866,14 +882,40 @@
   window.PubApps.register('paticcasamuppada', {
     mount: function (root, ctx) { return Trainer(root, ctx); },
     status: function (ctx) {
-      var n = loadRemembered(ctx).length;
-      return { text: digitsFor(ctx.lang)(fill(ctx.data.ui.card_progress, { n: n })), started: n > 0 };
+      var U = ctx.data.ui, C = U.card, T = digitsFor(ctx.lang);
+      var ids = loadRemembered(ctx), n = ids.length, N = ctx.data.links.length;
+      if (!n) return { text: '', started: false };
+      if (!C) return { text: T(fill(U.card_progress, { n: n })), started: true };   // на случай данных без подписей карточки
+      var rec = ctx.storage.get(progressKey(ctx)) || {};
+      // Начали: описание уступает место строке «запомнено N из 12» (или «Круг пройден») и «занимались вчера»;
+      // дата — из поля updated той же записи прогресса (есть с 1.0), без даты строка «занимались…» не выводится
+      var parts = [n >= N ? C.done : fill(U.card_progress, { n: n })];
+      var days = typeof rec.updated === 'number' ? Math.floor((startOfDay(Date.now()) - startOfDay(rec.updated)) / 864e5) : -1;
+      if (days === 0) parts.push(C.today); else if (days === 1) parts.push(C.yesterday);
+      else if (days > 1) parts.push(fill(C.days, { n: days, d: plural(days, C.day_forms, ctx.lang) }));
+      var text = T(parts.join(' · '));
+      // Тот же текст узлами: число запомненных — зелёным и жирным
+      var node = h('span', 'app-paticcasamuppada pt-cardline');
+      if (n < N) {
+        String(U.card_progress).split('{n}').forEach(function (p, i) {
+          if (i) node.appendChild(h('b', 'pt-cardline-n', T(n)));
+          if (p) node.appendChild(document.createTextNode(T(p)));
+        });
+      } else node.appendChild(h('b', 'pt-cardline-n', T(C.done)));
+      if (parts.length > 1) node.appendChild(h('span', 'pt-cardline-when', T(parts[1])));
+      return { text: text, node: node, started: true, compact: true, button: n >= N ? C.open : null };
     },
     cardIcon: function (ctx) {
-      var ids = loadRemembered(ctx), lit = {};
+      var ids = loadRemembered(ctx), n = ids.length, N = ctx.data.links.length, lit = {};
       ctx.data.links.forEach(function (l) { if (ids.indexOf(l.id) !== -1) lit[l.n] = true; });
       var s = miniWheel(64, 0, { lit: lit });
-      s.setAttribute('class', 'app-paticcasamuppada pt-icon');
+      s.setAttribute('class', 'app-paticcasamuppada pt-icon' + (n ? ' pt-icon-on' : '') + (n >= N ? ' pt-icon-done' : ''));
+      if (n) {
+        // В центре колеса — число запомненных
+        var big = svg('text', { x: 30, y: 36, 'text-anchor': 'middle', 'class': 'pt-icon-n' });
+        big.textContent = digitsFor(ctx.lang)(n);
+        s.appendChild(big);
+      }
       return s;
     }
   });
