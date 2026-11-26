@@ -157,6 +157,9 @@
     <xhtml:link rel="alternate" hreflang="th" href="https://indapanno.github.io/terms/anumodana_thai.html"/>
   </url>
   <url>
+    <loc>https://indapanno.github.io/terms/appamada_ru.html</loc>
+  </url>
+  <url>
     <loc>https://indapanno.github.io/terms/arahant_ru.html</loc>
     <xhtml:link rel="alternate" hreflang="ru" href="https://indapanno.github.io/terms/arahant_ru.html"/>
     <xhtml:link rel="alternate" hreflang="th" href="https://indapanno.github.io/terms/arahant_thai.html"/>
@@ -247,6 +250,9 @@
     <xhtml:link rel="alternate" hreflang="th" href="https://indapanno.github.io/terms/bhavana_thai.html"/>
   </url>
   <url>
+    <loc>https://indapanno.github.io/terms/bojjhanga_ru.html</loc>
+  </url>
+  <url>
     <loc>https://indapanno.github.io/terms/brahmacariya_ru.html</loc>
     <xhtml:link rel="alternate" hreflang="ru" href="https://indapanno.github.io/terms/brahmacariya_ru.html"/>
     <xhtml:link rel="alternate" hreflang="th" href="https://indapanno.github.io/terms/brahmacariya_thai.html"/>
@@ -315,6 +321,9 @@
     <loc>https://indapanno.github.io/terms/desana_thai.html</loc>
     <xhtml:link rel="alternate" hreflang="ru" href="https://indapanno.github.io/terms/desana_ru.html"/>
     <xhtml:link rel="alternate" hreflang="th" href="https://indapanno.github.io/terms/desana_thai.html"/>
+  </url>
+  <url>
+    <loc>https://indapanno.github.io/terms/devaduta_ru.html</loc>
   </url>
   <url>
     <loc>https://indapanno.github.io/terms/dhamma_ru.html</loc>
@@ -895,6 +904,9 @@
     <loc>https://indapanno.github.io/terms/sammakammanta_thai.html</loc>
     <xhtml:link rel="alternate" hreflang="ru" href="https://indapanno.github.io/terms/sammakammanta_ru.html"/>
     <xhtml:link rel="alternate" hreflang="th" href="https://indapanno.github.io/terms/sammakammanta_thai.html"/>
+  </url>
+  <url>
+    <loc>https://indapanno.github.io/terms/sampajanna_ru.html</loc>
   </url>
   <url>
     <loc>https://indapanno.github.io/terms/samsara_ru.html</loc>
